@@ -64,6 +64,8 @@ p{margin:0}
 .admin{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 140px}
 .wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.crumb{border:0;background:none;color:var(--muted);padding:0 0 6px;font-size:.88rem}
+.crumb:hover{color:var(--ink)}
 .eyebrow-a{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:500}
 .top h1{font-family:var(--f-display);font-style:italic;font-weight:500;font-size:clamp(1.7rem,6vw,2.3rem);line-height:1.1}
 .top-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -293,6 +295,67 @@ select.inp{padding:9px 10px;font-size:15px}
 @keyframes c1{0%{transform:rotate(-30deg) translateX(-4px)}55%{transform:rotate(8deg) translateX(1px)}100%{transform:rotate(-6deg)}}
 @keyframes c2{0%{transform:rotate(30deg) translateX(4px)}55%{transform:rotate(-8deg) translateX(-1px)}100%{transform:rotate(6deg)}}
 .next .mods{margin-top:20px}
+/* ---------- ADMINISTRARE: hub, evenimente ---------- */
+.hub{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:760px){.hub{grid-template-columns:1fr}}
+.hcard{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:20px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:190px;transition:border-color .15s,transform .15s}
+.hcard:hover{border-color:var(--accent)} .hcard:active{transform:scale(.99)}
+.hcard .hic{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--accent);margin-bottom:8px}
+.hcard .hic svg{width:22px;height:22px}
+.hcard b{font-family:var(--f-display);font-style:italic;font-weight:500;font-size:1.6rem;line-height:1.1}
+.hcard span{font-size:.95rem} .hcard em{font-style:normal;color:var(--accent);font-weight:600}
+.hcard small{font-size:.84rem;color:var(--muted);margin-top:auto}
+.linkbox{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface-2)}
+.linkbox code{flex:1;min-width:0;overflow-wrap:anywhere;font-size:.88rem}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+.warn-msg{color:var(--warn)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:760px){.kpis{grid-template-columns:1fr 1fr}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi span{font-size:.8rem;color:var(--muted)} .kpi b{font-size:1.35rem;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .kpi small{font-size:.8rem;color:var(--muted)}
+.lhead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;font-size:.86rem;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip i{font-style:normal;font-weight:600;margin-left:2px}
+.leads{display:flex;flex-direction:column}
+.lrow{display:grid;grid-template-columns:110px 1fr 130px 110px 128px;gap:12px;align-items:center;text-align:left;border:0;border-top:1px solid var(--line);background:none;padding:12px 6px;border-radius:0}
+.lrow:hover{background:var(--surface-2)}
+.lrow span{display:flex;flex-direction:column;min-width:0}
+.lrow small{font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .lp,.lrow .lpr{text-align:right;align-items:flex-end;font-variant-numeric:tabular-nums}
+.lrow .lpr b{color:var(--ok)} .lrow .lpr.neg b{color:var(--danger)}
+.lrow .ls{align-items:flex-end}
+@media (max-width:760px){.lrow{grid-template-columns:1fr auto;gap:4px 12px}.lrow .ld{grid-row:1;flex-direction:row;gap:8px;align-items:baseline}.lrow .ln{grid-column:1}.lrow .lp{grid-row:1;grid-column:2}.lrow .lpr{display:none}.lrow .ls{grid-column:2;grid-row:2}}
+.stp{display:inline-block;font-size:.76rem;font-weight:600;padding:3px 10px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.st-new{color:var(--accent)} .st-c{color:var(--gold)} .st-o{color:var(--warn)} .st-ok{color:var(--ok)} .st-no{color:var(--muted)}
+.sheet.wide{max-width:680px}
+.shead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;font-size:.93rem}
+@media (max-width:520px){.info{grid-template-columns:1fr}}
+.info div{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}
+.info span{font-size:.78rem;color:var(--muted)}
+.info a{color:var(--accent)}
+.tog{display:flex;gap:10px;align-items:center;font-size:.92rem;cursor:pointer;min-height:44px}
+.tog input{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto}
+.dgroup{display:grid;grid-template-columns:1fr 84px;gap:8px}
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:600px){.calc{grid-template-columns:1fr}}
+.calc .sum div{font-size:.88rem}
+.calc .sum div b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.calc .sum .tot{font-size:1rem;background:var(--surface-2)}
+.calc .sum .tot.pos b{color:var(--ok)} .calc .sum .tot.neg b{color:var(--danger)}
+.from{padding:11px 0;font-size:.95rem;overflow-wrap:anywhere}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:640px){.row3{grid-template-columns:1fr}}
+.suf{display:flex;align-items:center;gap:8px}
+.suf span{font-size:.85rem;color:var(--muted);white-space:nowrap}
+.mods-in{display:flex;flex-direction:column}
+.mods-in .tog{min-height:30px}
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:.95rem}
+.steps a{color:var(--accent)}
+.savebar{position:sticky;bottom:12px;flex-direction:row;justify-content:space-between;align-items:center;flex-wrap:wrap;box-shadow:0 10px 30px rgba(0,0,0,.12)}
 /* totem vertical / ecran înalt: conținutul stă centrat, nu lipit sus */
 @media (orientation:portrait) and (min-height:860px){
   .stage .sbody{justify-content:center;padding-bottom:5vh}
@@ -321,6 +384,8 @@ select.inp{padding:9px 10px;font-size:15px}
   <div id="pin" class="pin" hidden></div>
 </div>
 
+<script src="config.js"></script>
+<script src="pricing.js"></script>
 <script>
 /* ============================================================
    Wedding Welcome — v2
@@ -330,7 +395,7 @@ select.inp{padding:9px 10px;font-size:15px}
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '2.0.1';
+const APP_VERSION = '3.0.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
@@ -507,6 +572,7 @@ function updateUser(u){ const acc = accounts(); acc.users = acc.users.map(x => x
 /* ---------------- Stare aplicație ---------------- */
 let USER = null, W = null;
 let mode = 'auth';                  // auth | admin | test | live
+let area = 'home';                  // în admin: home (Administrare) | conturi | evenimente | tool (Wedding Welcome)
 let authView = 'login', authErr = '', authInfo = null;
 let tab = 'eveniment';
 let gView = 'home', curCat = null, seatQ = '', seatSel = null;
@@ -593,10 +659,11 @@ async function login(u){
   W.draft = normCfg(W.draft); if (W.published) W.published = normCfg(W.published);
   saveW();
   pendingData = (DATA && (DATA.version||0) > (W.dataVersion||0)) ? DATA : null;
-  tab = 'eveniment'; vImport = null; gImport = null; confirmAsk = null; msgs = {};
+  tab = 'eveniment'; area = 'home'; vImport = null; gImport = null; confirmAsk = null; msgs = {};
+  if (window.CRM) window.CRM.onLogin();
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e) {}
   mode = (W.live && W.published) ? 'live' : 'admin';
-  if (mode === 'live') { gView = 'home'; keepAwake(); }
+  if (mode === 'live') { gView = 'home'; area = 'tool'; keepAwake(); }
   render(); verifyBlobs();
 }
 function logout(){
@@ -615,7 +682,8 @@ async function verifyBlobs(){
 /* ============================ ADMIN ============================ */
 function renderAdmin(){
   const c = W.draft;
-  const tabs = [['eveniment','Eveniment și module'],['aspect','Aspect'],['video','Videoclipuri'],['invitati','Invitați'],['preview','Previzualizare'],['cont','Cont']];
+  const tabs = [['eveniment','Eveniment și module'],['aspect','Aspect'],['video','Videoclipuri'],['invitati','Invitați'],['preview','Previzualizare']];
+  if (tab === 'cont') tab = 'eveniment';
   const dirty = isDirty();
   const draftBar = !W.published
     ? `<div class="draft dirty"><p><b>Nepublicat încă.</b> Pregătește totul, verifică în TEST MODE, apoi publică în LIVE.</p></div>`
@@ -627,9 +695,9 @@ function renderAdmin(){
       <div class="btns"><button type="button" class="btn small danger" data-act="discard-yes">Da, renunță</button><button type="button" class="btn small" data-act="ask" data-k="">Anulează</button></div></div>` : '';
   $('#admin').innerHTML = `<div class="wrap">
     <header class="top">
-      <div><p class="eyebrow-a">Wedding Welcome · Administrare</p><h1 id="hName">${esc(c.couple || 'Evenimentul tău')}</h1></div>
+      <div><button type="button" class="crumb" data-act="area" data-k="home">‹ Administrare</button><p class="eyebrow-a">Wedding Welcome</p><h1 id="hName">${esc(c.couple || 'Evenimentul tău')}</h1></div>
       <div class="top-r"><span class="state-pill"><span class="dot${navigator.onLine?'':' no'}"></span>${navigator.onLine?'Online':'Offline'}</span>
-        <button type="button" class="state-pill" data-act="tab" data-k="cont" aria-label="Contul meu">${esc(USER.username)}</button></div>
+        <button type="button" class="state-pill" data-act="area" data-k="conturi" aria-label="Contul meu">${esc(USER.username)}</button></div>
     </header>
     ${pendingData ? `<section class="draft dirty" role="status" style="flex-direction:column;align-items:flex-start">
       <p><b>Am primit o versiune nouă a datelor de la Claude (v${pendingData.version||0}).</b></p>
@@ -1123,10 +1191,12 @@ function renderStage(){
 }
 function render(){
   $('#auth').hidden = mode !== 'auth';
-  $('#admin').hidden = mode !== 'admin'; $('#actionbar').hidden = mode !== 'admin';
+  $('#admin').hidden = mode !== 'admin'; $('#actionbar').hidden = !(mode === 'admin' && area === 'tool');
   $('#stage').hidden = !(mode === 'test' || mode === 'live');
   document.body.style.overflow = (mode === 'test' || mode === 'live') ? 'hidden' : '';
-  if (mode === 'auth') renderAuth(); else if (mode === 'admin') renderAdmin(); else renderStage();
+  if (mode === 'auth') renderAuth();
+  else if (mode === 'admin') { if (area === 'tool') renderAdmin(); else window.CRM.render(); }
+  else renderStage();
 }
 function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
 function go(v){
@@ -1243,7 +1313,7 @@ async function startLive(){
   keepAwake(); render();
 }
 function exitLive(){
-  W.live = false; saveW(); mode = 'admin'; $('#pin').hidden = true; clearTimers(); clearTimeout(idleT);
+  W.live = false; saveW(); mode = 'admin'; area = 'tool'; $('#pin').hidden = true; clearTimers(); clearTimeout(idleT);
   try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch(e) {}
   try { wakeLock && wakeLock.release(); } catch(e) {}
   render(); window.scrollTo(0,0);
@@ -1285,13 +1355,14 @@ function paintBgThumb(){ const im = $('#bgThumb'); const bg = W.draft.theme.bg; 
 
 /* ============================ EVENIMENTE ============================ */
 const A = {
+  area(el){ area = el.dataset.k; confirmAsk = null; msgs.pw = ''; msgs.del = ''; render(); window.scrollTo(0,0); },
   'auth-view'(el){ authView = el.dataset.v; authErr = ''; renderAuth(); },
   'auth-continue'(){ const u = findUser(authInfo.username); authInfo = null; authView = 'login'; if (u) login(u); else renderAuth(); },
   tab(el){ tab = el.dataset.k; confirmAsk = null; msgs.pw = ''; msgs.del = ''; renderAdmin(); window.scrollTo(0,0); if (tab === 'aspect') paintBgThumb(); },
-  ask(el){ confirmAsk = el.dataset.k || null; renderAdmin(); if (tab === 'aspect') paintBgThumb(); },
+  ask(el){ confirmAsk = el.dataset.k || null; render(); },
   test(){ mode = 'test'; gView = 'home'; booth = {st:'idle', n:3, photo:null}; seatQ = ''; seatSel = null;
     Promise.all(W.draft.categories.filter(x => x.video).map(x => blobURL(x.video.blob))).then(() => { keepAwake(); render(); }); },
-  'exit-test'(){ clearTimers(); mode = 'admin'; render(); if (tab === 'aspect') paintBgThumb(); },
+  'exit-test'(){ clearTimers(); mode = 'admin'; area = 'tool'; render(); },
   'live-ask'(){ liveSummary(); },
   'modal-close'(){ $('#modal').hidden = true; },
   async 'publish-only'(){ await publish(); $('#modal').hidden = true; renderAdmin(); },
@@ -1358,20 +1429,20 @@ document.addEventListener('submit', async e => {
       if (p.length < 6) throw 'Parola nouă trebuie să aibă cel puțin 6 caractere.';
       u.salt = newSalt(); u.hash = await hashPw(p, u.salt); updateUser(u); authErr = ''; login(u);
     } else if (f.id === 'fPw') {
-      if (!(await checkPw(USER, $('#pw0').value))) { msgs.pw = 'Parola actuală nu e corectă.'; msgs.pwOk = false; renderAdmin(); return; }
-      const p = $('#pw1').value; if (p.length < 6) { msgs.pw = 'Parola nouă trebuie să aibă cel puțin 6 caractere.'; msgs.pwOk = false; renderAdmin(); return; }
-      USER.salt = newSalt(); USER.hash = await hashPw(p, USER.salt); updateUser(USER); msgs.pw = 'Parola a fost schimbată.'; msgs.pwOk = true; renderAdmin();
+      if (!(await checkPw(USER, $('#pw0').value))) { msgs.pw = 'Parola actuală nu e corectă.'; msgs.pwOk = false; render(); return; }
+      const p = $('#pw1').value; if (p.length < 6) { msgs.pw = 'Parola nouă trebuie să aibă cel puțin 6 caractere.'; msgs.pwOk = false; render(); return; }
+      USER.salt = newSalt(); USER.hash = await hashPw(p, USER.salt); updateUser(USER); msgs.pw = 'Parola a fost schimbată.'; msgs.pwOk = true; render();
     } else if (f.id === 'fNewUser') {
       try { const r = await createUser($('#nu-u').value, $('#nu-p').value);
         msgs.nu = `Contul <b>${esc(r.user.username)}</b> a fost creat. Cod de recuperare: <b style="font-family:ui-monospace,monospace;letter-spacing:.08em">${esc(r.code)}</b>. Notează-l: e singura cale de a schimba parola dacă e uitată. Ca să intri în el, ieși din contul actual.`; }
       catch(err) { msgs.nu = `<span class="err-msg">${esc(err)}</span>`; }
-      renderAdmin();
+      render();
     } else if (f.id === 'addForm') {
       const name = $('#ng-name').value.trim(), table = tableVal($('#ng-table').value);
       if (!name || table === '' || table === 0) return;
       W.draft.guests.push({ name, table }); saveW(); renderAdmin(); $('#ng-name').focus();
     } else if (f.id === 'fDel') {
-      if (!(await checkPw(USER, $('#del-p').value))) { msgs.del = 'Parola nu e corectă.'; renderAdmin(); return; }
+      if (!(await checkPw(USER, $('#del-p').value))) { msgs.del = 'Parola nu e corectă.'; render(); return; }
       const id = USER.id; W.draft = normCfg({}); W.published = null; await gc();
       LS.del(wsKey(id)); const acc = accounts(); acc.users = acc.users.filter(u => u.id !== id); LS.set(K_ACC, acc);
       logout();
@@ -1424,8 +1495,8 @@ mono.addEventListener('pointerdown', e => { if (mode !== 'live') return; e.preve
 ['pointerup','pointerleave','pointercancel'].forEach(ev => mono.addEventListener(ev, () => { clearTimeout(holdT); mono.classList.remove('holding'); }));
 mono.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (mode === 'live' || mode === 'test')) keepAwake(); });
-addEventListener('online', () => { if (mode === 'admin') renderAdmin(); });
-addEventListener('offline', () => { if (mode === 'admin') renderAdmin(); });
+addEventListener('online', () => { if (mode === 'admin') render(); });
+addEventListener('offline', () => { if (mode === 'admin') render(); });
 
 /* pornire */
 (async function boot(){
@@ -1435,5 +1506,6 @@ addEventListener('offline', () => { if (mode === 'admin') renderAdmin(); });
 })();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
+<script src="crm.js"></script>
 </body>
 </html>

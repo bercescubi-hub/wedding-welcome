@@ -29,11 +29,30 @@ Poți oricând să *Renunți la modificări* și să revii la versiunea LIVE.
 
 Conturile, videoclipurile și pozele sunt păstrate **pe laptopul pe care au fost create** (parolele criptate cu PBKDF2). Fiecare cont are evenimentul lui separat. Conturile în cloud, accesibile de pe orice dispozitiv, sunt o etapă următoare.
 
+## Administrare
+
+După logare apare ecranul **Administrare**:
+
+- **Evenimente**: cererile de ofertă din Google Sheets, cu preț, transport, reducere, costuri și profit; status, note și emailuri din șabloane.
+- **Wedding Welcome**: tool-ul pentru ecranul invitaților.
+- **Conturi**: contul tău (conturile clienților vin într-o versiune următoare).
+
+**Formularul pentru clienți:** https://bercescubi-hub.github.io/wedding-welcome/oferta.html (se poate adăuga `?sursa=facebook` sau `?sursa=olx`, ca să vezi în Sheet de unde a venit cererea).
+
+### Conectarea la Google Sheets
+
+Scriptul e în `google-apps-script/Code.gs`; pașii sunt în aplicație, la *Evenimente → Conectare*. După publicarea scriptului, adresa lui (…/exec) se pune în `config.js`, ca formularul public să trimită cererile.
+
 ## Ce e în repo
 
 | Fișier | Rol |
 |---|---|
 | `index.html` | Aplicația (conturi, administrare, ecranul invitaților) |
+| `crm.js` | Secțiunea Evenimente și ecranul Administrare |
+| `pricing.js` | Pachete, transport, costuri, profit (comun aplicației și formularului) |
+| `oferta.html`, `img/` | Formularul public pentru clienți |
+| `config.js` | Adresa scriptului Google |
+| `google-apps-script/Code.gs` | Scriptul din Google Sheets: cereri, actualizări, emailuri |
 | `data.json` | Datele trimise de Claude (miri, categorii, mesaje, invitați, PIN, opțional temă) |
 | `sablon-invitati.xlsx` | Șablonul Excel pentru invitați |
 | `sw.js` | Funcționarea fără internet (crește `CACHE` la fiecare schimbare de cod) |

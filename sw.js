@@ -1,11 +1,12 @@
 /* Wedding Welcome — service worker
    Face aplicația să meargă fără internet:
-   - index.html și data.json: întâi rețeaua (ca să primești actualizările), apoi copia salvată.
-   - fonturi și iconițe: din copia salvată, actualizate în fundal.
+   - fișierele aplicației (html, js, json): întâi rețeaua, ca să vină mereu împreună în aceeași versiune; fără internet, copia salvată.
+   - imagini, iconițe și fonturi: din copia salvată, actualizate în fundal.
    La fiecare modificare a aplicației, crește CACHE ca laptopul să ia versiunea nouă. */
-const CACHE = 'ww-v3';
+const CACHE = 'ww-v4';
 const CORE = ['./', 'index.html', 'data.json', 'manifest.webmanifest',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png', 'sablon-invitati.xlsx'];
+  'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png', 'sablon-invitati.xlsx',
+  'config.js', 'pricing.js', 'crm.js', 'oferta.html', 'img/totem.jpg'];
 const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&family=Josefin+Sans:wght@300..600&family=Jost:wght@300..600&family=Marcellus&family=Montserrat:wght@300..600&family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Raleway:wght@300..600&display=swap';
 
 self.addEventListener('install', e => {
@@ -48,7 +49,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin === location.origin) {
-    if (req.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/data.json'))
+    if (req.mode === 'navigate' || /\.(html|js|json|gs)$/.test(url.pathname) || url.pathname.endsWith('/'))
       return e.respondWith(networkFirst(req));
     return e.respondWith(cacheFirst(req));
   }
