@@ -170,7 +170,7 @@ function renderPackages(){
   $('#pk').innerHTML = S.packages.map((p,i) => `<label>${i===1 ? '<span class="tag">Cel mai ales</span>' : ''}
     <input type="radio" name="pkg" value="${esc(p.id)}" ${p.id===cur?'checked':''}>
     <span class="h">${p.hours >= 8 ? 'Toată noaptea' : p.hours + ' ore'}</span><b>${esc(p.name)}</b>
-    <span class="pr">${P.lei(p.price)}</span>
+    <span class="pr">${P.lei(p.price)}${S.pricing.vatPayer && !S.pricing.pricesIncludeVat ? ' <small style="font-size:.7em;font-weight:500">+ TVA</small>' : ''}</span>
     <ul>${p.modules.map(m => `<li>${P.MODULE_NAMES[m] || m}</li>`).join('')}</ul></label>`).join('');
 }
 function lead(){
@@ -181,7 +181,7 @@ function lead(){
 function update(){
   const l = lead(), c = P.calc(l, S);
   $('#est').textContent = c.pkg ? P.lei(c.total) : '—';
-  $('#estLbl').textContent = c.pkg ? `Estimare · ${c.pkg.name}${c.transport ? ' + transport' : ''}` : 'Estimare';
+  $('#estLbl').textContent = c.pkg ? `Estimare · ${c.pkg.name}${c.transport ? ' + transport' : ''}${S.pricing.vatPayer ? ' · TVA inclus' : ''}` : 'Estimare';
   const n = $('#kmNote');
   if (l.outside === 'da' && l.km) { n.hidden = false;
     n.innerHTML = `Pentru evenimente în afara Bucureștiului și Ilfovului adăugăm transportul: aproximativ <b>${l.km} km</b> până în județul ${esc(l.county)} × ${P.lei(S.pricing.kmRate)}/km${S.pricing.roundTrip ? ' (dus-întors)' : ''} = <b>${P.lei(c.transport)}</b>. Distanța exactă o confirmăm în ofertă.`; }

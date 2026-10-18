@@ -11,8 +11,10 @@
       { id: 'allnight', name: 'All Night', hours: 10, price: 3300, modules: ['welcome', 'seating', 'booth'], staffMenu: true,
         desc: 'Toate cele trei, toată noaptea' }
     ],
-    pricing: { kmRate: 10, roundTrip: false },
-    costs: { staffCount: 2, staffRate: 60, setupHours: 1, menuCost: 250, fuelPerKm: 1.2, boothConsumables: 250, equipment: 100 },
+    /* TVA stă la „pricing” ca să ajungă și în formularul public (prețul afișat clientului); restul taxelor sunt interne, la „costs”. */
+    pricing: { kmRate: 10, roundTrip: false, vatPayer: true, vatRate: 21, pricesIncludeVat: true },
+    costs: { staffCount: 2, staffRate: 60, setupHours: 1, menuCost: 250, fuelPerKm: 1.2, boothConsumables: 250, equipment: 100,
+      incomeTax: 1, payFee: 0, invoiceFixed: 0 },
     email: { fromEmail: 'bercescubi@gmail.com', fromName: 'Wedding Welcome' },
     templates: [
       { id: 'oferta', name: 'Ofertă', status: 'Ofertă trimisă', subject: 'Oferta Wedding Welcome pentru {data_eveniment}',
@@ -59,7 +61,12 @@
     const subtotal = price + transport;
     const dv = num(lead.discountValue);
     const discount = Math.min(subtotal, Math.round(lead.discountType === 'lei' ? dv : subtotal * dv / 100));
-    const total = subtotal - discount;
+    const base = subtotal - discount;
+    /* TVA: dacă prețurile o includ, o scoatem din total; dacă nu, se adaugă peste. */
+    const Pr = S.pricing, vr = Pr.vatPayer ? num(Pr.vatRate) : 0;
+    const total = Pr.vatPayer && !Pr.pricesIncludeVat ? Math.round(base * (1 + vr / 100)) : base;
+    const vat = Pr.vatPayer ? (Pr.pricesIncludeVat ? Math.round(base * vr / (100 + vr)) : total - base) : 0;
+    const net = total - vat;
     const C = S.costs;
     const staff = Math.round(num(C.staffCount) * num(C.staffRate) * (hours + num(C.setupHours)));
     const menu = p && p.staffMenu && !yes(lead.staffMenuByClient) ? Math.round(num(C.staffCount) * num(C.menuCost)) : 0;
@@ -67,8 +74,14 @@
     const consumables = p && p.modules.includes('booth') ? num(C.boothConsumables) : 0;
     const equipment = p ? num(C.equipment) : 0;
     const cost = staff + menu + fuel + consumables + equipment;
-    return { pkg: p, price, hours, outside, km, billedKm, transport, subtotal, discount, total,
-      staff, menu, fuel, consumables, equipment, cost, profit: total - cost, margin: total ? (total - cost) / total : 0 };
+    /* taxe și costuri de facturare: impozit pe venit (fără TVA), comision la încasare, cost fix pe factură */
+    const incomeTax = Math.round(net * num(C.incomeTax) / 100);
+    const payFee = Math.round(total * num(C.payFee) / 100);
+    const invoiceFee = p ? Math.round(num(C.invoiceFixed)) : 0;
+    const taxes = vat + incomeTax + payFee + invoiceFee;
+    const profit = total - cost - taxes;
+    return { pkg: p, price, hours, outside, km, billedKm, transport, subtotal, discount, base, total, vat, vatRate: vr, vatIncluded: !!(Pr.vatPayer && Pr.pricesIncludeVat), net,
+      staff, menu, fuel, consumables, equipment, cost, incomeTax, payFee, invoiceFee, taxes, profit, margin: net ? profit / net : 0 };
   }
   const lei = n => Math.round(num(n)).toLocaleString('ro-RO') + ' lei';
   /** Apel JSONP către scriptul Google: ocolește blocările de tip CORS. */

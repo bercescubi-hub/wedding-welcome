@@ -10,6 +10,7 @@
   let C = null;                       // { url, key, settings, leads, lastSync, account }
   let view = 'cereri';                // cereri | preturi | sabloane | conectare
   let filter = 'Toate', q = '', busy = '', note = '', noteOk = false;
+  let fYear = 'Toate', fMonth = 'Toate';   // perioada, după data evenimentului
   let L = null;                       // cererea deschisă (copie de lucru)
   let compose = null;                 // { tpl, to, subject, body, sending, err }
   let setDirty = false;
@@ -165,18 +166,32 @@
       <p class="hint">Cererile din formularul public ajung în Google Sheet-ul tău. Ca să le vezi aici, conectează aplicația o singură dată.</p>
       <div class="btns"><button type="button" class="btn primary" data-act="crm-view" data-k="conectare">Mergi la Conectare</button></div></section>`;
     const S = C.settings;
-    const rows = C.leads.map(l => ({ l, c: P.calc(l, S), st: l.status || 'Nou' }));
+    const MONTHS = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+    const ym = l => { const m = /^(\d{4})-(\d{2})/.exec(String(l.eventDate || '')); return m ? [m[1], +m[2]] : ['', 0]; };
+    const years = [...new Set(C.leads.map(l => ym(l)[0]).filter(Boolean).concat(String(new Date().getFullYear())))].sort();
+    const inPeriod = l => { const [y, m] = ym(l); return (fYear === 'Toate' || y === fYear) && (fMonth === 'Toate' || m === +fMonth); };
+    const all = C.leads.map(l => ({ l, c: P.calc(l, S), st: l.status || 'Nou' }));
+    const rows = all.filter(r => inPeriod(r.l));
+    const period = fYear === 'Toate' && fMonth === 'Toate' ? 'toată perioada' : [fMonth === 'Toate' ? '' : MONTHS[+fMonth - 1], fYear === 'Toate' ? '' : fYear].filter(Boolean).join(' ');
     const sum = (arr, f) => arr.reduce((a, x) => a + f(x), 0);
     const conf = rows.filter(r => r.st === 'Confirmat'), open = rows.filter(r => !['Confirmat', 'Refuzat'].includes(r.st));
     const qq = norm(q);
     const shown = rows.filter(r => (filter === 'Toate' || r.st === filter) && (!qq || norm([r.l.name, r.l.city, r.l.venue, r.l.email, r.l.phone].join(' ')).includes(qq)))
       .sort((a, b) => String(b.l.createdAt).localeCompare(String(a.l.createdAt)));
     const counts = {}; rows.forEach(r => counts[r.st] = (counts[r.st] || 0) + 1);
-    return `<section class="kpis">
+    return `<section class="panel period">
+        <div class="lhead"><div><h2>Perioada</h2><p class="hint">După data evenimentului · ${esc(period)} · ${rows.length} din ${all.length} ${all.length === 1 ? 'cerere' : 'cereri'}</p></div>
+          <div class="btns">
+            <select class="inp" id="crmMonth" aria-label="Luna" style="width:auto"><option value="Toate">Toate lunile</option>${MONTHS.map((n, i) => `<option value="${i + 1}" ${String(i + 1) === String(fMonth) ? 'selected' : ''}>${n}</option>`).join('')}</select>
+            <select class="inp" id="crmYear" aria-label="Anul" style="width:auto"><option value="Toate">Toți anii</option>${years.map(y => `<option ${y === fYear ? 'selected' : ''}>${y}</option>`).join('')}</select>
+            ${fYear !== 'Toate' || fMonth !== 'Toate' ? `<button type="button" class="btn small" data-act="crm-period-reset">Toată perioada</button>` : ''}
+          </div></div>
+      </section>
+      <section class="kpis">
         <div class="kpi"><span>Cereri</span><b>${rows.length}</b><small>${counts['Nou'] || 0} noi</small></div>
         <div class="kpi"><span>În discuție</span><b>${lei(sum(open, r => r.c.total))}</b><small>${open.length} ${open.length === 1 ? 'eveniment' : 'evenimente'}</small></div>
         <div class="kpi"><span>Confirmate</span><b>${lei(sum(conf, r => r.c.total))}</b><small>${conf.length} ${conf.length === 1 ? 'eveniment' : 'evenimente'}</small></div>
-        <div class="kpi"><span>Profit confirmat</span><b>${lei(sum(conf, r => r.c.profit))}</b><small>estimat, după costuri</small></div>
+        <div class="kpi"><span>Profit net confirmat</span><b>${lei(sum(conf, r => r.c.profit))}</b><small>după costuri, TVA și taxe</small></div>
       </section>
       <section class="panel">
         <div class="lhead">
@@ -191,7 +206,7 @@
             <span class="lp"><small>${esc(c.pkg ? c.pkg.name : l.package || '—')}</small><b>${lei(c.total)}</b></span>
             <span class="lpr ${c.profit < 0 ? 'neg' : ''}"><small>profit</small><b>${lei(c.profit)}</b></span>
             <span class="ls">${pill(st)}</span></button>`).join('')}</div>`
-          : `<p class="hint" style="padding:18px 0">${rows.length ? 'Nicio cerere pentru filtrul ales.' : 'Nicio cerere încă. Trimite linkul pentru clienți și cererile vor apărea aici.'}</p>`}
+          : `<p class="hint" style="padding:18px 0">${rows.length ? 'Nicio cerere pentru filtrul ales.' : all.length ? `Nicio cerere cu evenimentul în ${esc(period)}.` : 'Nicio cerere încă. Trimite linkul pentru clienți și cererile vor apărea aici.'}</p>`}
       </section>
       <section class="panel"><h2>Linkul pentru clienți</h2>${linkBox()}</section>`;
   }
@@ -211,7 +226,10 @@
         ${row('Pachet ' + esc(c.pkg ? c.pkg.name : '—') + (c.pkg ? ` · ${c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore'}` : ''), lei(c.price))}
         ${row(c.outside ? `Transport · ${c.billedKm} km × ${lei(S.pricing.kmRate)}` : 'Transport (București-Ilfov)', lei(c.transport))}
         ${c.discount ? row('Reducere' + (L.discountType === '%' ? ` ${num(L.discountValue)}%` : ''), '− ' + lei(c.discount)) : ''}
+        ${c.vat && !c.vatIncluded ? row(`TVA ${c.vatRate}%`, '+ ' + lei(c.vat)) : ''}
         ${row('Total client', lei(c.total), 'tot')}
+        ${c.vat && c.vatIncluded ? row(`din care TVA ${c.vatRate}%`, lei(c.vat)) : ''}
+        ${c.vat ? row('Venit fără TVA', lei(c.net)) : ''}
       </div>
       <div class="sum">
         ${row(`Staff · ${num(S.costs.staffCount)} pers. × ${c.hours + num(S.costs.setupHours)} h × ${lei(S.costs.staffRate)}`, lei(c.staff))}
@@ -219,7 +237,11 @@
         ${c.outside ? row(`Combustibil · ${c.km * 2} km dus-întors`, lei(c.fuel)) : ''}
         ${c.consumables ? row('Consumabile Photo Booth', lei(c.consumables)) : ''}
         ${row('Echipament (uzură)', lei(c.equipment))}
-        ${row('Profit estimat' + (c.total ? ` · ${Math.round(c.margin * 100)}%` : ''), lei(c.profit), 'tot ' + (c.profit < 0 ? 'neg' : 'pos'))}
+        ${c.vat ? row(`TVA de plată ${c.vatRate}%`, lei(c.vat)) : ''}
+        ${c.incomeTax ? row(`Impozit pe venit ${num(S.costs.incomeTax)}%`, lei(c.incomeTax)) : ''}
+        ${c.payFee ? row(`Comision încasare ${num(S.costs.payFee)}%`, lei(c.payFee)) : ''}
+        ${c.invoiceFee ? row('Cost facturare', lei(c.invoiceFee)) : ''}
+        ${row('Profit net estimat' + (c.net ? ` · ${Math.round(c.margin * 100)}%` : ''), lei(c.profit), 'tot ' + (c.profit < 0 ? 'neg' : 'pos'))}
       </div></div>`;
   }
   function renderLead() {
@@ -285,6 +307,7 @@
       localitate: l.city || '', locatie: l.venue || l.city || '', locatie_completa: place(l) || l.city || '',
       pachet: c.pkg ? c.pkg.name : '', ore: c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore',
       pret_pachet: n0(c.price), transport: n0(c.transport), km: String(c.billedKm), reducere: n0(c.discount), total: n0(c.total),
+      tva: n0(c.vat), total_fara_tva: n0(c.net), cota_tva: String(c.vatRate),
       expeditor: S.email.fromName || '', invitati: l.guests || ''
     };
     return String(t || '').replace(/\{(\w+)\}/g, (m, k) => k in map ? map[k] : m);
@@ -349,6 +372,16 @@
           <div class="field"><label>&nbsp;</label><label class="tog"><input type="checkbox" data-s="pricing.roundTrip" ${S.pricing.roundTrip ? 'checked' : ''}> Facturez dus-întors</label></div></div>
         <p class="hint">Se aplică doar în afara Bucureștiului și Ilfovului. Formularul estimează km de la București până la reședința județului; corectezi distanța exactă în fiecare cerere.</p>
       </section>
+      <section class="panel"><h2>TVA, taxe și facturare</h2>
+        <div class="row3">
+          <div class="field"><label>&nbsp;</label><label class="tog"><input type="checkbox" data-s="pricing.vatPayer" ${S.pricing.vatPayer ? 'checked' : ''}> Firma e plătitoare de TVA</label></div>
+          ${f('pricing.vatRate', 'Cota TVA', S.pricing.vatRate, '%')}
+          <div class="field"><label>&nbsp;</label><label class="tog"><input type="checkbox" data-s="pricing.pricesIncludeVat" ${S.pricing.pricesIncludeVat ? 'checked' : ''}> Prețurile pachetelor includ TVA</label></div>
+        </div>
+        <div class="row3">${f('costs.incomeTax', 'Impozit pe venit (fără TVA)', S.costs.incomeTax, '%')}${f('costs.payFee', 'Comision la încasare (card, POS)', S.costs.payFee, '%')}${f('costs.invoiceFixed', 'Cost fix pe factură', S.costs.invoiceFixed, 'lei')}</div>
+        <p class="hint">Implicit: TVA 21% (cota standard din 2026) inclus în prețuri și impozit de microîntreprindere 1%. Dacă nu ești plătitor de TVA (sub plafonul de 395.000 lei pe an), debifează prima căsuță. „Cost fix pe factură” e pentru program de facturare, contabilitate sau alte costuri pe fiecare eveniment. Verifică cotele cu contabilul tău.</p>
+        <p class="hint">Dacă prețurile <b>nu</b> includ TVA, formularul public și emailurile arată totalul cu TVA adăugat.</p>
+      </section>
       <section class="panel"><h2>Costuri (pentru calculul profitului)</h2>
         <div class="row3">${f('costs.staffCount', 'Staff', S.costs.staffCount, 'persoane')}${f('costs.staffRate', 'Plată staff', S.costs.staffRate, 'lei/oră/pers.')}${f('costs.setupHours', 'Montaj + demontaj', S.costs.setupHours, 'ore')}</div>
         <div class="row3">${f('costs.menuCost', 'Meniu staff (toată noaptea)', S.costs.menuCost, 'lei/pers.')}${f('costs.fuelPerKm', 'Combustibil', S.costs.fuelPerKm, 'lei/km')}${f('costs.boothConsumables', 'Consumabile Photo Booth', S.costs.boothConsumables, 'lei/ev.')}</div>
@@ -366,7 +399,7 @@
   /* ---------- Șabloane ---------- */
   function templatesView() {
     const S = C.settings;
-    const ph = ['prenume', 'nume_complet', 'data_eveniment', 'locatie_completa', 'localitate', 'pachet', 'ore', 'pret_pachet', 'transport', 'km', 'reducere', 'total', 'invitati', 'expeditor'];
+    const ph = ['prenume', 'nume_complet', 'data_eveniment', 'locatie_completa', 'localitate', 'pachet', 'ore', 'pret_pachet', 'transport', 'km', 'reducere', 'total', 'tva', 'total_fara_tva', 'cota_tva', 'invitati', 'expeditor'];
     return `<section class="panel"><h2>Expeditor</h2>
         <div class="row2"><div class="field"><label>Emailul din care pleacă mesajele</label><input class="inp" type="email" data-s="email.fromEmail" value="${esc(S.email.fromEmail)}"></div>
           <div class="field"><label>Numele afișat</label><input class="inp" data-s="email.fromName" value="${esc(S.email.fromName)}"></div></div>
@@ -418,6 +451,7 @@
   Object.assign(A, {
     'crm-view'(el) { view = el.dataset.k; note = ''; render(); window.scrollTo(0, 0); },
     'crm-filter'(el) { filter = el.dataset.k; render(); },
+    'crm-period-reset'() { fYear = 'Toate'; fMonth = 'Toate'; render(); },
     'crm-sync'() { sync(); },
     'crm-open'(el) { openLead(el.dataset.id); },
     'crm-close'() { $('#modal').hidden = true; L = null; compose = null; },
@@ -465,6 +499,7 @@
       const b = $('#calcBox'); if (b) b.innerHTML = breakdown();
       return;
     }
+    if ((t.id === 'crmYear' || t.id === 'crmMonth') && e.type === 'change') { if (t.id === 'crmYear') fYear = t.value; else fMonth = t.value; render(); return; }
     if (t.id === 'crmQ' && e.type === 'input') { q = t.value; const pos = t.selectionStart; render(); const n = $('#crmQ'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } }
     if (t.id === 'cp-t' && e.type === 'change' && compose) { const tpl = C.settings.templates.find(x => x.id === t.value); compose.tpl = t.value; compose.subject = fill(tpl.subject, L); compose.body = fill(tpl.body, L); compose.newStatus = tpl.status; compose.to = $('#cp-to').value; renderCompose(); }
   }
