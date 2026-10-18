@@ -8,14 +8,16 @@
  *  - trimite emailurile către clienți din contul Gmail care a publicat scriptul.
  *
  * Instalare (o singură dată):
- *  1. În Google Sheet: Extensii → Apps Script. Șterge ce e acolo și lipește tot fișierul ăsta.
- *  2. Schimbă ADMIN_KEY de mai jos cu o parolă lungă, doar a ta (o pui și în aplicație).
+ *  1. În Google Sheet: Extensii → Apps Script. Selectează tot (Ctrl+A), șterge, apoi lipește tot fișierul ăsta.
+ *     Prima linie din editor trebuie să fie „/**”, nu „function myFunction() {”.
+ *  2. Schimbă ADMIN_KEY de mai jos cu o parolă lungă, doar a ta, păstrând ghilimelele: const ADMIN_KEY = 'parola-ta';
  *  3. Salvează, apoi Implementare → Implementare nouă → tip „Aplicație web”:
  *       Execută ca: Eu · Cine are acces: Oricine. Autorizează când ți se cere.
  *  4. Copiază adresa „Aplicație web” (…/exec) și pune-o în aplicație, la Evenimente → Conectare.
  */
 const ADMIN_KEY = 'SCHIMBA-ASTA-cu-o-parola-lunga';
 
+const SHEET_ID = '1F0WKXYN48B0Q_L29el01QJZmqKDt6WRBOiRfSca79Hs';   // Google Sheet-ul „Weeding Welcome”
 const SHEET = 'Cereri';
 const SETTINGS_SHEET = 'Setari';
 const FIELDS = [
@@ -57,8 +59,9 @@ function doPost(e) {
 }
 
 /* ---------------- foi ---------------- */
+function book_() { return SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SHEET_ID); }
 function sheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = book_();
   let sh = ss.getSheetByName(SHEET);
   if (!sh) {
     sh = ss.insertSheet(SHEET, 0);
@@ -69,7 +72,7 @@ function sheet_() {
   return sh;
 }
 function settingsSheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = book_();
   let sh = ss.getSheetByName(SETTINGS_SHEET);
   if (!sh) {
     sh = ss.insertSheet(SETTINGS_SHEET);
