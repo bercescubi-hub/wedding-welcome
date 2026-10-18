@@ -395,7 +395,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.1.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
@@ -545,7 +545,7 @@ async function createUser(username, password){
   if (findUser(username)) throw 'Există deja un cont cu acest nume.';
   if (String(password).length < 6) throw 'Parola trebuie să aibă cel puțin 6 caractere.';
   const salt = newSalt(), rsalt = newSalt(), code = recoveryCode();
-  const u = { id: 'u' + uid8(), username, salt, hash: await hashPw(password, salt), rsalt, rhash: await hashPw(code.replace(/-/g,''), rsalt), created: new Date().toISOString() };
+  const u = { id: 'u' + uid8(), username, salt, hash: await hashPw(password, salt), rsalt, rhash: await hashPw(code.replace(/-/g,''), rsalt), created: new Date().toISOString(), updated: new Date().toISOString() };
   const acc = accounts(); const first = !acc.users.length; acc.users.push(u); LS.set(K_ACC, acc);
   // spațiul de lucru nou
   let draft = cfgFromData(DATA || FALLBACK_DATA);
@@ -567,7 +567,42 @@ async function migrateOld(u, ws){
   return Object.assign(ws, { draft:c, dataVersion: old.dataVersion || ws.dataVersion, keptPhotos: old.keptPhotos || 0 });
 }
 async function checkPw(u, pw){ return (await hashPw(pw, u.salt)) === u.hash; }
-function updateUser(u){ const acc = accounts(); acc.users = acc.users.map(x => x.id === u.id ? u : x); LS.set(K_ACC, acc); }
+function updateUser(u){ u.updated = new Date().toISOString(); const acc = accounts(); acc.users = acc.users.map(x => x.id === u.id ? u : x); LS.set(K_ACC, acc); }
+
+/* ---------------- Conturi în Google Sheet ----------------
+   Pe un dispozitiv nou, contul nu e în browser: îl căutăm prin scriptul Google (foaia „Conturi”).
+   Parola nu pleacă niciodată: scriptul dă sarea, aplicația calculează amprenta și o trimite spre comparare. */
+const scriptUrl = () => (window.WW_CONFIG || {}).scriptUrl || '';
+async function cloud(payload){
+  const url = scriptUrl(); if (!url) throw new Error('fără script');
+  try { const r = await fetch(url + '?payload=' + encodeURIComponent(JSON.stringify(payload))); return await r.json(); }
+  catch (e) { if (!(e instanceof TypeError)) throw e; return await window.WWJsonp(url, payload); }
+}
+/** Salvează pe acest dispozitiv contul venit din Google Sheet și conectează Evenimentele cu cheia primită. */
+function adoptCloudUser(cu, key){
+  const acc = accounts();
+  const rec = { id:cu.id, username:cu.username, salt:cu.salt, hash:cu.hash, rsalt:cu.rsalt, rhash:cu.rhash, created:cu.created, updated:cu.updated };
+  acc.users = acc.users.filter(x => x.id !== rec.id && x.username.toLowerCase() !== rec.username.toLowerCase()).concat(rec);
+  LS.set(K_ACC, acc);
+  const ck = 'ww-crm-' + rec.id, crm = LS.get(ck) || {};
+  if (key) { crm.url = scriptUrl(); crm.key = key; LS.set(ck, crm); }
+  return rec;
+}
+async function cloudLogin(username, password){
+  const s = await cloud({ action:'authSalt', username });
+  if (!s || !s.ok) throw new Error((s && s.error) || 'Google nu a răspuns.');
+  const r = await cloud({ action:'login', username, hash: await hashPw(password, s.salt) });
+  if (!r.ok) throw r.error || 'Utilizator sau parolă greșite.';
+  return adoptCloudUser(r.user, r.key);
+}
+async function cloudRecover(username, code, password){
+  const s = await cloud({ action:'authSalt', username });
+  if (!s || !s.ok) throw new Error('Google nu a răspuns.');
+  const salt = newSalt();
+  const r = await cloud({ action:'recover', username, rhash: await hashPw(code, s.rsalt), salt, hash: await hashPw(password, salt) });
+  if (!r.ok) throw r.error || 'Utilizatorul sau codul de recuperare nu se potrivesc.';
+  return adoptCloudUser(r.user, r.key);
+}
 
 /* ---------------- Stare aplicație ---------------- */
 let USER = null, W = null;
@@ -627,7 +662,7 @@ function renderAuth(){
         <button class="go" type="submit">CREEAZĂ CONTUL</button>
       </form>
       <div class="links"><button type="button" class="lnk" data-act="auth-view" data-v="login">Am deja cont, vreau să intru</button></div>
-      <p class="fine">Conturile sunt păstrate pe acest laptop, cu parola criptată.</p>`;
+      <p class="fine">Parola e criptată. După ce conectezi Evenimentele la Google Sheets, poți intra cu acest cont de pe orice dispozitiv.</p>`;
   } else if (authView === 'recover') {
     h = `${brand('Parolă uitată', 'Folosește codul de recuperare primit la crearea contului.')}
       <form id="fRecover" class="acard" style="gap:12px">
@@ -647,7 +682,7 @@ function renderAuth(){
         <button class="go" type="submit">INTRĂ</button>
       </form>
       <div class="links"><button type="button" class="lnk" data-act="auth-view" data-v="signup">Creează cont nou</button><button type="button" class="lnk" data-act="auth-view" data-v="recover">Am uitat parola</button></div>
-      ${n ? '' : `<p class="fine">Pe acest dispozitiv nu e salvat încă niciun cont. Dacă e prima dată aici, alege „Creează cont nou”.</p>`}`;
+      <p class="fine">Poți intra cu un cont creat pe alt dispozitiv, dacă acolo Evenimentele sunt conectate la Google Sheets.</p>`;
   }
   $('#auth').innerHTML = `<div class="acard">${h}</div>`;
   const f = $('#auth input'); if (f) f.focus();
@@ -1091,7 +1126,9 @@ function adminAccount(){
           <p class="hint err-msg">${esc(msgs.del||'')}</p></form>`
         : `<div class="btns"><button type="button" class="btn danger" data-act="ask" data-k="delAccount">Șterge contul</button></div>`}
     </section>
-    <section class="panel"><p class="hint">Conturile sunt păstrate pe acest laptop, cu parolele criptate. Pentru acces de pe mai multe dispozitive e nevoie de conturi în cloud, o etapă următoare.</p></section>`;
+    <section class="panel"><h2>Pe ce dispozitive merge contul</h2>
+      <p class="hint">${window.CRM && window.CRM.cloudStatus ? window.CRM.cloudStatus() : ''}</p>
+      <p class="hint">Pe un dispozitiv nou vezi imediat Evenimentele. Pregătirea ecranului Wedding Welcome (invitați, videoclipuri, temă) rămâne pe dispozitivul pe care ai făcut-o; o muți cu „Exportă datele”.</p></section>`;
 }
 
 /* ============================ STAGE ============================ */
@@ -1420,22 +1457,33 @@ document.addEventListener('submit', async e => {
       if (p !== p2) throw 'Parolele nu coincid.';
       const r = await createUser(u, p); authErr = ''; authInfo = { username:r.user.username, code:r.code }; authView = 'code'; renderAuth();
     } else if (f.id === 'fLogin') {
-      const u = findUser($('#li-u').value);
-      if (!u) throw accounts().users.length ? 'Nu există un cont cu acest nume pe acest dispozitiv.' : 'Pe acest dispozitiv nu există încă niciun cont. Creează unul cu „Creează cont nou”.';
-      if (!(await checkPw(u, $('#li-p').value))) throw 'Parola nu e corectă.';
-      authErr = ''; login(u);
+      const name = $('#li-u').value.trim(), pw = $('#li-p').value, u = findUser(name);
+      if (u && await checkPw(u, pw)) { authErr = ''; login(u); return; }
+      // nu e pe acest dispozitiv (sau parola s-a schimbat pe altul): întrebăm Google Sheet
+      if (scriptUrl() && navigator.onLine) {
+        const box = $('#auth .err'); if (box) box.textContent = 'Caut contul…';
+        try { const cu = await cloudLogin(name, pw); authErr = ''; login(cu); return; }
+        catch (e) { if (typeof e === 'string') throw e; }
+      }
+      throw u ? 'Parola nu e corectă.' : (navigator.onLine ? 'Utilizator sau parolă greșite.' : 'Contul nu e pe acest dispozitiv, iar fără internet nu-l pot căuta.');
     } else if (f.id === 'fRecover') {
-      const u = findUser($('#rc-u').value); const code = $('#rc-c').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); const p = $('#rc-p').value;
-      if (!u || (await hashPw(code, u.rsalt)) !== u.rhash) throw 'Utilizatorul sau codul de recuperare nu se potrivesc.';
+      const name = $('#rc-u').value.trim(), u = findUser(name); const code = $('#rc-c').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); const p = $('#rc-p').value;
       if (p.length < 6) throw 'Parola nouă trebuie să aibă cel puțin 6 caractere.';
-      u.salt = newSalt(); u.hash = await hashPw(p, u.salt); updateUser(u); authErr = ''; login(u);
+      if (u && (await hashPw(code, u.rsalt)) === u.rhash) {
+        u.salt = newSalt(); u.hash = await hashPw(p, u.salt); updateUser(u); authErr = ''; login(u); window.CRM && window.CRM.pushAccounts(); return;
+      }
+      if (scriptUrl() && navigator.onLine) {
+        try { const cu = await cloudRecover(name, code, p); authErr = ''; login(cu); return; }
+        catch (e) { if (typeof e === 'string') throw e; }
+      }
+      throw 'Utilizatorul sau codul de recuperare nu se potrivesc.';
     } else if (f.id === 'fPw') {
       if (!(await checkPw(USER, $('#pw0').value))) { msgs.pw = 'Parola actuală nu e corectă.'; msgs.pwOk = false; render(); return; }
       const p = $('#pw1').value; if (p.length < 6) { msgs.pw = 'Parola nouă trebuie să aibă cel puțin 6 caractere.'; msgs.pwOk = false; render(); return; }
-      USER.salt = newSalt(); USER.hash = await hashPw(p, USER.salt); updateUser(USER); msgs.pw = 'Parola a fost schimbată.'; msgs.pwOk = true; render();
+      USER.salt = newSalt(); USER.hash = await hashPw(p, USER.salt); updateUser(USER); msgs.pw = 'Parola a fost schimbată.'; msgs.pwOk = true; render(); window.CRM && window.CRM.pushAccounts();
     } else if (f.id === 'fNewUser') {
       try { const r = await createUser($('#nu-u').value, $('#nu-p').value);
-        msgs.nu = `Contul <b>${esc(r.user.username)}</b> a fost creat. Cod de recuperare: <b style="font-family:ui-monospace,monospace;letter-spacing:.08em">${esc(r.code)}</b>. Notează-l: e singura cale de a schimba parola dacă e uitată. Ca să intri în el, ieși din contul actual.`; }
+        msgs.nu = `Contul <b>${esc(r.user.username)}</b> a fost creat. Cod de recuperare: <b style="font-family:ui-monospace,monospace;letter-spacing:.08em">${esc(r.code)}</b>. Notează-l: e singura cale de a schimba parola dacă e uitată. Ca să intri în el, ieși din contul actual.`; window.CRM && window.CRM.pushAccounts(); }
       catch(err) { msgs.nu = `<span class="err-msg">${esc(err)}</span>`; }
       render();
     } else if (f.id === 'addForm') {
@@ -1444,7 +1492,7 @@ document.addEventListener('submit', async e => {
       W.draft.guests.push({ name, table }); saveW(); renderAdmin(); $('#ng-name').focus();
     } else if (f.id === 'fDel') {
       if (!(await checkPw(USER, $('#del-p').value))) { msgs.del = 'Parola nu e corectă.'; render(); return; }
-      const id = USER.id; W.draft = normCfg({}); W.published = null; await gc();
+      const id = USER.id; if (window.CRM) await window.CRM.deleteCloudAccount(id); W.draft = normCfg({}); W.published = null; await gc();
       LS.del(wsKey(id)); const acc = accounts(); acc.users = acc.users.filter(u => u.id !== id); LS.set(K_ACC, acc);
       logout();
     }

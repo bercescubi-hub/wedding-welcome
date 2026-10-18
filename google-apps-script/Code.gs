@@ -5,7 +5,8 @@
  *  - primește cererile din formularul public (oferta.html) și le scrie în foaia „Cereri”;
  *  - dă aplicației lista de cereri și primește înapoi modificările (status, reduceri, km, note);
  *  - păstrează prețurile și șabloanele în foaia „Setari”, ca formularul să arate mereu prețurile tale;
- *  - trimite emailurile către clienți din contul Gmail care a publicat scriptul.
+ *  - trimite emailurile către clienți din contul Gmail care a publicat scriptul;
+ *  - păstrează conturile aplicației în foaia „Conturi” (doar parole criptate), ca să poți intra de pe orice dispozitiv.
  *
  * Instalare (o singură dată):
  *  1. În Google Sheet: Extensii → Apps Script. Selectează tot (Ctrl+A), șterge, apoi lipește tot fișierul ăsta.
@@ -60,7 +61,12 @@ function doPost(e) {
 function handle_(d) {
   if (d.action === 'submit') return submit(d.data || {});
   if (d.action === 'config') return { ok: true, config: publicConfig() };
+  if (d.action === 'authSalt') return authSalt_(d.username);
+  if (d.action === 'login') return login_(d.username, d.hash);
+  if (d.action === 'recover') return recover_(d);
   if (d.key !== ADMIN_KEY) return { ok: false, error: 'Cheie greșită' };
+  if (d.action === 'accountsPut') return accountsPut_(d.users || []);
+  if (d.action === 'accountDel') return accountDel_(d.id);
   if (d.action === 'list') return { ok: true, rows: listRows(), settings: getSettings(), account: Session.getEffectiveUser().getEmail() };
   if (d.action === 'ping') return { ok: true, account: Session.getEffectiveUser().getEmail() };
   if (d.action === 'update') return updateRow(d.id, d.fields || {});
@@ -93,7 +99,7 @@ function settingsSheet_() {
   return sh;
 }
 /** Rulează o dată din editor dacă vrei să vezi foile create înainte de prima cerere. */
-function setup() { sheet_(); settingsSheet_(); }
+function setup() { sheet_(); settingsSheet_(); accSheet_(); }
 
 /* ---------------- cereri ---------------- */
 function clean_(v, max) {
@@ -152,6 +158,87 @@ function saveSettings(s) { settingsSheet_().getRange('A2').setValue(JSON.stringi
 function publicConfig() {
   const s = getSettings(); if (!s) return null;
   return { packages: s.packages, pricing: s.pricing };   // fără costuri și șabloane
+}
+
+/* ---------------- conturi ----------------
+   Foaia „Conturi” ține doar sarea și amprenta parolei (PBKDF2, calculată în aplicație), nu parola.
+   Conturile ajung aici doar de pe un dispozitiv conectat cu ADMIN_KEY; la autentificare reușită,
+   aplicația primește cheia și se conectează singură la Evenimente. */
+const ACC_SHEET = 'Conturi';
+const ACC = ['id', 'username', 'salt', 'hash', 'rsalt', 'rhash', 'created', 'updated'];
+function accSheet_() {
+  const ss = book_();
+  let sh = ss.getSheetByName(ACC_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(ACC_SHEET);
+    sh.getRange(1, 1, 1, ACC.length).setValues([['ID', 'Utilizator', 'Sare', 'Amprentă parolă', 'Sare recuperare', 'Amprentă cod recuperare', 'Creat', 'Modificat']])
+      .setFontWeight('bold').setBackground('#6a2a5e').setFontColor('#ffffff');
+    sh.setFrozenRows(1);
+    sh.getRange(2, 1, sh.getMaxRows() - 1, ACC.length).setNumberFormat('@');
+  }
+  return sh;
+}
+function accRows_() {
+  const sh = accSheet_(), n = sh.getLastRow() - 1;
+  if (n < 1) return [];
+  return sh.getRange(2, 1, n, ACC.length).getDisplayValues().map((r, i) => { const o = { _row: i + 2 }; ACC.forEach((k, j) => o[k] = r[j]); return o; });
+}
+const lc_ = s => String(s || '').trim().toLowerCase();
+const b64ok_ = s => /^[A-Za-z0-9+/=]{8,128}$/.test(String(s || ''));
+function findAcc_(username) { return accRows_().find(a => lc_(a.username) === lc_(username)) || null; }
+function pub_(a) { const o = {}; ACC.forEach(k => o[k] = a[k]); return o; }
+function writeAcc_(sh, row, a) { sh.getRange(row, 1, 1, ACC.length).setValues([ACC.map(k => a[k] == null ? '' : "'" + String(a[k]))]); }
+/** Sare falsă, dar mereu aceeași, pentru nume inexistente: nu se poate afla ce conturi există. */
+function fakeSalt_(username, tag) {
+  const b = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, tag + ':' + lc_(username) + ':' + ADMIN_KEY);
+  return Utilities.base64Encode(b.slice(0, 16));
+}
+function authSalt_(username) {
+  const a = findAcc_(username);
+  return { ok: true, salt: a ? a.salt : fakeSalt_(username, 's'), rsalt: a ? a.rsalt : fakeSalt_(username, 'r') };
+}
+/** Cel mult 8 încercări greșite la 15 minute pentru același utilizator. */
+function tooMany_(username) { return Number(CacheService.getScriptCache().get('fail:' + lc_(username)) || 0) >= 8; }
+function failed_(username) { const c = CacheService.getScriptCache(), k = 'fail:' + lc_(username); c.put(k, String(Number(c.get(k) || 0) + 1), 900); }
+function login_(username, hash) {
+  if (tooMany_(username)) return { ok: false, error: 'Prea multe încercări greșite. Așteaptă 15 minute.' };
+  const a = findAcc_(username);
+  if (!a || !hash || a.hash !== String(hash)) { failed_(username); return { ok: false, error: 'Utilizator sau parolă greșite.' }; }
+  CacheService.getScriptCache().remove('fail:' + lc_(username));
+  return { ok: true, user: pub_(a), key: ADMIN_KEY };
+}
+function recover_(d) {
+  if (tooMany_(d.username)) return { ok: false, error: 'Prea multe încercări greșite. Așteaptă 15 minute.' };
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const a = findAcc_(d.username);
+    if (!a || !d.rhash || a.rhash !== String(d.rhash)) { failed_(d.username); return { ok: false, error: 'Utilizatorul sau codul de recuperare nu se potrivesc.' }; }
+    if (!b64ok_(d.salt) || !b64ok_(d.hash)) return { ok: false, error: 'Date invalide' };
+    a.salt = d.salt; a.hash = d.hash; a.updated = new Date().toISOString();
+    writeAcc_(accSheet_(), a._row, a);
+    return { ok: true, user: pub_(a), key: ADMIN_KEY };
+  } finally { lock.releaseLock(); }
+}
+/** Urcă sau actualizează conturile de pe un dispozitiv conectat. Un nume deja folosit de alt cont nu se suprascrie. */
+function accountsPut_(users) {
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const sh = accSheet_(), rows = accRows_(), conflicts = [];
+    (users || []).slice(0, 50).forEach(u => {
+      if (!u || !/^u[a-z0-9]{4,20}$/.test(String(u.id)) || !String(u.username || '').trim() || ![u.salt, u.hash, u.rsalt, u.rhash].every(b64ok_)) return;
+      const rec = { id: u.id, username: String(u.username).trim().slice(0, 60), salt: u.salt, hash: u.hash, rsalt: u.rsalt, rhash: u.rhash, created: clean_(u.created, 40), updated: clean_(u.updated || u.created, 40) };
+      const byId = rows.find(r => r.id === rec.id), byName = rows.find(r => lc_(r.username) === lc_(rec.username));
+      if (byName && byName.id !== rec.id) { conflicts.push(rec.username); return; }
+      if (byId) { if (String(rec.updated) >= String(byId.updated)) { writeAcc_(sh, byId._row, rec); Object.assign(byId, rec); } }
+      else { sh.appendRow(ACC.map(k => "'" + String(rec[k] == null ? '' : rec[k]))); rows.push(Object.assign({ _row: sh.getLastRow() }, rec)); }
+    });
+    return { ok: true, conflicts };
+  } finally { lock.releaseLock(); }
+}
+function accountDel_(id) {
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try { const a = accRows_().find(r => r.id === String(id)); if (a) accSheet_().deleteRow(a._row); return { ok: true }; }
+  finally { lock.releaseLock(); }
 }
 
 /* ---------------- email ---------------- */

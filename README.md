@@ -27,7 +27,7 @@ Poți oricând să *Renunți la modificări* și să revii la versiunea LIVE.
 
 ## Conturi
 
-Conturile, videoclipurile și pozele sunt păstrate **pe laptopul pe care au fost create** (parolele criptate cu PBKDF2). Fiecare cont are evenimentul lui separat. Conturile în cloud, accesibile de pe orice dispozitiv, sunt o etapă următoare.
+Parolele sunt criptate (PBKDF2) în aplicație. După conectarea Evenimentelor la Google Sheets, conturile se salvează și în foaia **„Conturi”** (doar sarea și amprenta parolei), așa că poți intra de pe orice dispozitiv; acolo Evenimentele se conectează automat. Pregătirea ecranului Wedding Welcome (invitați, videoclipuri, temă) rămâne pe dispozitivul unde ai făcut-o.
 
 ## Administrare
 

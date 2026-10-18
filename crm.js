@@ -76,8 +76,19 @@
       if (d.settings) C.settings = merge(P.DEFAULT_SETTINGS, d.settings);
       else await api('POST', { action: 'settings', settings: C.settings });   // prima conectare: urcă prețurile implicite
       C.lastSync = new Date().toISOString(); save(); note = ''; setDirty = false;
+      await pushAccounts(true);
     } catch (e) { note = navigator.onLine ? 'Nu am putut citi din Google Sheets: ' + e.message : 'Ești offline. Vezi ultimele cereri salvate pe laptop.'; noteOk = false; }
     busy = ''; rerender();
+  }
+  /** Urcă în foaia „Conturi” conturile de pe acest dispozitiv (doar sarea și amprenta parolei), ca să meargă și de pe alte dispozitive. */
+  async function pushAccounts(quiet) {
+    if (!C || !configured()) return;
+    try {
+      const users = accounts().users.map(u => ({ id: u.id, username: u.username, salt: u.salt, hash: u.hash, rsalt: u.rsalt, rhash: u.rhash, created: u.created, updated: u.updated || u.created }));
+      const d = await api('POST', { action: 'accountsPut', users });
+      C.accountsAt = new Date().toISOString(); C.accountConflicts = d.conflicts || []; save();
+      if (!quiet) rerender();
+    } catch (e) { /* încercăm din nou la următoarea sincronizare */ }
   }
   function rerender() { if (mode === 'admin' && area !== 'tool') render(); }
 
@@ -420,7 +431,7 @@
       C.url = $('#cn-url').value.trim(); C.key = $('#cn-key').value; save(); probed = false;
       const m = $('#cnMsg'); m.className = 'hint'; m.textContent = 'Se testează…';
       if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(C.url)) { m.className = 'hint err-msg'; m.textContent = 'Adresa trebuie să înceapă cu https://script.google.com/…'; return; }
-      try { const d = await api('GET', { action: 'ping' }); C.account = d.account; save(); m.className = 'hint ok-msg'; m.innerHTML = `Conectat la contul Google <b>${esc(d.account || '')}</b>. Se încarcă cererile…`; await sync(true); view = 'cereri'; render(); }
+      try { const d = await api('GET', { action: 'ping' }); C.account = d.account; save(); m.className = 'hint ok-msg'; m.innerHTML = `Conectat la contul Google <b>${esc(d.account || '')}</b>. Se încarcă cererile…`; await sync(true); await pushAccounts(true); view = 'cereri'; render(); }
       catch (e) {
         m.className = 'hint err-msg';
         if (e instanceof TypeError) m.innerHTML = `Google n-a răspuns cu date. Deschide <a href="${esc(C.url)}?action=config" target="_blank" rel="noopener">acest link</a>: dacă nu vezi <code>{"ok":true…}</code>, implementarea folosește încă o versiune veche a scriptului sau accesul nu e „Oricine” (Deploy → Manage deployments → creion → New version → Deploy).`;
@@ -468,6 +479,15 @@
   };
 
   window.CRM = {
+    pushAccounts() { if (!C) load(); return pushAccounts(false); },
+    async deleteCloudAccount(id) { if (!C) load(); if (configured()) { try { await api('POST', { action: 'accountDel', id }); } catch (e) {} } },
+    cloudStatus() {
+      if (!C) load();
+      if (!configured()) return 'Deocamdată contul merge doar pe acest dispozitiv. Conectează Evenimentele la Google Sheets (Evenimente → Conectare) și conturile de aici vor putea fi folosite de pe orice dispozitiv.';
+      const cf = (C.accountConflicts || []);
+      return (C.accountsAt ? `Conturile de pe acest dispozitiv sunt salvate în Google Sheet (ultima dată la ${esc(fmtDate(C.accountsAt))}): poți intra cu ele de pe orice telefon sau laptop.` : 'Conturile se salvează în Google Sheet la următoarea sincronizare.')
+        + (cf.length ? ` <span class="warn-msg">Numele ${cf.map(esc).join(', ')} există deja în Google Sheet pentru alt cont; pe alte dispozitive se folosește acela.</span>` : '');
+    },
     onLogin() { load(); view = 'cereri'; filter = 'Toate'; q = ''; note = ''; L = null; compose = null; if (configured() && navigator.onLine) sync(true); },
     render() { if (!C) load(); renderArea(); if (area === 'evenimente' && view === 'cereri' && configured() && !C.lastSync && !busy) sync(); }
   };
