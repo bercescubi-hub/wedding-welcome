@@ -608,7 +608,6 @@ const fmtDate = iso => { try { return new Date(iso).toLocaleString('ro-RO', {day
 /* ============================ AUTH ============================ */
 function renderAuth(){
   const n = accounts().users.length;
-  if (!n && authView === 'login') authView = 'signup';
   const brand = (t, s) => `<div class="brand"><span class="w">W</span><h1>${t}</h1>${s ? `<p class="sub">${s}</p>` : ''}</div>`;
   let h = '';
   if (!window.isSecureContext || !crypto.subtle) {
@@ -627,7 +626,7 @@ function renderAuth(){
         <p class="err" aria-live="polite">${esc(authErr)}</p>
         <button class="go" type="submit">CREEAZĂ CONTUL</button>
       </form>
-      ${n ? `<div class="links"><button type="button" class="lnk" data-act="auth-view" data-v="login">Am deja cont</button></div>` : ''}
+      <div class="links"><button type="button" class="lnk" data-act="auth-view" data-v="login">Am deja cont, vreau să intru</button></div>
       <p class="fine">Conturile sunt păstrate pe acest laptop, cu parola criptată.</p>`;
   } else if (authView === 'recover') {
     h = `${brand('Parolă uitată', 'Folosește codul de recuperare primit la crearea contului.')}
@@ -647,7 +646,8 @@ function renderAuth(){
         <p class="err" aria-live="polite">${esc(authErr)}</p>
         <button class="go" type="submit">INTRĂ</button>
       </form>
-      <div class="links"><button type="button" class="lnk" data-act="auth-view" data-v="recover">Am uitat parola</button></div>`;
+      <div class="links"><button type="button" class="lnk" data-act="auth-view" data-v="signup">Creează cont nou</button><button type="button" class="lnk" data-act="auth-view" data-v="recover">Am uitat parola</button></div>
+      ${n ? '' : `<p class="fine">Pe acest dispozitiv nu e salvat încă niciun cont. Dacă e prima dată aici, alege „Creează cont nou”.</p>`}`;
   }
   $('#auth').innerHTML = `<div class="acard">${h}</div>`;
   const f = $('#auth input'); if (f) f.focus();
@@ -1421,7 +1421,8 @@ document.addEventListener('submit', async e => {
       const r = await createUser(u, p); authErr = ''; authInfo = { username:r.user.username, code:r.code }; authView = 'code'; renderAuth();
     } else if (f.id === 'fLogin') {
       const u = findUser($('#li-u').value);
-      if (!u || !(await checkPw(u, $('#li-p').value))) throw 'Utilizator sau parolă greșite.';
+      if (!u) throw accounts().users.length ? 'Nu există un cont cu acest nume pe acest dispozitiv.' : 'Pe acest dispozitiv nu există încă niciun cont. Creează unul cu „Creează cont nou”.';
+      if (!(await checkPw(u, $('#li-p').value))) throw 'Parola nu e corectă.';
       authErr = ''; login(u);
     } else if (f.id === 'fRecover') {
       const u = findUser($('#rc-u').value); const code = $('#rc-c').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); const p = $('#rc-p').value;
