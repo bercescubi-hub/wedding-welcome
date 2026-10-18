@@ -223,14 +223,19 @@ $('#f').addEventListener('submit', async e => {
 });
 
 /** Trimite cererea: întâi direct, apoi pe calea de rezervă. O cerere dublată se poate șterge; una pierdută, nu. */
+let lastErr = [];   // motivele tehnice, afișate mic sub mesaj, ca să se poată depana
 async function sendLead(data) {
-  if (!CFG.scriptUrl) return false;
+  lastErr = [];
+  if (!CFG.scriptUrl) { lastErr.push('fără adresă de script'); return false; }
   const payload = { action:'submit', data };
   if (!viaJsonp) {
-    try { const r = await fetch(CFG.scriptUrl, { method:'POST', body: JSON.stringify(payload) }); const d = await r.json(); if (d.ok) return true; }
-    catch (_) {}
+    try { const r = await fetch(CFG.scriptUrl, { method:'POST', body: JSON.stringify(payload) }); const t = await r.text();
+      let d; try { d = JSON.parse(t); } catch (_) { lastErr.push('POST: răspuns ' + r.status + ' ' + t.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120)); }
+      if (d && d.ok) return true; if (d && !d.ok) lastErr.push('POST: ' + (d.error || 'eroare')); }
+    catch (e) { lastErr.push('POST: ' + (e && e.message || e)); }
   }
-  try { const d = await window.WWJsonp(CFG.scriptUrl, payload); return !!(d && d.ok); } catch (_) { return false; }
+  try { const d = await window.WWJsonp(CFG.scriptUrl, payload); if (d && d.ok) return true; lastErr.push('JSONP: ' + ((d && d.error) || 'eroare')); return false; }
+  catch (e) { lastErr.push('JSONP: ' + (e && e.message || e).toString().slice(0, 120)); return false; }
 }
 function fmtDay(s) { try { return new Date(s + 'T12:00:00').toLocaleDateString('ro-RO', {day:'numeric', month:'long', year:'numeric'}); } catch(_) { return s; } }
 function showDone(data) {
@@ -249,7 +254,8 @@ function showFallback(data) {
   const href = `mailto:${to}?subject=${encodeURIComponent('Cerere ofertă Wedding Welcome · ' + fmtDay(data.eventDate))}&body=${encodeURIComponent(body)}`;
   const err = $('#err');
   err.innerHTML = `Nu am reușit să trimitem cererea automat. Datele dumneavoastră nu s-au pierdut: le puteți trimite cu un singur buton pe email${to ? ` (<b>${esc(to)}</b>)` : ''}, sau încercați din nou peste câteva minute.
-    <span style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><a class="send" style="text-decoration:none;display:inline-block" href="${href}">TRIMITE PE EMAIL</a></span>`;
+    <span style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><a class="send" style="text-decoration:none;display:inline-block" href="${href}">TRIMITE PE EMAIL</a></span>
+    <small style="display:block;margin-top:10px;color:var(--muted);font-size:.72rem;overflow-wrap:anywhere">Detaliu tehnic: ${esc(lastErr.join(' · '))} · ${esc(navigator.userAgent.slice(0, 90))}</small>`;
   err.hidden = false;
 }
 /* o cerere rămasă netrimisă data trecută pe acest telefon pleacă acum, în liniște */
