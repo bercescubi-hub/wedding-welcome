@@ -3,10 +3,10 @@
    - index.html și data.json: întâi rețeaua (ca să primești actualizările), apoi copia salvată.
    - fonturi și iconițe: din copia salvată, actualizate în fundal.
    La fiecare modificare a aplicației, crește CACHE ca laptopul să ia versiunea nouă. */
-const CACHE = 'ww-v1';
+const CACHE = 'ww-v2';
 const CORE = ['./', 'index.html', 'data.json', 'manifest.webmanifest',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png'];
-const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Jost:wght@300..600&display=swap';
+  'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png', 'sablon-invitati.xlsx'];
+const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&family=Josefin+Sans:wght@300..600&family=Jost:wght@300..600&family=Marcellus&family=Montserrat:wght@300..600&family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Raleway:wght@300..600&display=swap';
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
