@@ -69,7 +69,11 @@
       if (!d) { try { d = await r.json(); } catch (e) { throw new Error('Răspuns neașteptat de la Google. Verifică adresa scriptului.'); } }
     }
     if (d.role && (d.role === 'admin' || d.role === 'user') && !C.key) { if (C.role !== d.role) { C.role = d.role; save(); } }
-    if (!d.ok) { if (d.auth && C.token) { note = d.error; noteOk = false; } throw new Error(d.error || 'Eroare necunoscută'); }
+    if (!d.ok) {
+      if (d.auth && C.key) d.error = 'Parola salvată în aplicație nu se potrivește cu ADMIN_KEY din scriptul Google. Pune aceeași parolă în ambele locuri: în script (linia const ADMIN_KEY, apoi Deploy → New version) sau în aplicație (Evenimente → Conectare).';
+      if (d.auth) { note = d.error; noteOk = false; }
+      throw new Error(d.error || 'Eroare necunoscută');
+    }
     return d;
   }
   async function sync(quiet) {
