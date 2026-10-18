@@ -398,7 +398,11 @@
       const m = $('#cnMsg'); m.className = 'hint'; m.textContent = 'Se testează…';
       if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(C.url)) { m.className = 'hint err-msg'; m.textContent = 'Adresa trebuie să înceapă cu https://script.google.com/…'; return; }
       try { const d = await api('GET', { action: 'ping' }); C.account = d.account; save(); m.className = 'hint ok-msg'; m.innerHTML = `Conectat la contul Google <b>${esc(d.account || '')}</b>. Se încarcă cererile…`; await sync(true); view = 'cereri'; render(); }
-      catch (e) { m.className = 'hint err-msg'; m.textContent = 'Nu merge: ' + e.message; }
+      catch (e) {
+        m.className = 'hint err-msg';
+        if (e instanceof TypeError) m.innerHTML = `Google n-a răspuns cu date. Deschide <a href="${esc(C.url)}?action=config" target="_blank" rel="noopener">acest link</a>: dacă nu vezi <code>{"ok":true…}</code>, implementarea folosește încă o versiune veche a scriptului sau accesul nu e „Oricine” (Deploy → Manage deployments → creion → New version → Deploy).`;
+        else m.textContent = 'Nu merge: ' + e.message;
+      }
     },
     'crm-savesettings'() { saveSettingsRemote(); },
     'crm-resetsettings'() { C.settings = merge(P.DEFAULT_SETTINGS, null); setDirty = true; save(); render(); },
