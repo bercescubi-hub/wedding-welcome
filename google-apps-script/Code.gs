@@ -6,7 +6,8 @@
  *  - dă aplicației lista de cereri și primește înapoi modificările (status, reduceri, km, note);
  *  - păstrează prețurile și șabloanele în foaia „Setari”, ca formularul să arate mereu prețurile tale;
  *  - trimite emailurile către clienți din contul Gmail care a publicat scriptul;
- *  - păstrează conturile aplicației în foaia „Conturi” (doar parole criptate), ca să poți intra de pe orice dispozitiv.
+ *  - păstrează conturile aplicației în foaia „Conturi” (doar parole criptate), cu rolurile Administrator / Utilizator,
+ *    ca să poți intra de pe orice dispozitiv și să dai acces colaboratorilor.
  *
  * Instalare (o singură dată):
  *  1. În Google Sheet: Extensii → Apps Script. Selectează tot (Ctrl+A), șterge, apoi lipește tot fișierul ăsta.
@@ -42,12 +43,7 @@ function doGet(e) {
   const cb = /^[A-Za-z_$][\w$]{0,40}$/.test(p.callback || '') ? p.callback : '';
   let out;
   try {
-    if (p.payload) out = handle_(JSON.parse(p.payload));
-    else if (p.action === 'config') out = { ok: true, config: publicConfig() };
-    else if (p.key !== ADMIN_KEY) out = { ok: false, error: 'Cheie greșită' };
-    else if (p.action === 'list') out = { ok: true, rows: listRows(), settings: getSettings(), account: Session.getEffectiveUser().getEmail() };
-    else if (p.action === 'ping') out = { ok: true, account: Session.getEffectiveUser().getEmail() };
-    else out = { ok: false, error: 'Acțiune necunoscută' };
+    out = handle_(p.payload ? JSON.parse(p.payload) : Object.assign({}, p));
   } catch (err) { out = { ok: false, error: String(err) }; }
   return json(out, cb);
 }
@@ -64,14 +60,24 @@ function handle_(d) {
   if (d.action === 'authSalt') return authSalt_(d.username);
   if (d.action === 'login') return login_(d.username, d.hash);
   if (d.action === 'recover') return recover_(d);
-  if (d.key !== ADMIN_KEY) return { ok: false, error: 'Cheie greșită' };
-  if (d.action === 'accountsPut') return accountsPut_(d.users || []);
-  if (d.action === 'accountDel') return accountDel_(d.id);
-  if (d.action === 'list') return { ok: true, rows: listRows(), settings: getSettings(), account: Session.getEffectiveUser().getEmail() };
-  if (d.action === 'ping') return { ok: true, account: Session.getEffectiveUser().getEmail() };
+  /* de aici: doar cu ADMIN_KEY (proprietarul) sau cu sesiunea unui cont din foaia „Conturi” */
+  const me = auth_(d);
+  if (!me) return { ok: false, error: d.token ? 'Sesiunea a expirat sau contul nu mai există. Intră din nou în cont.' : 'Cheie greșită', auth: true };
+  const admin = me.role === 'admin';
+  const who = { role: me.role, account: Session.getEffectiveUser().getEmail() };
+  if (d.action === 'list') return Object.assign({ ok: true, rows: listRows(), settings: getSettings() }, who);
+  if (d.action === 'ping') return Object.assign({ ok: true }, who);
   if (d.action === 'update') return updateRow(d.id, d.fields || {});
   if (d.action === 'email') return sendEmail(d);
+  if (d.action === 'accountsPut') return accountsPut_(d.users || [], me);
+  if (d.action === 'logout') { if (d.token) PropertiesService.getScriptProperties().deleteProperty('tok:' + d.token); return { ok: true }; }
+  /* doar administratori */
+  if (!admin) return { ok: false, error: 'Doar un administrator poate face asta.' };
   if (d.action === 'settings') { saveSettings(d.settings || {}); return { ok: true }; }
+  if (d.action === 'accounts') return { ok: true, accounts: accRows_().map(a => ({ id: a.id, username: a.username, role: a.role, email: a.email, sheetAccess: a.sheetAccess || 'none', created: a.created })), me: me.id || null };
+  if (d.action === 'accountMeta') return accountMeta_(d.id, d.role, d.email);
+  if (d.action === 'shareSheet') return shareSheet_(d.id, d.access);
+  if (d.action === 'accountDel') return accountDel_(d.id);
   return { ok: false, error: 'Acțiune necunoscută' };
 }
 
@@ -161,33 +167,36 @@ function publicConfig() {
 }
 
 /* ---------------- conturi ----------------
-   Foaia „Conturi” ține doar sarea și amprenta parolei (PBKDF2, calculată în aplicație), nu parola.
-   Conturile ajung aici doar de pe un dispozitiv conectat cu ADMIN_KEY; la autentificare reușită,
-   aplicația primește cheia și se conectează singură la Evenimente. */
+   Foaia „Conturi” ține doar sarea și amprenta parolei (PBKDF2, calculată în aplicație), nu parola,
+   plus rolul (admin / user), emailul Google și accesul la acest Sheet.
+   La autentificare, contul primește o sesiune proprie (nu ADMIN_KEY); rolul se citește din foaie la fiecare cerere,
+   așa că o schimbare de rol sau o ștergere are efect imediat. */
 const ACC_SHEET = 'Conturi';
-const ACC = ['id', 'username', 'salt', 'hash', 'rsalt', 'rhash', 'created', 'updated'];
+const ACC = ['id', 'username', 'salt', 'hash', 'rsalt', 'rhash', 'created', 'updated', 'role', 'email', 'sheetAccess'];
+const ACC_HEAD = ['ID', 'Utilizator', 'Sare', 'Amprentă parolă', 'Sare recuperare', 'Amprentă cod recuperare', 'Creat', 'Modificat', 'Rol', 'Email Google', 'Acces la Sheet'];
+const SESSION_DAYS = 180;
 function accSheet_() {
   const ss = book_();
   let sh = ss.getSheetByName(ACC_SHEET);
-  if (!sh) {
-    sh = ss.insertSheet(ACC_SHEET);
-    sh.getRange(1, 1, 1, ACC.length).setValues([['ID', 'Utilizator', 'Sare', 'Amprentă parolă', 'Sare recuperare', 'Amprentă cod recuperare', 'Creat', 'Modificat']])
-      .setFontWeight('bold').setBackground('#6a2a5e').setFontColor('#ffffff');
-    sh.setFrozenRows(1);
-    sh.getRange(2, 1, sh.getMaxRows() - 1, ACC.length).setNumberFormat('@');
-  }
+  if (!sh) { sh = ss.insertSheet(ACC_SHEET); sh.setFrozenRows(1); sh.getRange(2, 1, sh.getMaxRows() - 1, ACC.length).setNumberFormat('@'); }
+  if (sh.getLastColumn() < ACC.length || sh.getRange(1, 1).getValue() !== 'ID')
+    sh.getRange(1, 1, 1, ACC.length).setValues([ACC_HEAD]).setFontWeight('bold').setBackground('#6a2a5e').setFontColor('#ffffff');
   return sh;
 }
 function accRows_() {
   const sh = accSheet_(), n = sh.getLastRow() - 1;
   if (n < 1) return [];
-  return sh.getRange(2, 1, n, ACC.length).getDisplayValues().map((r, i) => { const o = { _row: i + 2 }; ACC.forEach((k, j) => o[k] = r[j]); return o; });
+  const rows = sh.getRange(2, 1, n, ACC.length).getDisplayValues().map((r, i) => { const o = { _row: i + 2 }; ACC.forEach((k, j) => o[k] = r[j]); return o; }).filter(a => a.id);
+  // trebuie să existe mereu un administrator: dacă nu e niciunul, primul cont devine administrator
+  if (rows.length && !rows.some(a => a.role === 'admin')) { rows[0].role = 'admin'; writeAcc_(sh, rows[0]._row, rows[0]); }
+  rows.forEach(a => { if (a.role !== 'admin') a.role = 'user'; });
+  return rows;
 }
 const lc_ = s => String(s || '').trim().toLowerCase();
 const b64ok_ = s => /^[A-Za-z0-9+/=]{8,128}$/.test(String(s || ''));
 function findAcc_(username) { return accRows_().find(a => lc_(a.username) === lc_(username)) || null; }
-function pub_(a) { const o = {}; ACC.forEach(k => o[k] = a[k]); return o; }
-function writeAcc_(sh, row, a) { sh.getRange(row, 1, 1, ACC.length).setValues([ACC.map(k => a[k] == null ? '' : "'" + String(a[k]))]); }
+function pub_(a) { const o = {}; ['id', 'username', 'salt', 'hash', 'rsalt', 'rhash', 'created', 'updated', 'role', 'email'].forEach(k => o[k] = a[k]); return o; }
+function writeAcc_(sh, row, a) { sh.getRange(row, 1, 1, ACC.length).setValues([ACC.map(k => a[k] == null || a[k] === '' ? '' : "'" + String(a[k]))]); }
 /** Sare falsă, dar mereu aceeași, pentru nume inexistente: nu se poate afla ce conturi există. */
 function fakeSalt_(username, tag) {
   const b = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, tag + ':' + lc_(username) + ':' + ADMIN_KEY);
@@ -197,6 +206,23 @@ function authSalt_(username) {
   const a = findAcc_(username);
   return { ok: true, salt: a ? a.salt : fakeSalt_(username, 's'), rsalt: a ? a.rsalt : fakeSalt_(username, 'r') };
 }
+/* ---- sesiuni ---- */
+function newSession_(id) {
+  const t = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  PropertiesService.getScriptProperties().setProperty('tok:' + t, JSON.stringify({ id: id, exp: Date.now() + SESSION_DAYS * 864e5 }));
+  return t;
+}
+/** Cine face cererea: proprietarul (ADMIN_KEY) sau un cont cu sesiune validă. */
+function auth_(d) {
+  if (d.key && d.key === ADMIN_KEY) return { role: 'admin', id: null };
+  if (!d.token || !/^[a-f0-9]{32,80}$/.test(String(d.token))) return null;
+  const props = PropertiesService.getScriptProperties(), raw = props.getProperty('tok:' + d.token);
+  if (!raw) return null;
+  let t; try { t = JSON.parse(raw); } catch (e) { return null; }
+  if (!t || t.exp < Date.now()) { props.deleteProperty('tok:' + d.token); return null; }
+  const a = accRows_().find(r => r.id === t.id);
+  return a ? { role: a.role, id: a.id } : null;
+}
 /** Cel mult 8 încercări greșite la 15 minute pentru același utilizator. */
 function tooMany_(username) { return Number(CacheService.getScriptCache().get('fail:' + lc_(username)) || 0) >= 8; }
 function failed_(username) { const c = CacheService.getScriptCache(), k = 'fail:' + lc_(username); c.put(k, String(Number(c.get(k) || 0) + 1), 900); }
@@ -205,7 +231,7 @@ function login_(username, hash) {
   const a = findAcc_(username);
   if (!a || !hash || a.hash !== String(hash)) { failed_(username); return { ok: false, error: 'Utilizator sau parolă greșite.' }; }
   CacheService.getScriptCache().remove('fail:' + lc_(username));
-  return { ok: true, user: pub_(a), key: ADMIN_KEY };
+  return { ok: true, user: pub_(a), role: a.role, token: newSession_(a.id) };
 }
 function recover_(d) {
   if (tooMany_(d.username)) return { ok: false, error: 'Prea multe încercări greșite. Așteaptă 15 minute.' };
@@ -216,29 +242,74 @@ function recover_(d) {
     if (!b64ok_(d.salt) || !b64ok_(d.hash)) return { ok: false, error: 'Date invalide' };
     a.salt = d.salt; a.hash = d.hash; a.updated = new Date().toISOString();
     writeAcc_(accSheet_(), a._row, a);
-    return { ok: true, user: pub_(a), key: ADMIN_KEY };
+    return { ok: true, user: pub_(a), role: a.role, token: newSession_(a.id) };
   } finally { lock.releaseLock(); }
 }
-/** Urcă sau actualizează conturile de pe un dispozitiv conectat. Un nume deja folosit de alt cont nu se suprascrie. */
-function accountsPut_(users) {
+/** Urcă sau actualizează conturi. Un administrator urcă orice cont de pe dispozitivul lui; un utilizator doar contul propriu
+    (de ex. după schimbarea parolei). Rolul, emailul și accesul la Sheet nu se schimbă de aici. */
+function accountsPut_(users, me) {
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
     const sh = accSheet_(), rows = accRows_(), conflicts = [];
     (users || []).slice(0, 50).forEach(u => {
       if (!u || !/^u[a-z0-9]{4,20}$/.test(String(u.id)) || !String(u.username || '').trim() || ![u.salt, u.hash, u.rsalt, u.rhash].every(b64ok_)) return;
-      const rec = { id: u.id, username: String(u.username).trim().slice(0, 60), salt: u.salt, hash: u.hash, rsalt: u.rsalt, rhash: u.rhash, created: clean_(u.created, 40), updated: clean_(u.updated || u.created, 40) };
-      const byId = rows.find(r => r.id === rec.id), byName = rows.find(r => lc_(r.username) === lc_(rec.username));
-      if (byName && byName.id !== rec.id) { conflicts.push(rec.username); return; }
+      if (me.role !== 'admin' && u.id !== me.id) return;
+      const byId = rows.find(r => r.id === u.id), byName = rows.find(r => lc_(r.username) === lc_(u.username));
+      if (byName && byName.id !== u.id) { conflicts.push(String(u.username)); return; }
+      const rec = Object.assign({}, byId || { role: rows.length ? 'user' : 'admin', email: '', sheetAccess: 'none' },
+        { id: u.id, username: String(u.username).trim().slice(0, 60), salt: u.salt, hash: u.hash, rsalt: u.rsalt, rhash: u.rhash,
+          created: clean_(u.created, 40), updated: clean_(u.updated || u.created, 40) });
       if (byId) { if (String(rec.updated) >= String(byId.updated)) { writeAcc_(sh, byId._row, rec); Object.assign(byId, rec); } }
-      else { sh.appendRow(ACC.map(k => "'" + String(rec[k] == null ? '' : rec[k]))); rows.push(Object.assign({ _row: sh.getLastRow() }, rec)); }
+      else if (me.role === 'admin') { sh.appendRow(ACC.map(k => rec[k] == null || rec[k] === '' ? '' : "'" + String(rec[k]))); rows.push(Object.assign({ _row: sh.getLastRow() }, rec)); }
     });
     return { ok: true, conflicts };
   } finally { lock.releaseLock(); }
 }
+/** Administratorul schimbă rolul și emailul unui cont. Trebuie să rămână mereu cel puțin un administrator. */
+function accountMeta_(id, role, email) {
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const rows = accRows_(), a = rows.find(r => r.id === String(id));
+    if (!a) return { ok: false, error: 'Contul nu există.' };
+    if (role !== undefined) {
+      if (role !== 'admin' && role !== 'user') return { ok: false, error: 'Rol necunoscut.' };
+      if (a.role === 'admin' && role === 'user' && rows.filter(r => r.role === 'admin').length < 2) return { ok: false, error: 'Trebuie să rămână cel puțin un administrator.' };
+      a.role = role;
+    }
+    if (email !== undefined) {
+      email = String(email || '').trim().toLowerCase();
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: 'Emailul nu e valid.' };
+      a.email = email;
+    }
+    writeAcc_(accSheet_(), a._row, a);
+    return { ok: true, role: a.role, email: a.email };
+  } finally { lock.releaseLock(); }
+}
+/** Dă sau ia accesul unui cont la acest Google Sheet (Google trimite singur invitația pe email). */
+function shareSheet_(id, access) {
+  if (['none', 'view', 'edit'].indexOf(access) < 0) return { ok: false, error: 'Acces necunoscut.' };
+  const a = accRows_().find(r => r.id === String(id));
+  if (!a) return { ok: false, error: 'Contul nu există.' };
+  if (!a.email) return { ok: false, error: 'Adaugă întâi adresa Google (Gmail) a contului și salveaz-o.' };
+  if (lc_(a.email) === lc_(Session.getEffectiveUser().getEmail())) return { ok: false, error: 'Acesta e contul care deține Sheet-ul; are deja acces complet.' };
+  const ss = book_();
+  try { ss.removeEditor(a.email); } catch (e) {}
+  try { ss.removeViewer(a.email); } catch (e) {}
+  if (access === 'edit') ss.addEditor(a.email);
+  else if (access === 'view') ss.addViewer(a.email);
+  a.sheetAccess = access; writeAcc_(accSheet_(), a._row, a);
+  return { ok: true, sheetAccess: access };
+}
 function accountDel_(id) {
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
-  try { const a = accRows_().find(r => r.id === String(id)); if (a) accSheet_().deleteRow(a._row); return { ok: true }; }
-  finally { lock.releaseLock(); }
+  try {
+    const rows = accRows_(), a = rows.find(r => r.id === String(id));
+    if (!a) return { ok: true };
+    if (a.role === 'admin' && rows.filter(r => r.role === 'admin').length < 2) return { ok: false, error: 'Nu poți șterge ultimul administrator.' };
+    if (a.email && a.sheetAccess && a.sheetAccess !== 'none') { const ss = book_(); try { ss.removeEditor(a.email); } catch (e) {} try { ss.removeViewer(a.email); } catch (e) {} }
+    accSheet_().deleteRow(a._row);
+    return { ok: true };
+  } finally { lock.releaseLock(); }
 }
 
 /* ---------------- email ---------------- */

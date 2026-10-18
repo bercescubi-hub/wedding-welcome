@@ -395,7 +395,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.2.0';
+const APP_VERSION = '3.3.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
@@ -579,13 +579,13 @@ async function cloud(payload){
   catch (e) { if (!(e instanceof TypeError)) throw e; return await window.WWJsonp(url, payload); }
 }
 /** Salvează pe acest dispozitiv contul venit din Google Sheet și conectează Evenimentele cu cheia primită. */
-function adoptCloudUser(cu, key){
+function adoptCloudUser(cu, token, role){
   const acc = accounts();
   const rec = { id:cu.id, username:cu.username, salt:cu.salt, hash:cu.hash, rsalt:cu.rsalt, rhash:cu.rhash, created:cu.created, updated:cu.updated };
   acc.users = acc.users.filter(x => x.id !== rec.id && x.username.toLowerCase() !== rec.username.toLowerCase()).concat(rec);
   LS.set(K_ACC, acc);
   const ck = 'ww-crm-' + rec.id, crm = LS.get(ck) || {};
-  if (key) { crm.url = scriptUrl(); crm.key = key; LS.set(ck, crm); }
+  if (token) { crm.url = scriptUrl(); crm.token = token; crm.role = role || 'user'; delete crm.key; LS.set(ck, crm); }
   return rec;
 }
 async function cloudLogin(username, password){
@@ -593,7 +593,7 @@ async function cloudLogin(username, password){
   if (!s || !s.ok) throw new Error((s && s.error) || 'Google nu a răspuns.');
   const r = await cloud({ action:'login', username, hash: await hashPw(password, s.salt) });
   if (!r.ok) throw r.error || 'Utilizator sau parolă greșite.';
-  return adoptCloudUser(r.user, r.key);
+  return adoptCloudUser(r.user, r.token, r.role);
 }
 async function cloudRecover(username, code, password){
   const s = await cloud({ action:'authSalt', username });
@@ -601,7 +601,7 @@ async function cloudRecover(username, code, password){
   const salt = newSalt();
   const r = await cloud({ action:'recover', username, rhash: await hashPw(code, s.rsalt), salt, hash: await hashPw(password, salt) });
   if (!r.ok) throw r.error || 'Utilizatorul sau codul de recuperare nu se potrivesc.';
-  return adoptCloudUser(r.user, r.key);
+  return adoptCloudUser(r.user, r.token, r.role);
 }
 
 /* ---------------- Stare aplicație ---------------- */
@@ -1106,17 +1106,16 @@ function adminAccount(){
       </form>
       <p class="hint ${msgs.pwOk?'ok-msg':'err-msg'}">${esc(msgs.pw||'')}</p>
     </section>
-    <section class="panel">
-      <h2>Alte conturi pe acest laptop</h2>
-      <p class="hint">Fiecare cont are evenimentul lui: invitați, videoclipuri, temă și versiune LIVE separate.</p>
-      ${others.length ? `<div class="glist">${others.map(u => `<div class="g" style="grid-template-columns:1fr auto"><div class="nm">${esc(u.username)}</div><span class="hint">creat ${esc(fmtDate(u.created))}</span></div>`).join('')}</div>` : '<p class="hint">Niciun alt cont încă.</p>'}
+    ${!window.CRM || window.CRM.isAdmin() ? `<section class="panel">
+      <h2>Creează un cont nou</h2>
+      <p class="hint">De exemplu pentru un colaborator: îi trimiți utilizatorul și parola, iar el intră de pe telefonul sau laptopul lui. Rolul și accesul la Sheet le alegi apoi în lista de mai sus.</p>
       <form id="fNewUser" style="display:flex;flex-direction:column;gap:12px;max-width:360px">
         <div class="field"><label for="nu-u">Utilizator nou</label><input class="inp" id="nu-u" autocapitalize="none" required></div>
         <div class="field"><label for="nu-p">Parolă (minim 6 caractere)</label><input class="inp" id="nu-p" type="password" autocomplete="new-password" required></div>
         <div class="btns"><button class="btn" type="submit">+ Creează cont</button></div>
       </form>
       ${msgs.nu ? `<div class="note" style="border-style:solid">${msgs.nu}</div>` : ''}
-    </section>
+    </section>` : ''}
     <section class="panel">
       <h2>Șterge acest cont</h2>
       <p class="hint">Se șterg definitiv evenimentul, invitații, videoclipurile și versiunea LIVE ale contului <b>${esc(USER.username)}</b>.</p>
@@ -1483,7 +1482,7 @@ document.addEventListener('submit', async e => {
       USER.salt = newSalt(); USER.hash = await hashPw(p, USER.salt); updateUser(USER); msgs.pw = 'Parola a fost schimbată.'; msgs.pwOk = true; render(); window.CRM && window.CRM.pushAccounts();
     } else if (f.id === 'fNewUser') {
       try { const r = await createUser($('#nu-u').value, $('#nu-p').value);
-        msgs.nu = `Contul <b>${esc(r.user.username)}</b> a fost creat. Cod de recuperare: <b style="font-family:ui-monospace,monospace;letter-spacing:.08em">${esc(r.code)}</b>. Notează-l: e singura cale de a schimba parola dacă e uitată. Ca să intri în el, ieși din contul actual.`; window.CRM && window.CRM.pushAccounts(); }
+        msgs.nu = `Contul <b>${esc(r.user.username)}</b> a fost creat. Cod de recuperare: <b style="font-family:ui-monospace,monospace;letter-spacing:.08em">${esc(r.code)}</b>. Notează-l: e singura cale de a schimba parola dacă e uitată. Rolul implicit e Utilizator; îl schimbi în lista de mai sus.`; if (window.CRM) { await window.CRM.pushAccounts(); window.CRM.reloadAccounts(); } }
       catch(err) { msgs.nu = `<span class="err-msg">${esc(err)}</span>`; }
       render();
     } else if (f.id === 'addForm') {

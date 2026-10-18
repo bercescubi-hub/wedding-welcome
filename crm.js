@@ -29,12 +29,15 @@
   function load() {
     C = LS.get(K()) || {};
     C.url = C.url || (window.WW_CONFIG || {}).scriptUrl || '';
-    C.key = C.key || '';
+    C.key = C.key || ''; C.token = C.token || '';
+    C.role = C.role || (C.key ? 'admin' : '');
     C.settings = merge(P.DEFAULT_SETTINGS, C.settings);
     C.leads = Array.isArray(C.leads) ? C.leads : [];
   }
   const save = () => LS.set(K(), C);
-  const configured = () => !!(C.url && C.key);
+  const configured = () => !!(C.url && (C.key || C.token));
+  /** Administrator: proprietarul (cu ADMIN_KEY), un cont cu rol de administrator sau orice cont încă neconectat (pe dispozitivul lui). */
+  const isAdmin = () => !configured() || !!C.key || C.role === 'admin';
   const formUrl = () => new URL('oferta.html', location.href).href;
 
   /* Apelul către scriptul Google. Întâi fetch; dacă browserul blochează răspunsul (extensii, setări de securitate),
@@ -47,7 +50,7 @@
     probed = true;
   }
   async function api(method, params) {
-    const body = Object.assign({}, params, { key: C.key });
+    const body = Object.assign({}, params, C.key ? { key: C.key } : { token: C.token });
     if (!probed) await probe();
     let d;
     if (useJsonp) d = await window.WWJsonp(C.url, body);
@@ -65,7 +68,8 @@
       }
       if (!d) { try { d = await r.json(); } catch (e) { throw new Error('Răspuns neașteptat de la Google. Verifică adresa scriptului.'); } }
     }
-    if (!d.ok) throw new Error(d.error || 'Eroare necunoscută');
+    if (d.role && (d.role === 'admin' || d.role === 'user') && !C.key) { if (C.role !== d.role) { C.role = d.role; save(); } }
+    if (!d.ok) { if (d.auth && C.token) { note = d.error; noteOk = false; } throw new Error(d.error || 'Eroare necunoscută'); }
     return d;
   }
   async function sync(quiet) {
@@ -73,7 +77,7 @@
     busy = 'Se încarcă cererile din Google Sheets…'; if (!quiet) rerender();
     try {
       const d = await api('GET', { action: 'list' });
-      C.leads = d.rows || []; C.account = d.account || C.account;
+      C.leads = d.rows || []; C.account = d.account || C.account; if (d.role) C.role = d.role;
       if (d.settings) C.settings = merge(P.DEFAULT_SETTINGS, d.settings);
       else await api('POST', { action: 'settings', settings: C.settings });   // prima conectare: urcă prețurile implicite
       C.lastSync = new Date().toISOString(); save(); note = ''; setDirty = false;
@@ -85,7 +89,7 @@
   async function pushAccounts(quiet) {
     if (!C || !configured()) return;
     try {
-      const users = accounts().users.map(u => ({ id: u.id, username: u.username, salt: u.salt, hash: u.hash, rsalt: u.rsalt, rhash: u.rhash, created: u.created, updated: u.updated || u.created }));
+      const users = accounts().users.filter(u => isAdmin() || u.id === USER.id).map(u => ({ id: u.id, username: u.username, salt: u.salt, hash: u.hash, rsalt: u.rsalt, rhash: u.rhash, created: u.created, updated: u.updated || u.created }));
       const d = await api('POST', { action: 'accountsPut', users });
       C.accountsAt = new Date().toISOString(); C.accountConflicts = d.conflicts || []; save();
       if (!quiet) rerender();
@@ -128,8 +132,8 @@
           <small>Ecranul invitaților: bun venit, mese, Photo Booth</small></button>
         <button type="button" class="hcard" data-act="area" data-k="conturi">
           <span class="hic">${ICON.user}</span><b>Conturi</b>
-          <span>Contul tău</span>
-          <small>Conturile clienților vin într-o versiune următoare</small></button>
+          <span>${isAdmin() ? 'Administrator' : 'Utilizator'}</span>
+          <small>${isAdmin() ? 'Toate conturile, roluri, acces la Google Sheet' : 'Contul tău'}</small></button>
       </div>
       <section class="panel">
         <h2>Linkul pentru clienți</h2>
@@ -144,15 +148,49 @@
       ${!(window.WW_CONFIG || {}).scriptUrl ? `<p class="hint warn-msg">Formularul se activează după conectarea la Google Sheets (Evenimente → Conectare).</p>` : ''}`;
   }
 
+  let accList = null, accBusy = false, accMsg = {};
+  async function loadAccounts() {
+    if (accBusy || !configured() || !isAdmin()) return;
+    accBusy = true;
+    try { const d = await api('POST', { action: 'accounts' }); accList = d.accounts || []; C.meId = d.me; }
+    catch (e) { accList = accList || []; accMsg._ = e.message; }
+    accBusy = false; if (area === 'conturi') render();
+  }
+  const ROLE = { admin: 'Administrator', user: 'Utilizator' };
+  const ACCESS = { none: 'Fără acces', view: 'Poate vedea', edit: 'Poate edita' };
+  function accountsPanel() {
+    if (!configured()) return `<section class="panel"><h2>Toate conturile</h2><p class="hint">Conectează întâi Evenimentele la Google Sheets (Evenimente → Conectare). Apoi aici vezi toate conturile, le alegi rolul și le poți da acces la Sheet.</p></section>`;
+    if (!isAdmin()) return `<section class="panel"><h2>Rolul tău: Utilizator</h2>
+      <p class="hint">Vezi și lucrezi cu cererile din Evenimente și cu ecranul Wedding Welcome. Prețurile, taxele, șabloanele și conturile le gestionează un administrator.</p></section>`;
+    if (!accList) { loadAccounts(); return `<section class="panel"><h2>Toate conturile</h2><p class="hint">Se încarcă…</p></section>`; }
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/1F0WKXYN48B0Q_L29el01QJZmqKDt6WRBOiRfSca79Hs/edit';
+    return `<section class="panel"><h2>Toate conturile <span class="hint" style="font-weight:400">· ${accList.length}</span></h2>
+      <p class="hint"><b>Administrator</b>: vede și schimbă tot (prețuri, taxe, șabloane, conturi). <b>Utilizator</b>: lucrează cu cererile și cu ecranul Wedding Welcome, fără setări și conturi. Rolul se aplică imediat, pe toate dispozitivele.</p>
+      ${accMsg._ ? `<p class="hint err-msg">${esc(accMsg._)}</p>` : ''}
+      ${accList.map(a => { const mine = a.id === USER.id; return `<div class="cat acc" data-accid="${esc(a.id)}">
+        <div class="cat-head" style="justify-content:space-between"><div><b>${esc(a.username)}</b>${mine ? ' <span class="stp st-ok">tu</span>' : ''} <span class="stp ${a.role === 'admin' ? 'st-new' : 'st-c'}">${ROLE[a.role] || 'Utilizator'}</span>
+          <br><small class="hint">creat ${esc(fmtDate(a.created))}${a.sheetAccess && a.sheetAccess !== 'none' ? ' · ' + ACCESS[a.sheetAccess].toLowerCase() + ' Sheet-ul' : ''}</small></div>
+          ${mine ? '' : `<button type="button" class="x" data-act="crm-acc-del" data-id="${esc(a.id)}" aria-label="Șterge contul ${esc(a.username)}">×</button>`}</div>
+        <div class="row3">
+          <div class="field"><label>Rol</label><select class="inp" data-acc="role">${Object.entries(ROLE).map(([k, n]) => `<option value="${k}" ${a.role === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+          <div class="field"><label>Email Google (Gmail)</label><input class="inp" type="email" data-acc="email" value="${esc(a.email || '')}" placeholder="nume@gmail.com"></div>
+          <div class="field"><label>Acces la Google Sheet</label><select class="inp" data-acc="sheetAccess">${Object.entries(ACCESS).map(([k, n]) => `<option value="${k}" ${(a.sheetAccess || 'none') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+        </div>
+        ${accMsg.del === a.id ? `<div class="btns"><span class="hint">Ștergi contul ${esc(a.username)}? Nu va mai putea intra, iar accesul la Sheet i se retrage.</span><button type="button" class="btn danger small" data-act="crm-acc-del-yes" data-id="${esc(a.id)}">Da, șterge</button><button type="button" class="btn small" data-act="crm-acc-del-no">Anulează</button></div>` : ''}
+        <div class="btns"><button type="button" class="btn small primary" data-act="crm-acc-save" data-id="${esc(a.id)}">Aplică</button><span class="hint" id="am-${esc(a.id)}">${accMsg[a.id] || ''}</span></div>
+      </div>`; }).join('')}
+      <p class="hint">Accesul la Sheet trimite colaboratorului o invitație Google pe email. „Poate vedea” e suficient ca să urmărească cererile; „Poate edita” îi permite să modifice direct tabelul. Pentru lucrul în aplicație nu e nevoie de acces la Sheet. <a href="${sheetUrl}" target="_blank" rel="noopener">Deschide Sheet-ul</a></p>
+    </section>`;
+  }
   function conturiView() {
     return `${header('Conturi', 'Administrare', true)}
-      <section class="panel"><h2>Conturile clienților</h2>
-        <p class="hint">Aici vor apărea conturile pe care le creezi pentru miri, ca să-și pregătească singuri invitații și videoclipurile. Vine într-o versiune următoare.</p></section>
+      ${accountsPanel()}
       ${adminAccount()}`;
   }
 
   function eventsView() {
-    const tabs = [['cereri', 'Cereri'], ['preturi', 'Prețuri și costuri'], ['sabloane', 'Șabloane email'], ['conectare', 'Conectare']];
+    const tabs = isAdmin() ? [['cereri', 'Cereri'], ['preturi', 'Prețuri și costuri'], ['sabloane', 'Șabloane email'], ['conectare', 'Conectare']] : [['cereri', 'Cereri']];
+    if (!isAdmin() && view !== 'cereri') view = 'cereri';
     const body = { cereri: leadsView, preturi: pricesView, sabloane: templatesView, conectare: connectView }[view]();
     return `${header('Evenimente', 'Administrare', true)}
       ${note ? `<div class="draft ${noteOk ? '' : 'dirty'}"><p>${esc(note)}</p></div>` : ''}
@@ -391,8 +429,8 @@
       ${saveBar()}`;
   }
   function saveBar() {
-    return `<section class="panel savebar"><p class="hint" id="setMsg">${setDirty ? 'Ai modificări nesalvate în Google Sheets.' : (configured() ? 'Totul e salvat.' : 'Se păstrează pe acest laptop. Conectează Google Sheets ca să ajungă și în formularul public.')}</p>
-      <div class="btns">${configured() ? `<button type="button" class="btn primary" data-act="crm-savesettings">Salvează în Google Sheets</button>` : ''}
+    return `<section class="panel savebar"><p class="hint" id="setMsg">${configured() ? (setDirty ? 'Ai modificări încă nesalvate în Google Sheets.' : 'Modificările se salvează automat în Google Sheets.') : 'Se păstrează pe acest dispozitiv. Conectează Google Sheets ca să ajungă și în formularul public.'}</p>
+      <div class="btns">${configured() && setDirty ? `<button type="button" class="btn primary" data-act="crm-savesettings">Salvează acum</button>` : ''}
       <button type="button" class="btn danger small" data-act="crm-resetsettings">Revino la valorile implicite</button></div></section>`;
   }
 
@@ -443,12 +481,43 @@
   const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   function setPath(obj, path, val) { const ks = path.split('.'); let o = obj; for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = val; }
   function getPath(obj, path) { return path.split('.').reduce((o, k) => o && o[k], obj); }
+  /** Setările se salvează singure în Google Sheets la o secundă după ultima modificare. */
+  let autoT = null;
+  function autoSave() {
+    const m = $('#setMsg');
+    if (!configured() || !isAdmin()) { if (m) { m.textContent = 'Salvat pe acest dispozitiv.'; m.className = 'hint'; } return; }
+    if (m) { m.textContent = 'Se salvează…'; m.className = 'hint'; }
+    clearTimeout(autoT); autoT = setTimeout(saveSettingsRemote, 1000);
+  }
   async function saveSettingsRemote() {
     const m = $('#setMsg'); if (m) m.textContent = 'Se salvează…';
-    try { await api('POST', { action: 'settings', settings: C.settings }); setDirty = false; save(); if (m) { m.textContent = 'Salvat. Formularul public folosește acum aceste prețuri.'; m.className = 'hint ok-msg'; } }
+    try { await api('POST', { action: 'settings', settings: C.settings }); setDirty = false; save(); const n = $('#setMsg'); if (n) { n.textContent = 'Salvat automat în Google Sheets. Formularul public folosește aceste valori.'; n.className = 'hint ok-msg'; } }
     catch (e) { if (m) { m.textContent = 'Nu am putut salva: ' + e.message; m.className = 'hint err-msg'; } }
   }
+  async function saveAccount(id) {
+    const box = document.querySelector(`[data-accid="${CSS.escape(id)}"]`); if (!box) return;
+    const a = accList.find(x => x.id === id); const val = k => box.querySelector(`[data-acc="${k}"]`).value;
+    const role = val('role'), email = val('email').trim().toLowerCase(), access = val('sheetAccess');
+    const msg = t => { accMsg[id] = t; const el = document.getElementById('am-' + id); if (el) el.innerHTML = t; };
+    msg('Se aplică…');
+    try {
+      if (role !== a.role || email !== (a.email || '')) { const d = await api('POST', { action: 'accountMeta', id, role, email }); a.role = d.role; a.email = d.email; }
+      if (access !== (a.sheetAccess || 'none')) { await api('POST', { action: 'shareSheet', id, access }); a.sheetAccess = access; }
+      accMsg[id] = '<span class="ok-msg">Aplicat.</span>';
+      if (id === USER.id && role === 'user') { C.role = 'user'; save(); }
+    } catch (e) { accMsg[id] = `<span class="err-msg">${esc(e.message)}</span>`; }
+    render();
+  }
   Object.assign(A, {
+    'crm-acc-save'(el) { saveAccount(el.dataset.id); },
+    'crm-acc-del'(el) { accMsg.del = el.dataset.id; render(); },
+    'crm-acc-del-no'() { accMsg.del = null; render(); },
+    async 'crm-acc-del-yes'(el) {
+      const id = el.dataset.id; accMsg.del = null;
+      try { await api('POST', { action: 'accountDel', id }); accList = accList.filter(a => a.id !== id); }
+      catch (e) { accMsg[id] = `<span class="err-msg">${esc(e.message)}</span>`; }
+      render();
+    },
     'crm-view'(el) { view = el.dataset.k; note = ''; render(); window.scrollTo(0, 0); },
     'crm-filter'(el) { filter = el.dataset.k; render(); },
     'crm-period-reset'() { fYear = 'Toate'; fMonth = 'Toate'; render(); },
@@ -473,11 +542,11 @@
       }
     },
     'crm-savesettings'() { saveSettingsRemote(); },
-    'crm-resetsettings'() { C.settings = merge(P.DEFAULT_SETTINGS, null); setDirty = true; save(); render(); },
-    'crm-addpkg'() { C.settings.packages.push({ id: 'p' + Date.now().toString(36), name: 'Pachet nou', hours: 4, price: 2000, modules: ['welcome', 'seating'], staffMenu: false, desc: '' }); setDirty = true; save(); render(); },
-    'crm-delpkg'(el) { C.settings.packages.splice(+el.dataset.i, 1); setDirty = true; save(); render(); },
-    'crm-addtpl'() { C.settings.templates.push({ id: 't' + Date.now().toString(36), name: 'Șablon nou', status: '', subject: '', body: 'Bună, {prenume}!\n\n\n\n{expeditor}' }); setDirty = true; save(); render(); },
-    'crm-deltpl'(el) { C.settings.templates.splice(+el.dataset.i, 1); setDirty = true; save(); render(); }
+    'crm-resetsettings'() { C.settings = merge(P.DEFAULT_SETTINGS, null); setDirty = true; save(); render(); autoSave(); },
+    'crm-addpkg'() { C.settings.packages.push({ id: 'p' + Date.now().toString(36), name: 'Pachet nou', hours: 4, price: 2000, modules: ['welcome', 'seating'], staffMenu: false, desc: '' }); setDirty = true; save(); render(); autoSave(); },
+    'crm-delpkg'(el) { C.settings.packages.splice(+el.dataset.i, 1); setDirty = true; save(); render(); autoSave(); },
+    'crm-addtpl'() { C.settings.templates.push({ id: 't' + Date.now().toString(36), name: 'Șablon nou', status: '', subject: '', body: 'Bună, {prenume}!\n\n\n\n{expeditor}' }); setDirty = true; save(); render(); autoSave(); },
+    'crm-deltpl'(el) { C.settings.templates.splice(+el.dataset.i, 1); setDirty = true; save(); render(); autoSave(); }
   });
 
   /* câmpuri: setări (data-s), cererea deschisă (data-l), căutare, șablon */
@@ -488,8 +557,7 @@
       if (t.dataset.m) { const arr = getPath(C.settings, path); const i = arr.indexOf(t.dataset.m); if (t.checked && i < 0) arr.push(t.dataset.m); if (!t.checked && i >= 0) arr.splice(i, 1); }
       else if (t.type === 'checkbox') setPath(C.settings, path, t.checked);
       else setPath(C.settings, path, t.dataset.num ? P.num(t.value) : t.value);
-      setDirty = true; save();
-      const m = $('#setMsg'); if (m && configured()) { m.textContent = 'Ai modificări nesalvate în Google Sheets.'; m.className = 'hint'; }
+      setDirty = true; save(); autoSave();
       return;
     }
     if (t.dataset.l !== undefined && L) {
@@ -514,6 +582,8 @@
   };
 
   window.CRM = {
+    isAdmin() { if (!C) load(); return isAdmin(); },
+    reloadAccounts() { accList = null; if (area === 'conturi') render(); },
     pushAccounts() { if (!C) load(); return pushAccounts(false); },
     async deleteCloudAccount(id) { if (!C) load(); if (configured()) { try { await api('POST', { action: 'accountDel', id }); } catch (e) {} } },
     cloudStatus() {
@@ -524,6 +594,6 @@
         + (cf.length ? ` <span class="warn-msg">Numele ${cf.map(esc).join(', ')} există deja în Google Sheet pentru alt cont; pe alte dispozitive se folosește acela.</span>` : '');
     },
     onLogin() { load(); view = 'cereri'; filter = 'Toate'; q = ''; note = ''; L = null; compose = null; if (configured() && navigator.onLine) sync(true); },
-    render() { if (!C) load(); renderArea(); if (area === 'evenimente' && view === 'cereri' && configured() && !C.lastSync && !busy) sync(); }
+    render() { if (!C) load(); if (area !== 'conturi') accList = null; renderArea(); if (area === 'evenimente' && view === 'cereri' && configured() && !C.lastSync && !busy) sync(); }
   };
 })();
