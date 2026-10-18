@@ -42,32 +42,12 @@
 
   /* Apelul către scriptul Google. Întâi fetch; dacă browserul blochează răspunsul (extensii, setări de securitate),
      trimitem același apel prin JSONP (un <script> cu ?payload=…&callback=…), pe care scriptul îl înțelege. */
-  let useJsonp = false, probed = false;
-  /** Află o singură dată, cu un apel care doar citește, dacă browserul lasă aplicația să citească răspunsurile Google. */
-  async function probe() {
-    try { await (await fetch(C.url + (C.url.includes('?') ? '&' : '?') + 'action=config')).json(); useJsonp = false; }
-    catch (e) { useJsonp = e instanceof TypeError; }
-    probed = true;
-  }
+  const WRITES = ['update', 'email', 'settings', 'accountsPut', 'accountMeta', 'shareSheet', 'accountDel', 'deleteLead', 'logout'];
+  /** Apelul către scriptul Google, prin canalul comun (WWNet), care alege calea ce merge pe dispozitiv (și pe iPhone). */
   async function api(method, params) {
     const body = Object.assign({}, params, C.key ? { key: C.key } : { token: C.token });
-    if (!probed) await probe();
-    let d;
-    if (useJsonp) d = await window.WWJsonp(C.url, body);
-    else {
-      let r;
-      try {
-        if (method === 'GET') r = await fetch(C.url + (C.url.includes('?') ? '&' : '?') + new URLSearchParams(body));
-        else r = await fetch(C.url, { method: 'POST', body: JSON.stringify(body) });
-      } catch (e) {
-        if (!(e instanceof TypeError)) throw e;
-        // o citire se poate repeta fără grijă; o scriere (email, salvare) nu, ca să nu se dubleze
-        useJsonp = true;
-        if (method === 'GET') d = await window.WWJsonp(C.url, body);
-        else throw new Error('Conexiunea s-a întrerupt. Reîmprospătează lista ca să vezi dacă s-a salvat, apoi încearcă din nou.');
-      }
-      if (!d) { try { d = await r.json(); } catch (e) { throw new Error('Răspuns neașteptat de la Google. Verifică adresa scriptului.'); } }
-    }
+    const d = await window.WWNet.call(C.url, body, WRITES.includes(params.action));
+    if (!d) throw new Error('Răspuns gol de la Google');
     if (d.role && (d.role === 'admin' || d.role === 'user') && !C.key) { if (C.role !== d.role) { C.role = d.role; save(); } }
     if (!d.ok) {
       if (d.auth && C.key) d.error = 'Parola salvată în aplicație nu se potrivește cu ADMIN_KEY din scriptul Google. Pune aceeași parolă în ambele locuri: în script (linia const ADMIN_KEY, apoi Deploy → New version) sau în aplicație (Evenimente → Conectare).';
@@ -562,13 +542,13 @@
     async 'crm-copy'(el) { try { await navigator.clipboard.writeText(el.dataset.v); el.textContent = 'Copiat!'; } catch (e) { el.textContent = 'Selectează și copiază'; } setTimeout(() => { el.textContent = 'Copiază'; }, 1800); },
     async 'crm-copyscript'(el) { try { const t = await (await fetch('google-apps-script/Code.gs', { cache: 'no-cache' })).text(); await navigator.clipboard.writeText(t); el.textContent = 'Copiat!'; } catch (e) { el.textContent = 'Deschide „Vezi scriptul”'; } },
     async 'crm-connect'() {
-      C.url = $('#cn-url').value.trim(); C.key = $('#cn-key').value; save(); probed = false;
+      C.url = $('#cn-url').value.trim(); C.key = $('#cn-key').value; save(); window.WWNet.mode = null;
       const m = $('#cnMsg'); m.className = 'hint'; m.textContent = 'Se testează…';
       if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(C.url)) { m.className = 'hint err-msg'; m.textContent = 'Adresa trebuie să înceapă cu https://script.google.com/…'; return; }
       try { const d = await api('GET', { action: 'ping' }); C.account = d.account; save(); m.className = 'hint ok-msg'; m.innerHTML = `Conectat la contul Google <b>${esc(d.account || '')}</b>. Se încarcă cererile…`; await sync(true); await pushAccounts(true); view = 'cereri'; render(); }
       catch (e) {
         m.className = 'hint err-msg';
-        if (e instanceof TypeError) m.innerHTML = `Google n-a răspuns cu date. Deschide <a href="${esc(C.url)}?action=config" target="_blank" rel="noopener">acest link</a>: dacă nu vezi <code>{"ok":true…}</code>, implementarea folosește încă o versiune veche a scriptului sau accesul nu e „Oricine” (Deploy → Manage deployments → creion → New version → Deploy).`;
+        if (/nu poate fi contactat/.test(e.message)) m.innerHTML = `Google n-a răspuns cu date. Deschide <a href="${esc(C.url)}?action=config" target="_blank" rel="noopener">acest link</a>: dacă nu vezi <code>{"ok":true…}</code>, implementarea folosește încă o versiune veche a scriptului sau accesul nu e „Oricine” (Deploy → Manage deployments → creion → New version → Deploy).`;
         else m.textContent = 'Nu merge: ' + e.message;
       }
     },

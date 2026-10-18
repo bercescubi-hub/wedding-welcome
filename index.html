@@ -396,7 +396,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.4.0';
+const APP_VERSION = '3.5.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
@@ -576,9 +576,7 @@ function updateUser(u){ u.updated = new Date().toISOString(); const acc = accoun
 const scriptUrl = () => (window.WW_CONFIG || {}).scriptUrl || '';
 async function cloud(payload){
   const url = scriptUrl(); if (!url) throw new Error('fără script');
-  // ca un link deschis (merge și pe iPhone); dacă răspunsul nu se poate citi, pe calea de rezervă
-  try { const r = await fetch(url + '?payload=' + encodeURIComponent(JSON.stringify(payload))); return JSON.parse(await r.text()); }
-  catch (e) { return await window.WWJsonp(url, payload); }
+  return window.WWNet.call(url, payload, payload.action === 'recover');
 }
 /** Salvează pe acest dispozitiv contul venit din Google Sheet și conectează Evenimentele cu cheia primită. */
 function adoptCloudUser(cu, token, role){
@@ -1466,6 +1464,7 @@ document.addEventListener('submit', async e => {
         try { const cu = await cloudLogin(name, pw); authErr = ''; login(cu); return; }
         catch (e) {
           if (typeof e === 'string') throw e;
+          if (u) throw 'Parola nu e corectă.';   // contul e pe acest dispozitiv: nu-l mai căutăm la Google
           throw 'Nu am putut verifica contul la Google. Verifică internetul și încearcă din nou. (' + String(e && e.message || e).slice(0, 140) + ')';
         }
       }

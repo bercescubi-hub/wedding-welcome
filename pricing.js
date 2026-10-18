@@ -92,11 +92,74 @@
       if (src.length > 14000) return reject(new Error('Mesajul e prea lung pentru conexiunea de rezervă. Scurtează textul.'));
       const s = document.createElement('script'); let done = false;
       const end = () => { done = true; clearTimeout(t); delete g[cb]; s.remove(); };
-      const t = setTimeout(() => { if (!done) { end(); reject(new Error('Google nu a răspuns. Verifică internetul și dacă scriptul e publicat cu acces „Oricine”.')); } }, 25000);
+      const t = setTimeout(() => { if (!done) { end(); reject(new Error('Google nu a răspuns. Verifică internetul și dacă scriptul e publicat cu acces „Oricine”.')); } }, 15000);
       g[cb] = d => { end(); resolve(d); };
       s.onerror = () => { if (!done) { end(); reject(new Error('Google a răspuns cu o pagină de eroare în loc de date. De obicei scriptul cere o autorizare nouă: în Apps Script alege funcția „setup”, apasă Run și acceptă permisiunile, apoi Deploy → Manage deployments → creion → New version → Deploy.')); } };
       s.src = src; document.head.appendChild(s);
     });
+  };
+  /** Apel printr-o fereastră invizibilă: un formular clasic trimis către script, iar scriptul răspunde cu postMessage.
+      Merge și pe iPhone/Safari, unde cererile din pagină către Google sunt blocate. */
+  g.WWFrame = function (url, payload, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const nonce = 'f' + Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36), name = 'wwf_' + nonce;
+      const ifr = document.createElement('iframe'); ifr.name = name; ifr.title = 'conexiune'; ifr.setAttribute('aria-hidden', 'true');
+      ifr.style.cssText = 'position:absolute;width:1px;height:1px;border:0;left:-9999px;top:0';
+      const form = document.createElement('form'); form.method = 'POST'; form.action = url; form.target = name; form.style.display = 'none';
+      form.acceptCharset = 'UTF-8';
+      [['payload', JSON.stringify(payload)], ['via', 'frame'], ['nonce', nonce]].forEach(([k, v]) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; form.appendChild(i); });
+      let done = false;
+      const end = () => { done = true; clearTimeout(t); g.removeEventListener('message', onMsg); setTimeout(() => { ifr.remove(); form.remove(); }, 1500); };
+      const onMsg = ev => {
+        let host = ''; try { host = new URL(ev.origin).hostname; } catch (_) {}
+        if (!/(^|\.)googleusercontent\.com$|^script\.google\.com$/.test(host)) return;
+        const m = ev.data; if (!m || m.__ww !== nonce) return;
+        end(); resolve(m.data);
+      };
+      const t = setTimeout(() => { if (!done) { end(); reject(new Error('fereastra: fără răspuns de la Google')); } }, timeoutMs || 12000);
+      g.addEventListener('message', onMsg);
+      document.body.appendChild(ifr); document.body.appendChild(form); form.submit();
+    });
+  };
+  /** Canalul către scriptul Google. Află o singură dată (cu o citire inofensivă) ce cale merge pe acest dispozitiv:
+      cerere directă, JSONP sau fereastră invizibilă, și o folosește apoi pentru tot, ca nimic să nu se trimită de două ori. */
+  g.WWNet = {
+    mode: null, url: '', tried: [],
+    async via(m, url, payload, write) {
+      if (m === 'fetch') {
+        const r = write ? await fetch(url, { method: 'POST', body: JSON.stringify(payload) })
+                        : await fetch(url + (url.includes('?') ? '&' : '?') + 'payload=' + encodeURIComponent(JSON.stringify(payload)));
+        const t = await r.text(); try { return JSON.parse(t); } catch (_) { throw new Error('răspuns ' + r.status + ' fără date'); }
+      }
+      if (m === 'jsonp') return g.WWJsonp(url, payload);
+      return g.WWFrame(url, payload);
+    },
+    /** O singură verificare odată; dacă tocmai a eșuat (în ultimele 20 de secunde), nu o repetăm imediat. */
+    probe(url) {
+      if (this._p && this.url === url) return this._p;
+      if (this.url === url && !this.mode && this.failedAt && Date.now() - this.failedAt < 20000) return Promise.resolve(null);
+      this.url = url; this.tried = [];
+      this._p = (async () => {
+        for (const m of ['fetch', 'jsonp', 'frame']) {
+          try { const d = await this.via(m, url, { action: 'config' }, false); if (d && d.ok) { this.mode = m; this.failedAt = 0; return m; } this.tried.push(m + ': ' + ((d && d.error) || 'fără date')); }
+          catch (e) { this.tried.push(m + ': ' + String(e && e.message || e).slice(0, 80)); }
+        }
+        this.mode = null; this.failedAt = Date.now(); return null;
+      })().finally(() => { this._p = null; });
+      return this._p;
+    },
+    /** write = acțiune care schimbă ceva (cerere nouă, salvare, email): nu se repetă pe altă cale dacă prima a eșuat. */
+    async call(url, payload, write) {
+      if (!this.mode || this.url !== url) await this.probe(url);
+      if (!this.mode) throw new Error('Google nu poate fi contactat de pe acest dispozitiv (' + this.tried.join(' · ') + ')');
+      try { return await this.via(this.mode, url, payload, write); }
+      catch (e) {
+        if (write) throw e;
+        const m = this.mode; await this.probe(url);           // de exemplu s-a schimbat rețeaua: căutăm din nou calea
+        if (!this.mode || this.mode === m) throw e;
+        return this.via(this.mode, url, payload, false);
+      }
+    }
   };
   g.WWPricing = { DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, num, yes, lei };
 })(typeof window !== 'undefined' ? window : globalThis);

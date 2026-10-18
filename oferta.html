@@ -193,9 +193,9 @@ renderPackages(); update();
 document.addEventListener('change', update); document.addEventListener('input', e => { if (e.target.getAttribute('aria-invalid')) e.target.removeAttribute('aria-invalid'); });
 
 /* prețurile reale, dacă scriptul Google e conectat */
-let viaJsonp = false;   // devine true dacă browserul nu ne lasă să citim răspunsul Google
-if (CFG.scriptUrl) fetch(CFG.scriptUrl + '?action=config').then(r => r.json()).catch(e => { viaJsonp = true; return window.WWJsonp(CFG.scriptUrl, { action:'config' }); }).then(d => {
-  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages; S.pricing = d.config.pricing || S.pricing; renderPackages(); update(); }
+/* prețurile reale, dacă scriptul Google e conectat; tot acum aflăm ce cale de comunicare merge pe acest telefon */
+if (CFG.scriptUrl) window.WWNet.call(CFG.scriptUrl, { action:'config' }, false).then(d => {
+  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages; S.pricing = Object.assign({}, S.pricing, d.config.pricing || {}); renderPackages(); update(); }
 }).catch(() => {});
 
 $('#f').addEventListener('submit', async e => {
@@ -227,17 +227,8 @@ let lastErr = [];   // motivele tehnice, afișate mic sub mesaj, ca să se poat�
 async function sendLead(data) {
   lastErr = [];
   if (!CFG.scriptUrl) { lastErr.push('fără adresă de script'); return false; }
-  const payload = { action:'submit', data };
-  const url = CFG.scriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(payload));
-  const read = async (r, tag) => { const t = await r.text(); try { const d = JSON.parse(t); if (!d.ok) lastErr.push(tag + ': ' + (d.error || 'eroare')); return !!d.ok; }
-    catch (_) { lastErr.push(tag + ': răspuns ' + r.status + ' ' + t.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100)); return false; } };
-  // 1. ca un link deschis în browser (metoda care merge și pe iPhone)
-  try { if (await read(await fetch(url, { redirect: 'follow' }), 'GET')) return true; } catch (e) { lastErr.push('GET: ' + (e && e.message || e)); }
-  // 2. ca script (ocolește blocările de citire a răspunsului)
-  try { const d = await window.WWJsonp(CFG.scriptUrl, payload); if (d && d.ok) return true; lastErr.push('JSONP: ' + ((d && d.error) || 'eroare')); }
-  catch (e) { lastErr.push('JSONP: ' + String(e && e.message || e).slice(0, 100)); }
-  // 3. trimitere clasică
-  try { if (await read(await fetch(CFG.scriptUrl, { method:'POST', body: JSON.stringify(payload) }), 'POST')) return true; } catch (e) { lastErr.push('POST: ' + (e && e.message || e)); }
+  try { const d = await window.WWNet.call(CFG.scriptUrl, { action:'submit', data }, true); if (d && d.ok) return true; lastErr.push((window.WWNet.mode || '') + ': ' + ((d && d.error) || 'eroare')); }
+  catch (e) { lastErr.push(String(e && e.message || e).slice(0, 220)); }
   return false;
 }
 function fmtDay(s) { try { return new Date(s + 'T12:00:00').toLocaleDateString('ro-RO', {day:'numeric', month:'long', year:'numeric'}); } catch(_) { return s; } }

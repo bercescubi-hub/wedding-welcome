@@ -45,13 +45,27 @@ function doGet(e) {
   try {
     out = handle_(p.payload ? JSON.parse(p.payload) : Object.assign({}, p));
   } catch (err) { out = { ok: false, error: String(err) }; }
-  return json(out, cb);
+  return p.via === 'frame' ? frame_(out, p.nonce) : json(out, cb);
 }
 
+/* POST: fie JSON în corp (aplicația, pe calculator), fie un formular clasic trimis într-o fereastră invizibilă
+   (iPhone/Safari, unde cererile din pagină sunt blocate): atunci răspunsul vine ca mesaj către pagină. */
 function doPost(e) {
+  const p = (e && e.parameter) || {};
   let d = {};
-  try { d = JSON.parse((e && e.postData && e.postData.contents) || '{}'); } catch (err) { return json({ ok: false, error: 'Date invalide' }); }
-  try { return json(handle_(d)); } catch (err) { return json({ ok: false, error: String(err) }); }
+  try { d = p.payload ? JSON.parse(p.payload) : JSON.parse((e && e.postData && e.postData.contents) || '{}'); }
+  catch (err) { return p.via === 'frame' ? frame_({ ok: false, error: 'Date invalide' }, p.nonce) : json({ ok: false, error: 'Date invalide' }); }
+  let out;
+  try { out = handle_(d); } catch (err) { out = { ok: false, error: String(err) }; }
+  return p.via === 'frame' ? frame_(out, p.nonce) : json(out);
+}
+/** Răspuns pentru fereastra invizibilă: o pagină care trimite rezultatul înapoi formularului (postMessage). */
+function frame_(o, nonce) {
+  // doar caractere ASCII în pagină: diacriticele ajung corect indiferent de codificarea ferestrei
+  const msg = JSON.stringify({ __ww: String(nonce || '').slice(0, 40), data: o })
+    .replace(/[<\u007f-\uffff]/g, c => '\\u' + ('000' + c.charCodeAt(0).toString(16)).slice(-4));
+  return HtmlService.createHtmlOutput('<!doctype html><script>window.top.postMessage(' + msg + ', "*");</script>')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function handle_(d) {
