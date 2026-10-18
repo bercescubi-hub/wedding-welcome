@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wedding Welcome</title>
+<meta name="theme-color" content="#160b18">
+<meta name="description" content="Ecranul de bun venit pentru invitați: mesajul mirilor, găsirea mesei și photo booth.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Jost:wght@300..600&display=swap">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;padding:0}img{max-width:100%}</style>
+<style>
+/* Layout: administrare = o coloană calmă cu bară de acțiuni fixă jos; ecranul invitaților = scenă de seară pe toată suprafața, nume centrate, butoane mari stivuite */
+:root{
+  --bg:#f5f2f5; --surface:#ffffff; --surface-2:#faf7fa; --ink:#26182a; --muted:#6e6272; --line:#e4dce6;
+  --accent:#6a2a5e; --accent-ink:#ffffff; --gold:#8f6f35; --ok:#2f7a4f; --warn:#9a5118; --danger:#a3283a;
+  --stage:#160b18; --stage-2:#2b1531; --champ:#f0e3cb; --champ-dim:rgba(240,227,203,.64); --gilt:#cfae72; --gilt-line:rgba(207,174,114,.42);
+  --f-display:"Bodoni Moda","Didot","Bodoni 72",Georgia,serif;
+  --f-body:"Jost","Futura","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#130e15; --surface:#1d1620; --surface-2:#231b26; --ink:#f1eaf2; --muted:#a99eac; --line:#362c39;
+  --accent:#d498c4; --accent-ink:#1d0f1b; --gold:#d8b87d; --ok:#6cc391; --warn:#e3a066; --danger:#f0798a; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#130e15; --surface:#1d1620; --surface-2:#231b26; --ink:#f1eaf2; --muted:#a99eac; --line:#362c39;
+  --accent:#d498c4; --accent-ink:#1d0f1b; --gold:#d8b87d; --ok:#6cc391; --warn:#e3a066; --danger:#f0798a; color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{text-wrap:balance;margin:0}
+p{margin:0}
+
+/* ---------- ADMIN ---------- */
+.admin{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 140px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.eyebrow-a{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:500}
+.top h1{font-family:var(--f-display);font-style:italic;font-weight:500;font-size:clamp(1.7rem,6vw,2.3rem);line-height:1.1}
+.top .app{font-size:.85rem;color:var(--muted)}
+.state-pill{font-size:.75rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.tabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:8px 16px;font-size:.92rem;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-size:1.05rem;font-weight:600}
+.panel .hint{font-size:.88rem;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font-size:.82rem;color:var(--muted);font-weight:500}
+.inp{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:11px 12px;font-size:16px;min-width:0}
+textarea.inp{min-height:110px;resize:vertical;font-size:15px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.sw-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.sw-row:first-of-type{border-top:0;padding-top:0}
+.sw-row .txt{flex:1;min-width:0}
+.sw-row b{display:block;font-weight:600}
+.sw-row span{font-size:.86rem;color:var(--muted)}
+.sw{appearance:none;-webkit-appearance:none;width:52px;height:30px;border-radius:99px;background:var(--line);position:relative;flex:0 0 auto;transition:background .2s;margin:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.sw:checked{background:var(--accent)}
+.sw:checked::after{transform:translateX(22px)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:500;font-size:.95rem}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--danger)}
+.btn.small{padding:6px 10px;font-size:.85rem}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.note{font-size:.86rem;padding:10px 12px;border-radius:10px;background:var(--surface-2);border:1px dashed var(--line);color:var(--muted)}
+.cat{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--surface-2)}
+.cat-head{display:flex;gap:8px;align-items:center}
+.cat-head .inp{font-weight:600}
+.status{font-size:.82rem;display:inline-flex;align-items:center;gap:6px}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.status.ok{color:var(--ok)} .status.sim{color:var(--warn)}
+.file-btn{position:relative;overflow:hidden}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.glist{display:flex;flex-direction:column}
+.g{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.g .nm{min-width:0;overflow-wrap:anywhere}
+.g .nm small{display:block;color:var(--muted);font-size:.8rem}
+.g .tb{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.x{border:0;background:none;color:var(--muted);font-size:1.3rem;line-height:1;padding:4px 8px}
+.add-g{display:grid;grid-template-columns:1fr 100px auto;gap:8px;align-items:end}
+@media (max-width:600px){.add-g{grid-template-columns:1fr 90px}.add-g .btn{grid-column:1/-1}}
+.preview-wrap{border-radius:22px;overflow:hidden;border:1px solid var(--line);max-width:420px;width:100%;margin:0 auto}
+.preview{padding:28px 18px 30px;min-height:520px}
+.limits{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.limits{grid-template-columns:1fr}}
+.limits ul{margin:6px 0 0;padding-left:18px;font-size:.88rem;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.limits h3{font-size:.9rem;font-weight:600}
+.actionbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.actionbar .in{max-width:720px;margin:0 auto;display:flex;gap:10px}
+.actionbar button{flex:1;padding:15px 10px;border-radius:12px;font-weight:600;letter-spacing:.06em;font-size:.92rem}
+.b-test{border:1.5px solid var(--ink);background:transparent}
+.b-live{border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink)}
+
+/* modal (admin) */
+.modal{position:fixed;inset:0;z-index:40;background:rgba(10,5,12,.55);display:flex;align-items:flex-end;justify-content:center;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+@media (min-width:640px){.modal{align-items:center}}
+.sheet{background:var(--surface);border-radius:18px;padding:22px;width:100%;max-width:480px;max-height:88%;overflow-y:auto;display:flex;flex-direction:column;gap:14px;animation:rise .25s ease}
+.sheet h2{font-family:var(--f-display);font-style:italic;font-weight:500;font-size:1.6rem}
+.sum{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px}
+.sum div{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-top:1px solid var(--line);font-size:.93rem}
+.sum div:first-child{border-top:0}
+.on{color:var(--ok);font-weight:600} .off{color:var(--muted)}
+
+/* ---------- STAGE (ecranul invitaților, aspect unic de seară) ---------- */
+.stagebg{background:radial-gradient(120% 70% at 50% -5%,var(--stage-2) 0%,var(--stage) 62%),var(--stage);color:var(--champ);font-family:var(--f-body)}
+.stage{position:fixed;inset:0;z-index:30;overflow-y:auto;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) max(20px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(20px,env(safe-area-inset-left,0px))}
+.stage-top{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px}
+.mono{width:46px;height:46px;border-radius:50%;border:1px solid var(--gilt-line);background:transparent;color:var(--gilt);font-family:var(--f-display);font-style:italic;font-size:.95rem;position:relative;user-select:none;-webkit-user-select:none;touch-action:none}
+.mono svg{position:absolute;inset:-3px;width:52px;height:52px;transform:rotate(-90deg);pointer-events:none}
+.mono circle{fill:none;stroke:var(--champ);stroke-width:2;stroke-dasharray:157;stroke-dashoffset:157}
+.mono.holding circle{transition:stroke-dashoffset 3s linear;stroke-dashoffset:0}
+.test-tag{font-size:.7rem;letter-spacing:.2em;border:1px solid var(--gilt);color:var(--gilt);padding:4px 10px;border-radius:99px}
+.ghost{border:1px solid var(--gilt-line);background:transparent;color:var(--champ);border-radius:99px;padding:8px 14px;font-size:.85rem}
+.sbody{flex:1;width:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column}
+.fade{animation:fade .5s ease both}
+@keyframes fade{from{opacity:.001;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes rise{from{transform:translateY(16px);opacity:.4}to{transform:none;opacity:1}}
+.home{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:4vh}
+.eyebrow{font-size:.74rem;letter-spacing:.32em;text-transform:uppercase;color:var(--gilt)}
+.names{font-family:var(--f-display);font-style:italic;font-weight:400;font-size:clamp(2.5rem,11vw,4.6rem);line-height:1.02;letter-spacing:-.01em}
+.names .amp{display:block;font-size:.5em;color:var(--gilt);margin:.12em 0}
+.orn{display:flex;align-items:center;gap:10px;width:160px;margin:6px 0}
+.orn span{flex:1;height:1px;background:var(--gilt-line)}
+.orn i{width:7px;height:7px;transform:rotate(45deg);border:1px solid var(--gilt)}
+.evname{font-size:1.02rem;letter-spacing:.02em}
+.evmeta{font-size:.86rem;color:var(--champ-dim)}
+.mods{display:grid;gap:12px;width:100%;margin-top:26px}
+.mod{display:grid;grid-template-columns:50px 1fr 16px;gap:14px;align-items:center;text-align:left;min-height:88px;padding:18px 18px;border-radius:18px;
+  border:1px solid var(--gilt-line);background:rgba(240,227,203,.04);color:var(--champ);transition:background .2s,transform .15s}
+.mod:active{transform:scale(.985);background:rgba(240,227,203,.1)}
+@media (hover:hover){.mod:hover{background:rgba(240,227,203,.08)}}
+.mod .ic{width:50px;height:50px;border-radius:50%;border:1px solid var(--gilt-line);display:grid;place-items:center;color:var(--gilt)}
+.mod .ic svg{width:22px;height:22px}
+.mod b{display:block;font-family:var(--f-display);font-weight:500;font-size:1.38rem;line-height:1.15}
+.mod span{font-size:.86rem;color:var(--champ-dim)}
+.mod .chev{color:var(--gilt);font-size:1.3rem}
+@media (min-width:900px){.sbody.wide{max-width:1000px}.mods{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+.empty{color:var(--champ-dim);font-size:.95rem;padding:18px;border:1px dashed var(--gilt-line);border-radius:14px}
+.back{align-self:flex-start;border:0;background:none;color:var(--champ-dim);padding:8px 0;font-size:.95rem;margin-bottom:8px}
+.sh2{font-family:var(--f-display);font-style:italic;font-weight:400;font-size:clamp(2rem,8vw,2.8rem);line-height:1.1}
+.ssub{color:var(--champ-dim);margin-top:6px;margin-bottom:22px}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.catb{min-height:120px;border-radius:18px;border:1px solid var(--gilt-line);background:rgba(240,227,203,.04);color:var(--champ);padding:16px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.catb:active{transform:scale(.98)}
+.catb b{font-family:var(--f-display);font-weight:500;font-size:1.35rem;line-height:1.15}
+.catb span{font-size:.78rem;color:var(--gilt);letter-spacing:.12em;text-transform:uppercase}
+.player{display:flex;flex-direction:column;gap:16px}
+.player video{width:100%;max-height:70vh;border-radius:16px;background:#000}
+.sim{border-radius:18px;border:1px solid var(--gilt-line);aspect-ratio:9/12;max-width:100%;max-height:64vh;width:100%;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:14px;
+  background:radial-gradient(80% 60% at 50% 40%,rgba(207,174,114,.18),transparent 70%)}
+.sim-ring{width:86px;height:86px;border-radius:50%;border:1px solid var(--gilt);display:grid;place-items:center;animation:pulse 2.4s ease-in-out infinite}
+.sim-ring svg{width:28px;height:28px;color:var(--gilt)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(207,174,114,.35)}50%{box-shadow:0 0 0 18px rgba(207,174,114,0)}}
+.sim-from{font-family:var(--f-display);font-style:italic;font-size:1.5rem}
+.sim-msg{font-size:1.02rem;max-width:30ch;color:var(--champ)}
+.sim-tag{position:absolute;top:12px;left:12px;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gilt);border:1px solid var(--gilt-line);padding:3px 8px;border-radius:99px}
+.bar{height:3px;background:rgba(240,227,203,.15);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gilt);width:100%;transform-origin:left;animation:prog linear forwards}
+@keyframes prog{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.cta{border:1px solid var(--gilt);background:var(--champ);color:var(--stage);border-radius:99px;padding:16px 26px;font-weight:600;letter-spacing:.1em;font-size:.95rem}
+.cta.alt{background:transparent;color:var(--champ);border-color:var(--gilt-line)}
+.search{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--gilt);padding:6px 2px}
+.search svg{width:22px;height:22px;color:var(--gilt);flex:0 0 auto}
+.search input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--champ);font-size:1.35rem;padding:8px 0;font-family:var(--f-display);font-style:italic}
+.search input::placeholder{color:rgba(240,227,203,.4)}
+.res{display:flex;flex-direction:column;margin-top:14px}
+.res button{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 4px;border:0;border-bottom:1px solid rgba(207,174,114,.18);background:none;color:var(--champ);text-align:left;font-size:1.1rem}
+.res button em{font-style:normal;color:var(--gilt);font-size:.9rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+.res .none{color:var(--champ-dim);padding:18px 0}
+.tablecard{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 0}
+.tablecard .lbl{font-size:.78rem;letter-spacing:.32em;text-transform:uppercase;color:var(--gilt)}
+.tablecard .num{font-family:var(--f-display);font-weight:400;font-size:clamp(6rem,34vw,10rem);line-height:.95;font-variant-numeric:lining-nums}
+.tablecard .who{font-family:var(--f-display);font-style:italic;font-size:1.6rem}
+.mates{margin-top:18px;border-top:1px solid var(--gilt-line);padding-top:14px;width:100%;font-size:.95rem;color:var(--champ-dim)}
+.mates b{display:block;color:var(--gilt);font-weight:500;font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px}
+.booth{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;flex:1;justify-content:center}
+.shutter{width:min(62vw,240px);aspect-ratio:1;border-radius:50%;border:1px solid var(--gilt);background:radial-gradient(circle,rgba(240,227,203,.1),transparent 70%);color:var(--champ);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative}
+.shutter::before{content:"";position:absolute;inset:10px;border-radius:50%;border:1px solid var(--gilt-line)}
+.shutter b{font-weight:600;letter-spacing:.14em;font-size:1rem}
+.shutter span{font-size:.82rem;color:var(--champ-dim)}
+.shutter svg{width:34px;height:34px;color:var(--gilt)}
+.count{font-family:var(--f-display);font-size:clamp(9rem,48vw,16rem);line-height:1;animation:tick 1s ease both}
+@keyframes tick{0%{transform:scale(1.4);opacity:.001}25%{transform:scale(1);opacity:1}85%{opacity:1}100%{opacity:.2}}
+.flash{position:fixed;inset:0;background:#fff;z-index:60;animation:flash .5s ease forwards;pointer-events:none}
+@keyframes flash{from{opacity:1}to{opacity:0}}
+.photo{width:100%;max-width:380px;border-radius:6px;box-shadow:0 18px 50px rgba(0,0,0,.5);aspect-ratio:4/5;object-fit:cover}
+.qrcard{background:#fff;padding:14px;border-radius:14px;width:min(70vw,260px)}
+.qrcard canvas{width:100%;height:auto;display:block}
+.disc{font-size:.85rem;color:var(--champ-dim);max-width:34ch}
+.pin{position:fixed;inset:0;z-index:55;background:rgba(10,4,12,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:var(--champ);
+  padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px))}
+.dots{display:flex;gap:14px}
+.dots i{width:14px;height:14px;border-radius:50%;border:1px solid var(--gilt)}
+.dots i.f{background:var(--gilt)}
+.pad{display:grid;grid-template-columns:repeat(3,72px);gap:12px}
+.pad button{height:72px;border-radius:50%;border:1px solid var(--gilt-line);background:transparent;color:var(--champ);font-size:1.5rem;font-family:var(--f-display)}
+.pad button.t{font-family:var(--f-body);font-size:.85rem}
+.pin .err{color:#f3a3b0;min-height:1.4em;font-size:.9rem}
+.mod.hero{min-height:120px;grid-template-columns:64px 1fr 16px;background:rgba(240,227,203,.08);border-color:var(--gilt)}
+.mod.hero .ic{width:64px;height:64px}.mod.hero .ic svg{width:30px;height:30px}
+.mod.hero b{font-size:1.75rem}
+.skip{align-self:center;border:0;background:none;color:var(--champ-dim);text-decoration:underline;text-underline-offset:4px;padding:14px;margin-top:10px;font-size:.92rem}
+.next{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:3vh}
+.clink{width:110px;height:110px;color:var(--gilt);margin-bottom:6px}
+.clink .gl1,.clink .gl2{transform-box:fill-box;transform-origin:bottom center}
+.clink .gl1{animation:c1 1.4s ease-out both}.clink .gl2{animation:c2 1.4s ease-out both}
+@keyframes c1{0%{transform:rotate(-30deg) translateX(-4px)}55%{transform:rotate(8deg) translateX(1px)}100%{transform:rotate(-6deg)}}
+@keyframes c2{0%{transform:rotate(30deg) translateX(4px)}55%{transform:rotate(-8deg) translateX(-1px)}100%{transform:rotate(6deg)}}
+.next .mods{margin-top:20px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.upd{border:1px solid var(--gold);background:var(--surface-2);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.upd b{font-weight:600}
+.ver{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.offline-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px}
+.offline-dot.no{background:var(--warn)}
+</style>
+
+</head>
+<body>
+<div id="admin" class="admin"><div class="wrap"><section class="panel" style="margin-top:20vh">
+  <p class="eyebrow-a">Wedding Welcome</p>
+  <h2>Se încarcă aplicația…</h2>
+  <p class="hint">Previzualizarea de fișiere (de exemplu aplicația Fișiere de pe iPhone) arată doar aspectul paginii, fără butoanele funcționale. Deschide aplicația de pe adresa ei (linkul GitHub Pages) în Chrome sau Edge.</p>
+</section></div></div>
+<div id="actionbar" class="actionbar" hidden>
+  <div class="in">
+    <button type="button" class="b-test" data-act="test">TEST MODE</button>
+    <button type="button" class="b-live" data-act="live-ask">START LIVE EVENT</button>
+  </div>
+</div>
+<div id="modal" class="modal" hidden></div>
+<div id="stage" class="stage stagebg" hidden>
+  <div class="stage-top">
+    <button type="button" id="mono" class="mono" aria-label="Monogramă"></button>
+    <div id="stageRight"></div>
+  </div>
+  <div id="sbody" class="sbody"></div>
+</div>
+<div id="pin" class="pin" hidden></div>
+
+<script>
+/* ============================================================
+   Wedding Welcome — prototip v0.1
+   Toate datele stau în browserul acestui dispozitiv (localStorage + IndexedDB pentru video).
+   ============================================================ */
+const KEY = 'wedding-welcome-v1';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+
+/* Datele evenimentului vin din data.json (fișierul pe care îl actualizează Claude în repo).
+   Ce modifici aici, în panoul de administrare, rămâne pe acest laptop (localStorage).
+   Când data.json are o versiune mai nouă, panoul îți propune s-o aplici. */
+let DATA = null;          // ultimul data.json citit
+let pendingData = null;   // data.json mai nou decât ce e pe laptop
+const APP_VERSION = '1.0.0';
+function stateFromData(d){
+  const e = JSON.parse(JSON.stringify(d.event || {}));
+  return {
+    couple: e.couple || '', eventName: e.eventName || '', date: e.date || '', venue: e.venue || '',
+    modules: Object.assign({welcome:true, seating:true, booth:true}, e.modules || {}),
+    pin: String(e.pin || '1234'),
+    keptPhotos: 0, live: false,
+    categories: (e.categories || []).map(c => ({id:c.id, name:c.name, msg:c.msg || ''})),
+    guests: (e.guests || []).map(g => ({name:g.name, table:+g.table})),
+    dataVersion: d.version || 0
+  };
+}
+function demoState(){ return DATA ? stateFromData(DATA) : stateFromData(FALLBACK_DATA); }
+const FALLBACK_DATA = {"version": 1, "note": "Datele demonstrative inițiale.", "event": {"couple": "Ioana & Andrei", "eventName": "Nunta Ioanei și a lui Andrei", "date": "2027-06-19", "venue": "Conacul de pe Deal, Sibiu", "modules": {"welcome": true, "seating": true, "booth": true}, "pin": "1234", "categories": [{"id": "familie", "name": "Familie", "msg": "Vă mulțumim că ne-ați crescut, ne-ați sprijinit și sunteți azi alături de noi. Seara asta e și a voastră."}, {"id": "prieteni", "name": "Prieteni", "msg": "Ați fost cu noi la fiecare poveste. Acum ne ajutați să scriem cea mai frumoasă. Distracție plăcută!"}, {"id": "colegi", "name": "Colegi", "msg": "Mulțumim că ați lăsat ședințele deoparte pentru noi. Azi singurul termen limită e ringul de dans."}, {"id": "altele", "name": "Alte persoane", "msg": "Ne bucurăm mult că sunteți aici. Bine ați venit la nunta noastră!"}], "guests": [{"name": "Maria Popescu", "table": 1}, {"name": "Ion Popescu", "table": 1}, {"name": "Tudor Cârstea", "table": 1}, {"name": "Elena Ionescu", "table": 2}, {"name": "George Enache", "table": 2}, {"name": "Lucia Enache", "table": 2}, {"name": "Ștefan Dumitrescu", "table": 3}, {"name": "Ana-Maria Constantin", "table": 3}, {"name": "Irina Bălan", "table": 3}, {"name": "Mihai Rădulescu", "table": 4}, {"name": "Cristina Țurcanu", "table": 4}, {"name": "Paul Vișan", "table": 4}, {"name": "Alexandru Stoica", "table": 5}, {"name": "Ioana Mureșan", "table": 5}, {"name": "Bogdan Neagu", "table": 5}, {"name": "Diana Florea", "table": 6}, {"name": "Radu Gheorghiu", "table": 6}, {"name": "Andreea Lazăr", "table": 7}, {"name": "Vlad Munteanu", "table": 7}, {"name": "Simona Pătrașcu", "table": 7}]}};
+function applyData(d){
+  const keepVid = {}; S.categories.forEach(c => { if (c.video) keepVid[c.id] = c.video; });
+  const n = stateFromData(d);
+  n.keptPhotos = S.keptPhotos || 0;
+  n.categories.forEach(c => { if (keepVid[c.id]) c.video = keepVid[c.id]; });
+  S = n; save(); pendingData = null;
+}
+function exportData(){
+  const out = { version: (S.dataVersion||0), exportedAt: new Date().toISOString(), note: 'Export din panoul de administrare',
+    event: { couple:S.couple, eventName:S.eventName, date:S.date, venue:S.venue, modules:S.modules, pin:S.pin,
+      categories:S.categories.map(c=>({id:c.id,name:c.name,msg:c.msg})), guests:S.guests } };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(out,null,2)], {type:'application/json'}));
+  a.download = 'wedding-welcome-date.json'; document.body.appendChild(a); a.click(); a.remove();
+}
+
+let S = null;
+try { S = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+
+/* ---------- Video storage (IndexedDB, doar pe acest dispozitiv) ---------- */
+const IDB = {
+  db:null,
+  open(){ return new Promise((res,rej)=>{ try{ const r=indexedDB.open('wedding-welcome',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('videos'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);}catch(e){rej(e)} }); },
+  async run(mode,fn){ if(!this.db) this.db=await this.open();
+    return new Promise((res,rej)=>{ const tx=this.db.transaction('videos',mode); const req=fn(tx.objectStore('videos'));
+      tx.oncomplete=()=>res(req && req.result); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error); }); },
+  get(k){ return this.run('readonly', s=>s.get(k)); },
+  put(k,v){ return this.run('readwrite', s=>s.put(v,k)); },
+  del(k){ return this.run('readwrite', s=>s.delete(k)); }
+};
+const vurls = {};     // id -> object URL
+async function videoURL(id){
+  if (vurls[id]) return vurls[id];
+  try { const b = await IDB.get(id); if (b) { vurls[id] = URL.createObjectURL(b); return vurls[id]; } } catch(e) {}
+  return null;
+}
+async function verifyVideos(){
+  let changed=false;
+  for (const c of S.categories){ if (c.video && !(await videoURL(c.id))) { delete c.video; changed=true; } }
+  if (changed){ save(); if (mode==='admin') renderAdmin(); }
+}
+
+/* ---------- Puncte de integrare pentru etapa următoare ----------
+   CameraAdapter.capture() -> dataURL al fotografiei.
+     Acum: imagine demonstrativă generată local.
+     Mai târziu: un mic serviciu pe laptop conectat la aparatul Canon (ex. prin USB/EDSDK sau gPhoto2) care returnează poza.
+   ShareAdapter.publish(dataURL) -> URL public sau null.
+     Acum: null (fără găzduire). Mai târziu: upload într-un spațiu de stocare și QR către linkul real. */
+const CameraAdapter = { name:'demo', async capture(){ return drawDemoPhoto(); } };
+const ShareAdapter  = { name:'none', async publish(_dataUrl){ return null; } };
+
+/* ---------- State UI ---------- */
+let mode = 'admin';
+let tab = 'eveniment';
+let gView = 'home', curCat = null, seatQ = '', seatSel = null;
+let booth = { st:'idle', n:3, photo:null };
+let timers = [], idleT = null, wakeLock = null, resetAsk = false;
+
+const MODS = {
+  welcome: { admin:'Wedding Welcome', adesc:'Primul ecran: mesajul video al mirilor, pe categorii', title:'Ciocnește cu mirii', sub:'Mirii v-au pregătit un mesaj de bun venit',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><g class="gl1"><path d="M5.5 3h5l-.6 6.2a1.9 1.9 0 0 1-3.8 0z"/><path d="M8 11.2V19M5.8 19h4.4"/></g><g class="gl2"><path d="M13.5 3h5l-.6 6.2a1.9 1.9 0 0 1-3.8 0z"/><path d="M16 11.2V19M13.8 19h4.4"/></g></svg>' },
+  seating: { admin:'Guest Seating', adesc:'Apare după mesajul mirilor: căutare după nume și masa', title:'Găsește-ți masa', sub:'Caută după nume',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="3.2" r="1.3"/><circle cx="12" cy="20.8" r="1.3"/><circle cx="3.2" cy="12" r="1.3"/><circle cx="20.8" cy="12" r="1.3"/></svg>' },
+  booth:   { admin:'Photo Booth', adesc:'Apare după mesajul mirilor: fotografie și cod QR (demonstrativ)', title:'Photo Booth', sub:'Faceți o fotografie amintire',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 8h3l1.6-2.2h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.6"/></svg>' }
+};
+const enabledMods = () => Object.keys(MODS).filter(k => S.modules[k]);
+const catName = id => (S.categories.find(c=>c.id===id)||{}).name || '—';
+function initials(){ const p=S.couple.split('&').map(s=>s.trim()).filter(Boolean); return p.length>1 ? p[0][0]+'·'+p[1][0] : (S.couple.trim()[0]||'W'); }
+function dateStr(){ if(!S.date) return ''; try{ return new Date(S.date+'T12:00:00').toLocaleDateString('ro-RO',{day:'numeric',month:'long',year:'numeric'}); }catch(e){ return S.date; } }
+function namesHTML(){ const p=S.couple.split('&').map(s=>s.trim()).filter(Boolean);
+  return p.length>1 ? `${esc(p[0])}<span class="amp">&amp;</span>${esc(p.slice(1).join(' & '))}` : esc(S.couple); }
+
+/* ============================ ADMIN ============================ */
+function renderAdmin(){
+  const tabs = [['eveniment','Eveniment și module'],['video','Videoclipuri'],['invitati','Invitați'],['preview','Previzualizare']];
+  $('#admin').innerHTML = `<div class="wrap">
+    <header class="top">
+      <div><p class="eyebrow-a">Wedding Welcome · Administrare</p><h1 id="hName">${esc(S.couple)}</h1></div>
+      <span class="state-pill"><span class="offline-dot${navigator.onLine?'':' no'}"></span>${navigator.onLine?'Online':'Offline'} · date v${S.dataVersion||0}</span>
+    </header>
+    ${pendingData ? `<section class="upd" role="status">
+      <b>Am primit o versiune nouă a datelor (v${pendingData.version||0})</b>
+      ${pendingData.note?`<p class="hint">${esc(pendingData.note)}</p>`:''}
+      <p class="hint">Dacă o aplici, invitații, textele și setările de pe acest laptop sunt înlocuite cu cele noi. Videoclipurile încărcate rămân.</p>
+      <div class="btns"><button type="button" class="btn primary" data-act="upd-apply">Aplică actualizarea</button>
+        <button type="button" class="btn" data-act="upd-skip">Păstrează ce am acum</button></div></section>` : ''}
+    <nav class="tabs" role="tablist">${tabs.map(([k,l])=>`<button type="button" role="tab" aria-selected="${tab===k}" data-act="tab" data-k="${k}">${l}</button>`).join('')}</nav>
+    ${ {eveniment:adminEvent, video:adminVideo, invitati:adminGuests, preview:adminPreview}[tab]() }
+  </div>`;
+}
+
+function adminEvent(){
+  return `<section class="panel">
+      <h2>Detalii eveniment</h2>
+      <div class="row2">
+        <div class="field"><label for="f-couple">Numele mirilor</label><input class="inp" id="f-couple" data-k="couple" value="${esc(S.couple)}" placeholder="Ioana & Andrei"></div>
+        <div class="field"><label for="f-event">Numele evenimentului</label><input class="inp" id="f-event" data-k="eventName" value="${esc(S.eventName)}"></div>
+        <div class="field"><label for="f-date">Data</label><input class="inp" type="date" id="f-date" data-k="date" value="${esc(S.date)}"></div>
+        <div class="field"><label for="f-venue">Locația</label><input class="inp" id="f-venue" data-k="venue" value="${esc(S.venue)}"></div>
+      </div>
+      <p class="hint">Folosește „&amp;” între nume ca să apară pe două rânduri pe ecranul invitaților.</p>
+    </section>
+    <section class="panel">
+      <h2>Module afișate invitaților</h2>
+      ${Object.entries(MODS).map(([k,m])=>`<div class="sw-row"><div class="txt"><b>${m.admin}</b><span>${m.adesc}</span></div>
+        <input type="checkbox" class="sw" role="switch" id="sw-${k}" data-mod="${k}" ${S.modules[k]?'checked':''} aria-label="${m.admin}"></div>`).join('')}
+      <p class="note" id="modNote">${modNote()}</p>
+    </section>
+    <section class="panel">
+      <h2>Ieșirea din modul LIVE</h2>
+      <div class="field" style="max-width:220px"><label for="f-pin">PIN din 4 cifre</label><input class="inp" id="f-pin" data-k="pin" inputmode="numeric" maxlength="4" value="${esc(S.pin)}"></div>
+      <p class="hint">În LIVE, panoul de administrare dispare. Pentru a reveni: ține apăsat 3 secunde pe monograma din colțul stânga sus, apoi introdu PIN-ul. Este doar o barieră pentru invitați curioși, nu o protecție reală: oricine are telefonul poate închide browserul sau șterge datele site-ului.</p>
+    </section>
+    <section class="panel">
+      <h2>Date</h2>
+      <p class="hint">Fotografii păstrate în LIVE: <b>${S.keptPhotos||0}</b> (doar contor; fotografiile demonstrative nu se salvează). Setările și videoclipurile rămân pe acest laptop, în acest browser.</p>
+      <p class="hint">Ai modificat lucruri aici și vrei să lucrăm mai departe cu Claude pe ele? Exportă datele și trimite fișierul în conversație.</p>
+      <div class="btns"><button type="button" class="btn" data-act="export">Exportă datele (.json)</button>
+        <button type="button" class="btn" data-act="recheck">Verifică actualizări</button><span class="hint" id="chkMsg"></span></div>
+      <div class="btns">${resetAsk
+        ? `<span class="hint">Revii la datele din data.json? Modificările locale și videoclipurile se șterg.</span><button type="button" class="btn danger" data-act="reset-yes">Da, resetează</button><button type="button" class="btn" data-act="reset-no">Anulează</button>`
+        : `<button type="button" class="btn danger" data-act="reset">Resetează la datele din data.json</button>`}</div>
+      <p class="ver">Aplicație v${APP_VERSION}</p>
+    </section>`;
+}
+function modNote(){
+  const after = afterMods().map(k=>MODS[k].title);
+  if (!enabledMods().length) return 'Niciun modul activ. Activează cel puțin unul ca să poți porni evenimentul.';
+  if (S.modules.welcome) return 'Flux: invitatul vede întâi „Ciocnește cu mirii” și mesajul video. ' +
+    (after.length ? `După mesaj apar: ${after.join(' și ')}.` : 'După mesaj, ecranul revine la început pentru următorul invitat.');
+  return `Fără mesaj de bun venit, invitații văd direct: ${after.join(' și ')}.`;
+}
+function adminVideo(){
+  return `<section class="panel">
+      <h2>Videoclipuri pe categorii</h2>
+      <p class="hint">Încarcă un video pentru fiecare categorie de pe laptop. Fără video, invitații văd o redare simulată cu mesajul text de mai jos.</p>
+      ${S.categories.map((c,i)=>`<div class="cat">
+        <div class="cat-head"><input class="inp" id="cn-${esc(c.id)}" data-cat="${i}" data-ck="name" value="${esc(c.name)}" aria-label="Nume categorie">
+          ${S.categories.length>1?`<button type="button" class="x" data-act="delcat" data-i="${i}" aria-label="Șterge categoria">×</button>`:''}</div>
+        ${c.video ? `<span class="status ok">Video încărcat: ${esc(c.video.name)} · ${(c.video.size/1048576).toFixed(1)} MB</span>`
+                  : `<span class="status sim">Redare simulată (fără fișier video)</span>`}
+        <div class="field"><label for="cm-${esc(c.id)}">Mesaj pentru simulare</label><textarea class="inp" id="cm-${esc(c.id)}" data-cat="${i}" data-ck="msg" rows="2" style="min-height:70px">${esc(c.msg)}</textarea></div>
+        <div class="btns">
+          <span class="btn small file-btn">${c.video?'Înlocuiește video':'Alege video'}<input type="file" accept="video/*" data-vid="${i}" aria-label="Alege video pentru ${esc(c.name)}"></span>
+          ${c.video?`<button type="button" class="btn small danger" data-act="delvid" data-i="${i}">Elimină video</button>`:''}
+          <button type="button" class="btn small" data-act="trycat" data-i="${i}">Testează</button>
+        </div>
+      </div>`).join('')}
+      <div class="btns"><button type="button" class="btn" data-act="addcat">+ Adaugă categorie</button></div>
+      <p class="note">Videoclipurile se păstrează doar în această aplicație, pe acest laptop, și merg și fără internet. Un clip de 30–60 de secunde în 720p sau 1080p e ideal.</p>
+    </section>`;
+}
+
+function adminGuests(){
+  const q = norm(($('#gfilter')||{}).value || '');
+  const list = S.guests.map((g,i)=>({...g,i})).filter(g=>!q || norm(g.name).includes(q))
+    .sort((a,b)=>(a.table-b.table)||a.name.localeCompare(b.name,'ro'));
+  const tables = new Set(S.guests.map(g=>g.table)).size;
+  return `<section class="panel">
+      <h2>Adaugă invitat</h2>
+      <form class="add-g" id="addForm">
+        <div class="field"><label for="ng-name">Nume complet</label><input class="inp" id="ng-name" required placeholder="ex. Andreea Lazăr"></div>
+        <div class="field"><label for="ng-table">Masa</label><input class="inp" id="ng-table" type="number" min="1" inputmode="numeric" required></div>
+        <button class="btn primary" type="submit">Adaugă</button>
+      </form>
+      <details><summary class="hint" style="cursor:pointer">Adaugă mai mulți deodată (lipire listă)</summary>
+        <div class="field" style="margin-top:10px"><label for="bulk">Un invitat pe rând: Nume și Masa (copiate din Excel sau separate prin „;”)</label>
+          <textarea class="inp" id="bulk" placeholder="Cristian Pop; 8&#10;Laura Pop; 8"></textarea></div>
+        <div class="btns" style="margin-top:8px"><button type="button" class="btn" data-act="bulk">Importă lista</button><span class="hint" id="bulkMsg"></span></div>
+      </details>
+    </section>
+    <section class="panel">
+      <h2>Lista invitaților <span class="hint" style="font-weight:400">· ${S.guests.length} invitați, ${tables} mese</span></h2>
+      <input class="inp" id="gfilter" placeholder="Filtrează după nume" value="${esc(($('#gfilter')||{}).value||'')}" aria-label="Filtrează invitații">
+      <div class="glist">${list.map(g=>`<div class="g"><div class="nm">${esc(g.name)}</div>
+        <span class="tb">Masa ${g.table}</span><button type="button" class="x" data-act="delguest" data-i="${g.i}" aria-label="Șterge ${esc(g.name)}">×</button></div>`).join('') || '<p class="hint" style="padding-top:10px">Niciun rezultat.</p>'}</div>
+    </section>`;
+}
+
+function adminPreview(){
+  return `<section class="panel">
+      <h2>Așa arată ecranul invitaților</h2>
+      <p class="hint">${modNote()} Pentru a apăsa pe butoane și a parcurge totul, folosește TEST MODE.</p>
+      <div class="preview-wrap"><div class="stagebg preview" inert>${homeHTML()}</div></div>
+      <div class="btns" style="justify-content:center"><button type="button" class="btn primary" data-act="test">Deschide TEST MODE</button></div>
+    </section>
+    <section class="panel limits">
+      <div><h3>Funcționează acum</h3><ul>
+        <li>Module activabile, previzualizare, TEST și LIVE</li><li>Videoclipuri reale din galerie sau redare simulată</li>
+        <li>Căutare invitați fără diacritice („stefan” găsește „Ștefan”)</li><li>Photo Booth cu numărătoare și poză demonstrativă</li>
+        <li>Aplicație instalabilă, merge și fără internet</li><li>Actualizări de date trimise de Claude, aplicate cu un clic</li></ul></div>
+      <div><h3>Etapa următoare (necesită laptop)</h3><ul>
+        <li>Conectarea aparatului Canon prin USB și un mic program pe laptop</li><li>Încărcarea pozelor online și QR către poza reală</li>
+        <li>Mod kiosk real (blocarea ecranului), din setările sistemului</li><li>Sincronizare între mai multe dispozitive</li></ul></div>
+    </section>`;
+}
+
+/* ============================ STAGE ============================ */
+function homeHTML(){
+  const mods = S.modules.welcome ? ['welcome'] : enabledMods();
+  return `<div class="home fade">
+    <p class="eyebrow">Bine ați venit</p>
+    <h1 class="names">${namesHTML()}</h1>
+    <div class="orn" aria-hidden="true"><span></span><i></i><span></span></div>
+    <p class="evname">${esc(S.eventName)}</p>
+    <p class="evmeta">${esc(dateStr())}${S.venue?' · '+esc(S.venue):''}</p>
+    <div class="mods">${mods.length ? mods.map(k=>`<button type="button" class="mod${k==='welcome'?' hero':''}" data-act="go" data-v="${k}">
+        <span class="ic">${MODS[k].icon}</span><span><b>${MODS[k].title}</b><span>${MODS[k].sub}</span></span><span class="chev">›</span></button>`).join('')
+      : '<p class="empty">Niciun modul activ în acest moment.</p>'}</div>
+  </div>`;
+}
+const backTo = () => S.modules.welcome ? 'next' : 'home';
+const afterMods = () => ['seating','booth'].filter(k=>S.modules[k]);
+const backBtn = '<button type="button" class="back" data-act="go" data-v="home">‹ Înapoi</button>';
+const backBtn2 = () => `<button type="button" class="back" data-act="go" data-v="${backTo()}">‹ Înapoi</button>`;
+
+const VIEWS = {
+  home: homeHTML,
+  welcome(){
+    return `<div class="fade">${backBtn}<h2 class="sh2">Cine sunteți?</h2><p class="ssub">Alegeți categoria voastră. Mirii v-au pregătit un mesaj.</p>
+      <div class="cats">${S.categories.map(c=>`<button type="button" class="catb" data-act="play" data-id="${esc(c.id)}"><b>${esc(c.name)}</b><span>${c.video?'▶ Video':'▶ Mesaj'}</span></button>`).join('')}</div>
+      <button type="button" class="skip" data-act="go" data-v="next">Treci peste mesaj</button></div>`;
+  },
+  play(){
+    const c = S.categories.find(x=>x.id===curCat); if(!c) return VIEWS.welcome();
+    const url = vurls[c.id];
+    const back = '<button type="button" class="back" data-act="go" data-v="welcome">‹ Înapoi la categorii</button>';
+    if (url) return `<div class="player fade">${back}<video src="${url}" controls autoplay playsinline></video>
+      <button type="button" class="cta alt" data-act="go" data-v="next">Continuă</button></div>`;
+    return `<div class="player fade">${back}
+      <div class="sim"><span class="sim-tag">Redare simulată</span>
+        <div class="sim-ring">${MODS.welcome.icon}</div>
+        <p class="sim-from">${esc(S.couple)}</p><p class="sim-msg">${esc(c.msg)}</p></div>
+      <div class="bar"><i style="animation-duration:12s"></i></div>
+      <button type="button" class="cta alt" data-act="go" data-v="next">Continuă</button></div>`;
+  },
+  next(){
+    const mods = afterMods();
+    return `<div class="next fade"><div class="clink" aria-hidden="true">${MODS.welcome.icon}</div>
+      <h2 class="sh2">Noroc!</h2>
+      <p class="ssub" style="margin-bottom:0">${mods.length?'Bine ați venit! Ce doriți să faceți acum?':'Bine ați venit! Vă dorim o seară minunată.'}</p>
+      ${mods.length?`<div class="mods">${mods.map(k=>`<button type="button" class="mod" data-act="go" data-v="${k}">
+        <span class="ic">${MODS[k].icon}</span><span><b>${MODS[k].title}</b><span>${MODS[k].sub}</span></span><span class="chev">›</span></button>`).join('')}</div>`:''}
+      <button type="button" class="skip" data-act="go" data-v="home">Am terminat</button></div>`;
+  },
+  seating(){
+    if (seatSel !== null){
+      const g = S.guests[seatSel];
+      const mates = S.guests.filter((x,i)=>x.table===g.table && i!==seatSel).map(x=>esc(x.name));
+      return `<div class="fade"><button type="button" class="back" data-act="seat-back">‹ Caută alt nume</button>
+        <div class="tablecard"><span class="lbl">Masa</span><span class="num">${g.table}</span><span class="who">${esc(g.name)}</span>
+        ${mates.length?`<div class="mates"><b>La aceeași masă</b>${mates.join(' · ')}</div>`:''}</div>
+        <div style="display:flex;justify-content:center;margin-top:8px"><button type="button" class="cta" data-act="go" data-v="home">GATA</button></div></div>`;
+    }
+    return `<div class="fade">${backBtn2()}<h2 class="sh2">Găsește-ți masa</h2><p class="ssub">Scrieți numele sau prenumele. Diacriticele nu sunt necesare.</p>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>
+      <input id="gsearch" autocomplete="off" autocapitalize="words" placeholder="ex. Popescu" value="${esc(seatQ)}" aria-label="Caută după nume"></div>
+      <div class="res" id="res">${seatResults()}</div></div>`;
+  },
+  booth(){
+    if (booth.st==='count') return `<div class="booth"><div class="count" aria-live="assertive">${booth.n}</div><p class="disc">Zâmbiți!</p></div>`;
+    if (booth.st==='preview') return `<div class="booth fade"><img class="photo" src="${booth.photo}" alt="Fotografie demonstrativă">
+      <div class="btns" style="justify-content:center;gap:12px"><button type="button" class="cta alt" data-act="retake">RETAKE</button><button type="button" class="cta" data-act="keep">KEEP PHOTO</button></div></div>`;
+    if (booth.st==='qr') return `<div class="booth fade"><h2 class="sh2">Fotografia ta</h2>
+      <div class="qrcard"><canvas id="qr" width="290" height="290" aria-label="Cod QR demonstrativ"></canvas></div>
+      <p class="disc"><b style="color:var(--gilt)">QR demonstrativ.</b> Nu duce la nicio fotografie. Descărcarea prin QR va fi disponibilă după conectarea aparatului foto și a stocării online.</p>
+      <button type="button" class="cta" data-act="booth-done">GATA</button></div>`;
+    return `<div class="fade" style="display:flex;flex-direction:column;flex:1">${backBtn2()}<div class="booth">
+      <button type="button" class="shutter" data-act="shoot">${MODS.booth.icon}<b>TAKE A PHOTO</b><span>Fă o fotografie</span></button>
+      <p class="disc">Numărătoare de 3 secunde. În prototip se folosește o fotografie demonstrativă, nu camera.</p></div></div>`;
+  }
+};
+
+function seatResults(){
+  const q = norm(seatQ);
+  if (q.length < 2) return '<p class="none">Introduceți cel puțin 2 litere.</p>';
+  const hits = S.guests.map((g,i)=>({g,i})).filter(({g})=>norm(g.name).split(/[\s-]+/).some(w=>w.startsWith(q)) || norm(g.name).includes(q)).slice(0,12);
+  if (!hits.length) return '<p class="none">Nu am găsit acest nume. Vă rugăm să întrebați personalul de la intrare.</p>';
+  return hits.map(({g,i})=>`<button type="button" data-act="seat" data-i="${i}"><span>${esc(g.name)}</span><em>Masa ${g.table}</em></button>`).join('');
+}
+
+function renderStage(){
+  $('#mono').innerHTML = `${esc(initials())}<svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="25"/></svg>`;
+  $('#mono').setAttribute('aria-label', mode==='live' ? 'Monogramă (ține apăsat 3 secunde pentru administrare)' : 'Monogramă');
+  $('#stageRight').innerHTML = mode==='test'
+    ? `<span class="test-tag">MOD TEST</span> <button type="button" class="ghost" data-act="exit-test">Închide testul</button>` : '';
+  $('#stageRight').style.display = 'flex'; $('#stageRight').style.gap = '8px'; $('#stageRight').style.alignItems = 'center';
+  $('#sbody').className = 'sbody' + (gView==='home' ? ' wide' : '');
+  $('#sbody').innerHTML = VIEWS[gView]();
+  if (gView==='booth' && booth.st==='qr') drawDemoQR($('#qr'));
+  if (gView==='play'){ const v=$('#sbody video');
+    if (v) v.addEventListener('ended', ()=>go('next'));
+    else timers.push(setTimeout(()=>go('next'), 12600)); }
+  if (gView==='next' && !afterMods().length) timers.push(setTimeout(()=>go('home'), 9000));
+  if (gView==='seating' && seatSel===null){ const i=$('#gsearch'); if(i && matchMedia('(hover:hover)').matches) i.focus(); }
+  bumpIdle();
+}
+
+function render(){
+  const inAdmin = mode==='admin';
+  $('#admin').hidden = !inAdmin; $('#actionbar').hidden = !inAdmin; $('#stage').hidden = inAdmin;
+  document.body.style.overflow = inAdmin ? '' : 'hidden';
+  if (inAdmin) renderAdmin(); else renderStage();
+}
+
+function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+function go(v){
+  clearTimers();
+  if (v!=='booth') booth = {st:'idle',n:3,photo:null};
+  if (v!=='seating'){ seatQ=''; seatSel=null; }
+  gView = v; renderStage(); $('#stage').scrollTop = 0;
+}
+function bumpIdle(){
+  clearTimeout(idleT);
+  if (mode!=='live' || gView==='home') return;
+  idleT = setTimeout(()=>{ const v=$('#sbody video'); if (v && !v.paused && !v.ended) return bumpIdle(); go('home'); }, 90000);
+}
+
+/* ---------- Photo booth ---------- */
+function shoot(){
+  booth = {st:'count', n:3, photo:null}; renderStage();
+  const step = () => {
+    booth.n--;
+    if (booth.n > 0){ renderStage(); timers.push(setTimeout(step, 1000)); return; }
+    const f = document.createElement('div'); f.className='flash'; document.body.appendChild(f); setTimeout(()=>f.remove(), 600);
+    CameraAdapter.capture().then(p=>{ booth = {st:'preview', n:0, photo:p}; renderStage(); });
+  };
+  timers.push(setTimeout(step, 1000));
+}
+function rnd(seed){ let s=seed>>>0||1; return ()=>((s=Math.imul(s^s>>>15,1|s)+0x6D2B79F5|0, ((s^s>>>7)>>>0)/4294967296)); }
+function drawDemoPhoto(){
+  const c=document.createElement('canvas'); c.width=800; c.height=1000; const x=c.getContext('2d'); const r=rnd(Date.now());
+  const g=x.createLinearGradient(0,0,0,1000); const h=290+r()*60;
+  g.addColorStop(0,`hsl(${h},35%,22%)`); g.addColorStop(1,`hsl(${h+20},40%,9%)`); x.fillStyle=g; x.fillRect(0,0,800,1000);
+  for(let i=0;i<46;i++){ const cx=r()*800, cy=r()*620, rad=14+r()*60; const b=x.createRadialGradient(cx,cy,0,cx,cy,rad);
+    b.addColorStop(0,`hsla(${35+r()*20},80%,75%,${.22+r()*.3})`); b.addColorStop(1,'hsla(40,80%,70%,0)'); x.fillStyle=b; x.beginPath(); x.arc(cx,cy,rad,0,7); x.fill(); }
+  const n=2+Math.floor(r()*3), w=800/(n+1);
+  for(let i=1;i<=n;i++){ const px=w*i+(r()-.5)*40, top=430+r()*80, s=.9+r()*.25;
+    x.fillStyle='rgba(14,6,16,.92)'; x.beginPath(); x.ellipse(px,top+330*s,120*s,250*s,0,Math.PI,0); x.fill();
+    x.beginPath(); x.arc(px,top,62*s,0,7); x.fill(); }
+  x.fillStyle='#f4ead8'; x.fillRect(0,850,800,150);
+  x.fillStyle='#3a1d3d'; x.textAlign='center';
+  x.font="italic 52px 'Bodoni Moda', Georgia, serif"; x.fillText(S.couple,400,925);
+  x.font="24px 'Jost', system-ui, sans-serif"; x.fillStyle='#8a6a3a'; x.fillText(dateStr().toUpperCase(),400,966);
+  x.fillStyle='rgba(0,0,0,.45)'; x.fillRect(24,24,330,40); x.fillStyle='#fff'; x.textAlign='left';
+  x.font="600 18px 'Jost', system-ui, sans-serif"; x.fillText('FOTOGRAFIE DEMONSTRATIVĂ',40,51);
+  return Promise.resolve(c.toDataURL('image/jpeg',.88));
+}
+function drawDemoQR(cv){
+  if(!cv) return; const x=cv.getContext('2d'), N=29, m=10; const r=rnd(1337);
+  x.fillStyle='#fff'; x.fillRect(0,0,290,290); x.fillStyle='#1c0f1e';
+  const finder=(a,b)=>{ x.fillRect(a*m,b*m,7*m,7*m); x.fillStyle='#fff'; x.fillRect((a+1)*m,(b+1)*m,5*m,5*m); x.fillStyle='#1c0f1e'; x.fillRect((a+2)*m,(b+2)*m,3*m,3*m); };
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){ const inF=(i<8&&j<8)||(i>N-9&&j<8)||(i<8&&j>N-9); if(!inF && r()<.48) x.fillRect(i*m,j*m,m,m); }
+  finder(0,0); finder(N-7,0); finder(0,N-7);
+  x.fillStyle='#fff'; x.fillRect(85,115,120,60); x.strokeStyle='#1c0f1e'; x.lineWidth=2; x.strokeRect(85,115,120,60);
+  x.fillStyle='#1c0f1e'; x.font="600 26px 'Jost', system-ui, sans-serif"; x.textAlign='center'; x.fillText('DEMO',145,155);
+}
+
+/* ---------- Live ---------- */
+function liveSummary(){
+  const on = enabledMods(); const vids = S.categories.filter(c=>c.video).length;
+  $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lvT">
+    <h2 id="lvT">Pornești evenimentul?</h2>
+    <div class="sum">
+      <div><span>Eveniment</span><b>${esc(S.eventName)}</b></div>
+      ${Object.entries(MODS).map(([k,m])=>`<div><span>${m.admin}</span><span class="${S.modules[k]?'on':'off'}">${S.modules[k]?'Activ':'Ascuns'}</span></div>`).join('')}
+      ${S.modules.welcome?`<div><span>Videoclipuri reale</span><b>${vids} din ${S.categories.length}</b></div>`:''}
+      ${S.modules.seating?`<div><span>Invitați în listă</span><b>${S.guests.length}</b></div>`:''}
+    </div>
+    ${S.modules.welcome && vids<S.categories.length?'<p class="note">Categoriile fără video vor afișa redarea simulată.</p>':''}
+    ${S.modules.booth?'<p class="note">Photo Booth folosește fotografii și QR demonstrative.</p>':''}
+    <p class="hint">Panoul de administrare va fi ascuns. Pentru a reveni: ține apăsat 3 secunde pe monograma din stânga sus și introdu PIN-ul (${esc(S.pin)}). Nu este un mod kiosk real; cineva poate ieși din aplicație cu tastatura (Esc, Alt+Tab).</p>
+    <div class="btns" style="justify-content:flex-end"><button type="button" class="btn" data-act="modal-close">Anulează</button>
+      <button type="button" class="btn primary" data-act="live-go" ${on.length?'':'disabled'}>${on.length?'Pornește evenimentul':'Activează un modul'}</button></div></div>`;
+  $('#modal').hidden = false;
+}
+async function keepAwake(){ try{ if('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){} }
+function startLive(){
+  S.live = true; save(); mode='live'; $('#modal').hidden = true; gView='home';
+  try{ const p=document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if(p&&p.catch) p.catch(()=>{}); }catch(e){}
+  keepAwake(); render();
+}
+function exitLive(){
+  S.live=false; save(); mode='admin'; $('#pin').hidden=true; clearTimers(); clearTimeout(idleT);
+  try{ if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }catch(e){}
+  try{ wakeLock && wakeLock.release(); }catch(e){}
+  render(); window.scrollTo(0,0);
+}
+let pinVal='', pinErr='';
+function renderPin(){
+  $('#pin').innerHTML = `<p class="eyebrow">Administrare</p><p style="font-family:var(--f-display);font-style:italic;font-size:1.6rem">Introdu PIN-ul</p>
+    <div class="dots">${[0,1,2,3].map(i=>`<i class="${i<pinVal.length?'f':''}"></i>`).join('')}</div><p class="err" aria-live="polite">${pinErr}</p>
+    <div class="pad">${[1,2,3,4,5,6,7,8,9].map(d=>`<button type="button" data-act="pd" data-d="${d}">${d}</button>`).join('')}
+      <button type="button" class="t" data-act="pin-cancel">Anulează</button><button type="button" data-act="pd" data-d="0">0</button><button type="button" class="t" data-act="pd-del">Șterge</button></div>`;
+}
+
+/* ---------- Events ---------- */
+const A = {
+  tab(el){ tab=el.dataset.k; resetAsk=false; renderAdmin(); },
+  test(){ mode='test'; gView='home'; booth={st:'idle',n:3,photo:null}; seatQ=''; seatSel=null; keepAwake(); render(); },
+  'exit-test'(){ clearTimers(); mode='admin'; render(); },
+  'live-ask'(){ liveSummary(); },
+  'modal-close'(){ $('#modal').hidden=true; },
+  'live-go'(){ startLive(); },
+  go(el){ go(el.dataset.v); },
+  async play(el){ curCat=el.dataset.id; const c=S.categories.find(x=>x.id===curCat); if(c&&c.video) await videoURL(c.id); go('play'); },
+  seat(el){ seatSel=+el.dataset.i; renderStage(); },
+  'seat-back'(){ seatSel=null; renderStage(); },
+  shoot(){ shoot(); }, retake(){ clearTimers(); shoot(); },
+  async keep(){ if(mode==='live'){ S.keptPhotos=(S.keptPhotos||0)+1; save(); } await ShareAdapter.publish(booth.photo); booth.st='qr'; renderStage(); },
+  'booth-done'(){ go('home'); },
+  reset(){ resetAsk=true; renderAdmin(); }, 'reset-no'(){ resetAsk=false; renderAdmin(); },
+  async 'reset-yes'(){ for(const c of S.categories){ if(c.video){ try{await IDB.del(c.id);}catch(e){} } } S=demoState(); pendingData=null; save(); resetAsk=false; renderAdmin(); },
+  delguest(el){ S.guests.splice(+el.dataset.i,1); save(); renderAdmin(); },
+  bulk(){
+    const lines = $('#bulk').value.split('\n').map(l=>l.trim()).filter(l=>l && !/^nume\b/i.test(norm(l))); let ok=0, bad=0;
+    for(const l of lines){ const p=l.split(/[;\t]/).map(s=>s.trim()); const t=parseInt(p[1],10);
+      if(!p[0]||!(t>0)){ bad++; continue; }
+      S.guests.push({name:p[0],table:t}); ok++; }
+    save(); renderAdmin(); const d=$('details'); if(d) d.open=true;
+    $('#bulkMsg').textContent = `${ok} adăugați${bad?`, ${bad} rânduri ignorate (lipsește numele sau masa)`:''}.`;
+  },
+  addcat(){ S.categories.push({id:'c'+Date.now().toString(36), name:'Categorie nouă', msg:'Ne bucurăm că sunteți aici!'}); save(); renderAdmin(); },
+  async delcat(el){ const c=S.categories[+el.dataset.i]; if(c.video){ try{await IDB.del(c.id);}catch(e){} }
+    S.categories.splice(+el.dataset.i,1); const fb=S.categories[S.categories.length-1].id; S.guests.forEach(g=>{ if(g.cat===c.id) g.cat=fb; }); save(); renderAdmin(); },
+  async delvid(el){ const c=S.categories[+el.dataset.i]; try{await IDB.del(c.id);}catch(e){} if(vurls[c.id]){URL.revokeObjectURL(vurls[c.id]); delete vurls[c.id];} delete c.video; save(); renderAdmin(); },
+  async trycat(el){ const c=S.categories[+el.dataset.i]; mode='test'; curCat=c.id; if(c.video) await videoURL(c.id); render(); go('play'); },
+  pd(el){ if(pinVal.length>=4) return; pinVal+=el.dataset.d; pinErr='';
+    if(pinVal.length===4){ if(pinVal===String(S.pin)){ pinVal=''; exitLive(); return; } pinErr='PIN incorect'; pinVal=''; } renderPin(); },
+  'pd-del'(){ pinVal=pinVal.slice(0,-1); renderPin(); },
+  'upd-apply'(){ if(pendingData){ applyData(pendingData); renderAdmin(); } },
+  'upd-skip'(){ if(pendingData){ S.dataVersion = pendingData.version||0; save(); pendingData=null; renderAdmin(); } },
+  export(){ exportData(); },
+  async recheck(){ const d = await loadData(); const m=$('#chkMsg');
+    if(!d){ if(m) m.textContent='Fără conexiune — încearcă din nou când ai internet.'; return; }
+    DATA = d; if((d.version||0) > (S.dataVersion||0)){ pendingData=d; renderAdmin(); window.scrollTo(0,0); }
+    else if(m) m.textContent='Ai deja cea mai nouă versiune (v'+(S.dataVersion||0)+').'; },
+  'pin-cancel'(){ pinVal=''; pinErr=''; $('#pin').hidden=true; }
+};
+document.addEventListener('click', e => { const el=e.target.closest('[data-act]'); if(!el || el.disabled) return; const f=A[el.dataset.act]; if(f) f(el,e); });
+
+$('#admin').addEventListener('input', e => {
+  const t=e.target;
+  if (t.dataset.k){ S[t.dataset.k] = t.dataset.k==='pin' ? t.value.replace(/\D/g,'').slice(0,4) : t.value; if(t.dataset.k==='pin') t.value=S.pin; save();
+    if(t.dataset.k==='couple') $('#hName').textContent=S.couple; }
+  else if (t.dataset.cat){ S.categories[+t.dataset.cat][t.dataset.ck]=t.value; save(); }
+  else if (t.id==='gfilter'){ const pos=t.selectionStart; renderAdmin(); const n=$('#gfilter'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(_){} }
+});
+$('#admin').addEventListener('change', async e => {
+  const t=e.target;
+  if (t.dataset.mod){ S.modules[t.dataset.mod]=t.checked; save(); const n=$('#modNote'); if(n) n.textContent=modNote(); }
+  if (t.dataset.vid && t.files && t.files[0]){
+    const c=S.categories[+t.dataset.vid], f=t.files[0];
+    try { await IDB.put(c.id, f); if(vurls[c.id]){URL.revokeObjectURL(vurls[c.id]); delete vurls[c.id];}
+      c.video={name:f.name,size:f.size}; save(); }
+    catch(err){ vurls[c.id]=URL.createObjectURL(f); c.video={name:f.name+' (doar până la reîncărcare)',size:f.size}; }
+    renderAdmin();
+  }
+});
+$('#admin').addEventListener('submit', e => {
+  if (e.target.id!=='addForm') return; e.preventDefault();
+  const name=$('#ng-name').value.trim(), table=parseInt($('#ng-table').value,10);
+  if(!name||!(table>0)) return;
+  S.guests.push({name,table}); save(); renderAdmin(); $('#ng-name').focus();
+});
+$('#stage').addEventListener('input', e => { if(e.target.id==='gsearch'){ seatQ=e.target.value; $('#res').innerHTML=seatResults(); } });
+$('#stage').addEventListener('pointerdown', bumpIdle);
+
+/* hold-to-exit pe monogramă (doar LIVE) */
+let holdT=null;
+const mono=$('#mono');
+mono.addEventListener('pointerdown', e => { if(mode!=='live') return; e.preventDefault(); mono.classList.add('holding');
+  holdT=setTimeout(()=>{ mono.classList.remove('holding'); pinVal=''; pinErr=''; renderPin(); $('#pin').hidden=false; }, 3000); });
+['pointerup','pointerleave','pointercancel'].forEach(ev=>mono.addEventListener(ev,()=>{ clearTimeout(holdT); mono.classList.remove('holding'); }));
+mono.addEventListener('contextmenu', e=>e.preventDefault());
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && mode!=='admin') keepAwake(); });
+
+async function loadData(){
+  try {
+    const r = await fetch('data.json', {cache:'no-cache'});
+    if (r.ok) return await r.json();
+  } catch(e) {}
+  return null;
+}
+(async function boot(){
+  DATA = await loadData();
+  if (!S || !S.modules || !Array.isArray(S.guests)) { S = demoState(); save(); }
+  else if (DATA && (DATA.version||0) > (S.dataVersion||0)) pendingData = DATA;
+  mode = S.live ? 'live' : 'admin';
+  render();
+  verifyVideos();
+  if (S.live) keepAwake();
+})();
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+addEventListener('online', ()=>{ if(mode==='admin') renderAdmin(); });
+addEventListener('offline', ()=>{ if(mode==='admin') renderAdmin(); });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "note": "Datele demonstrative inițiale.",
+  "event": {
+    "couple": "Ioana & Andrei",
+    "eventName": "Nunta Ioanei și a lui Andrei",
+    "date": "2027-06-19",
+    "venue": "Conacul de pe Deal, Sibiu",
+    "modules": {
+      "welcome": true,
+      "seating": true,
+      "booth": true
+    },
+    "pin": "1234",
+    "categories": [
+      {
+        "id": "familie",
+        "name": "Familie",
+        "msg": "Vă mulțumim că ne-ați crescut, ne-ați sprijinit și sunteți azi alături de noi. Seara asta e și a voastră."
+      },
+      {
+        "id": "prieteni",
+        "name": "Prieteni",
+        "msg": "Ați fost cu noi la fiecare poveste. Acum ne ajutați să scriem cea mai frumoasă. Distracție plăcută!"
+      },
+      {
+        "id": "colegi",
+        "name": "Colegi",
+        "msg": "Mulțumim că ați lăsat ședințele deoparte pentru noi. Azi singurul termen limită e ringul de dans."
+      },
+      {
+        "id": "altele",
+        "name": "Alte persoane",
+        "msg": "Ne bucurăm mult că sunteți aici. Bine ați venit la nunta noastră!"
+      }
+    ],
+    "guests": [
+      {
+        "name": "Maria Popescu",
+        "table": 1
+      },
+      {
+        "name": "Ion Popescu",
+        "table": 1
+      },
+      {
+        "name": "Tudor Cârstea",
+        "table": 1
+      },
+      {
+        "name": "Elena Ionescu",
+        "table": 2
+      },
+      {
+        "name": "George Enache",
+        "table": 2
+      },
+      {
+        "name": "Lucia Enache",
+        "table": 2
+      },
+      {
+        "name": "Ștefan Dumitrescu",
+        "table": 3
+      },
+      {
+        "name": "Ana-Maria Constantin",
+        "table": 3
+      },
+      {
+        "name": "Irina Bălan",
+        "table": 3
+      },
+      {
+        "name": "Mihai Rădulescu",
+        "table": 4
+      },
+      {
+        "name": "Cristina Țurcanu",
+        "table": 4
+      },
+      {
+        "name": "Paul Vișan",
+        "table": 4
+      },
+      {
+        "name": "Alexandru Stoica",
+        "table": 5
+      },
+      {
+        "name": "Ioana Mureșan",
+        "table": 5
+      },
+      {
+        "name": "Bogdan Neagu",
+        "table": 5
+      },
+      {
+        "name": "Diana Florea",
+        "table": 6
+      },
+      {
+        "name": "Radu Gheorghiu",
+        "table": 6
+      },
+      {
+        "name": "Andreea Lazăr",
+        "table": 7
+      },
+      {
+        "name": "Vlad Munteanu",
+        "table": 7
+      },
+      {
+        "name": "Simona Pătrașcu",
+        "table": 7
+      }
+    ]
+  }
+}

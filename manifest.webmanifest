@@ -1,0 +1,18 @@
+{
+  "name": "Wedding Welcome",
+  "short_name": "Welcome",
+  "description": "Ecranul de bun venit pentru invitați: mesajul mirilor, găsirea mesei și photo booth.",
+  "lang": "ro",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#160b18",
+  "theme_color": "#160b18",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
