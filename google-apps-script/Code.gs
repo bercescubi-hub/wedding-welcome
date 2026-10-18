@@ -33,29 +33,40 @@ const TEXT_COLS = ['id','createdAt','phone','eventDate','startTime','lastEmail']
 const CLIENT_KEYS = ['name','phone','email','eventType','eventDate','startTime','county','city','venue','guests','package','outside','km','transport','packagePrice','total','clientMessage','source'];
 const ADMIN_KEYS = ['status','package','outside','km','transport','packagePrice','discountType','discountValue','total','cost','profit','staffMenuByClient','notes','name','phone','email','eventDate','startTime','county','city','venue','guests','eventType'];
 
-/* ---------------- intrări web ---------------- */
+/* ---------------- intrări web ----------------
+   Aplicația vorbește cu scriptul prin fetch (GET/POST). Dacă browserul blochează citirea răspunsului,
+   trece pe „JSONP”: același apel, trimis ca GET cu ?payload=…&callback=…, iar răspunsul vine ca script. */
 function doGet(e) {
   const p = (e && e.parameter) || {};
+  const cb = /^[A-Za-z_$][\w$]{0,40}$/.test(p.callback || '') ? p.callback : '';
+  let out;
   try {
-    if (p.action === 'config') return json({ ok: true, config: publicConfig() });
-    if (p.key !== ADMIN_KEY) return json({ ok: false, error: 'Cheie greșită' });
-    if (p.action === 'list') return json({ ok: true, rows: listRows(), settings: getSettings(), account: Session.getEffectiveUser().getEmail() });
-    if (p.action === 'ping') return json({ ok: true, account: Session.getEffectiveUser().getEmail() });
-    return json({ ok: false, error: 'Acțiune necunoscută' });
-  } catch (err) { return json({ ok: false, error: String(err) }); }
+    if (p.payload) out = handle_(JSON.parse(p.payload));
+    else if (p.action === 'config') out = { ok: true, config: publicConfig() };
+    else if (p.key !== ADMIN_KEY) out = { ok: false, error: 'Cheie greșită' };
+    else if (p.action === 'list') out = { ok: true, rows: listRows(), settings: getSettings(), account: Session.getEffectiveUser().getEmail() };
+    else if (p.action === 'ping') out = { ok: true, account: Session.getEffectiveUser().getEmail() };
+    else out = { ok: false, error: 'Acțiune necunoscută' };
+  } catch (err) { out = { ok: false, error: String(err) }; }
+  return json(out, cb);
 }
 
 function doPost(e) {
   let d = {};
   try { d = JSON.parse((e && e.postData && e.postData.contents) || '{}'); } catch (err) { return json({ ok: false, error: 'Date invalide' }); }
-  try {
-    if (d.action === 'submit') return json(submit(d.data || {}));
-    if (d.key !== ADMIN_KEY) return json({ ok: false, error: 'Cheie greșită' });
-    if (d.action === 'update') return json(updateRow(d.id, d.fields || {}));
-    if (d.action === 'email') return json(sendEmail(d));
-    if (d.action === 'settings') { saveSettings(d.settings || {}); return json({ ok: true }); }
-    return json({ ok: false, error: 'Acțiune necunoscută' });
-  } catch (err) { return json({ ok: false, error: String(err) }); }
+  try { return json(handle_(d)); } catch (err) { return json({ ok: false, error: String(err) }); }
+}
+
+function handle_(d) {
+  if (d.action === 'submit') return submit(d.data || {});
+  if (d.action === 'config') return { ok: true, config: publicConfig() };
+  if (d.key !== ADMIN_KEY) return { ok: false, error: 'Cheie greșită' };
+  if (d.action === 'list') return { ok: true, rows: listRows(), settings: getSettings(), account: Session.getEffectiveUser().getEmail() };
+  if (d.action === 'ping') return { ok: true, account: Session.getEffectiveUser().getEmail() };
+  if (d.action === 'update') return updateRow(d.id, d.fields || {});
+  if (d.action === 'email') return sendEmail(d);
+  if (d.action === 'settings') { saveSettings(d.settings || {}); return { ok: true }; }
+  return { ok: false, error: 'Acțiune necunoscută' };
 }
 
 /* ---------------- foi ---------------- */
@@ -163,4 +174,7 @@ function sendEmail(d) {
   return { ok: true, lastEmail: stamp, sentFrom: opts.from || me };
 }
 
-function json(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+function json(o, callback) {
+  if (callback) return ContentService.createTextOutput(callback + '(' + JSON.stringify(o) + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}

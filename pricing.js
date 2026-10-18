@@ -71,5 +71,19 @@
       staff, menu, fuel, consumables, equipment, cost, profit: total - cost, margin: total ? (total - cost) / total : 0 };
   }
   const lei = n => Math.round(num(n)).toLocaleString('ro-RO') + ' lei';
+  /** Apel JSONP către scriptul Google: ocolește blocările de tip CORS. */
+  g.WWJsonp = function (url, payload) {
+    return new Promise((resolve, reject) => {
+      const cb = '__ww' + Date.now().toString(36) + Math.floor(Math.random() * 1e6);
+      const src = url + (url.includes('?') ? '&' : '?') + 'payload=' + encodeURIComponent(JSON.stringify(payload)) + '&callback=' + cb;
+      if (src.length > 14000) return reject(new Error('Mesajul e prea lung pentru conexiunea de rezervă. Scurtează textul.'));
+      const s = document.createElement('script'); let done = false;
+      const end = () => { done = true; clearTimeout(t); delete g[cb]; s.remove(); };
+      const t = setTimeout(() => { if (!done) { end(); reject(new Error('Google nu a răspuns. Verifică internetul și dacă scriptul e publicat cu acces „Oricine”.')); } }, 25000);
+      g[cb] = d => { end(); resolve(d); };
+      s.onerror = () => { if (!done) { end(); reject(new Error('Browserul a blocat conexiunea la Google. Încearcă dezactivarea extensiilor de blocare pentru acest site.')); } };
+      s.src = src; document.head.appendChild(s);
+    });
+  };
   g.WWPricing = { DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, num, yes, lei };
 })(typeof window !== 'undefined' ? window : globalThis);

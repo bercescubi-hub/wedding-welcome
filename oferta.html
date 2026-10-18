@@ -193,7 +193,8 @@ renderPackages(); update();
 document.addEventListener('change', update); document.addEventListener('input', e => { if (e.target.getAttribute('aria-invalid')) e.target.removeAttribute('aria-invalid'); });
 
 /* prețurile reale, dacă scriptul Google e conectat */
-if (CFG.scriptUrl) fetch(CFG.scriptUrl + '?action=config').then(r => r.json()).then(d => {
+let viaJsonp = false;   // devine true dacă browserul nu ne lasă să citim răspunsul Google
+if (CFG.scriptUrl) fetch(CFG.scriptUrl + '?action=config').then(r => r.json()).catch(e => { viaJsonp = true; return window.WWJsonp(CFG.scriptUrl, { action:'config' }); }).then(d => {
   if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages; S.pricing = d.config.pricing || S.pricing; renderPackages(); update(); }
 }).catch(() => {});
 
@@ -215,8 +216,9 @@ $('#f').addEventListener('submit', async e => {
     website: $('#website').value, source: new URLSearchParams(location.search).get('sursa') || 'formular' };
   const btn = $('#send'); btn.disabled = true; btn.textContent = 'SE TRIMITE…';
   try {
-    const r = await fetch(CFG.scriptUrl, { method:'POST', body: JSON.stringify({ action:'submit', data }) });
-    const d = await r.json();
+    let d;
+    if (viaJsonp) d = await window.WWJsonp(CFG.scriptUrl, { action:'submit', data });
+    else { const r = await fetch(CFG.scriptUrl, { method:'POST', body: JSON.stringify({ action:'submit', data }) }); d = await r.json(); }
     if (!d.ok) throw new Error(d.error || 'eroare');
     $('#page').hidden = true; $('#done').hidden = false; window.scrollTo(0,0);
     try { $('#dWhen').textContent = new Date(data.eventDate + 'T12:00:00').toLocaleDateString('ro-RO', {day:'numeric', month:'long', year:'numeric'}); } catch(_) { $('#dWhen').textContent = data.eventDate; }
