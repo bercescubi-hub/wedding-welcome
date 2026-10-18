@@ -215,18 +215,46 @@ $('#f').addEventListener('submit', async e => {
     transport: String(c.transport), packagePrice: String(c.price), total: String(c.total), clientMessage: $('#clientMessage').value.trim(),
     website: $('#website').value, source: new URLSearchParams(location.search).get('sursa') || 'formular' };
   const btn = $('#send'); btn.disabled = true; btn.textContent = 'SE TRIMITE…';
-  try {
-    let d;
-    if (viaJsonp) d = await window.WWJsonp(CFG.scriptUrl, { action:'submit', data });
-    else { const r = await fetch(CFG.scriptUrl, { method:'POST', body: JSON.stringify({ action:'submit', data }) }); d = await r.json(); }
-    if (!d.ok) throw new Error(d.error || 'eroare');
-    $('#page').hidden = true; $('#done').hidden = false; window.scrollTo(0,0);
-    try { $('#dWhen').textContent = new Date(data.eventDate + 'T12:00:00').toLocaleDateString('ro-RO', {day:'numeric', month:'long', year:'numeric'}); } catch(_) { $('#dWhen').textContent = data.eventDate; }
-  } catch (x) {
-    err.textContent = 'Nu am putut trimite cererea. Verificați conexiunea și încercați din nou.'; err.hidden = false;
-    btn.disabled = false; btn.textContent = 'CERE OFERTA';
-  }
+  if (await sendLead(data)) { showDone(data); return; }
+  // nu a mers: păstrăm cererea pe acest telefon (o retrimitem la următoarea deschidere) și oferim emailul ca alternativă
+  try { localStorage.setItem('ww-pending', JSON.stringify(data)); } catch (_) {}
+  showFallback(data);
+  btn.disabled = false; btn.textContent = 'ÎNCEARCĂ DIN NOU';
 });
+
+/** Trimite cererea: întâi direct, apoi pe calea de rezervă. O cerere dublată se poate șterge; una pierdută, nu. */
+async function sendLead(data) {
+  if (!CFG.scriptUrl) return false;
+  const payload = { action:'submit', data };
+  if (!viaJsonp) {
+    try { const r = await fetch(CFG.scriptUrl, { method:'POST', body: JSON.stringify(payload) }); const d = await r.json(); if (d.ok) return true; }
+    catch (_) {}
+  }
+  try { const d = await window.WWJsonp(CFG.scriptUrl, payload); return !!(d && d.ok); } catch (_) { return false; }
+}
+function fmtDay(s) { try { return new Date(s + 'T12:00:00').toLocaleDateString('ro-RO', {day:'numeric', month:'long', year:'numeric'}); } catch(_) { return s; } }
+function showDone(data) {
+  try { localStorage.removeItem('ww-pending'); } catch (_) {}
+  $('#page').hidden = true; $('#done').hidden = false; window.scrollTo(0,0);
+  $('#dWhen').textContent = fmtDay(data.eventDate);
+}
+function showFallback(data) {
+  const pk = (S.packages.find(p => p.id === data.package) || {}).name || data.package;
+  const body = [`Bună ziua! Aș dori o ofertă Wedding Welcome.`, '',
+    `Nume: ${data.name}`, `Telefon: ${data.phone}`, `Email: ${data.email}`, '',
+    `Eveniment: ${data.eventType}, ${fmtDay(data.eventDate)}${data.startTime ? ', ora ' + data.startTime : ''}`,
+    `Invitați: ${data.guests || '-'}`, `Locație: ${[data.venue, data.city, 'jud. ' + data.county].filter(Boolean).join(', ')}`,
+    `Pachet: ${pk}`, `Estimare: ${P.lei(data.total)}`, data.clientMessage ? `\nMesaj: ${data.clientMessage}` : ''].join('\n');
+  const to = CFG.contactEmail || '';
+  const href = `mailto:${to}?subject=${encodeURIComponent('Cerere ofertă Wedding Welcome · ' + fmtDay(data.eventDate))}&body=${encodeURIComponent(body)}`;
+  const err = $('#err');
+  err.innerHTML = `Nu am reușit să trimitem cererea automat. Datele dumneavoastră nu s-au pierdut: le puteți trimite cu un singur buton pe email${to ? ` (<b>${esc(to)}</b>)` : ''}, sau încercați din nou peste câteva minute.
+    <span style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><a class="send" style="text-decoration:none;display:inline-block" href="${href}">TRIMITE PE EMAIL</a></span>`;
+  err.hidden = false;
+}
+/* o cerere rămasă netrimisă data trecută pe acest telefon pleacă acum, în liniște */
+(async () => { let p = null; try { p = JSON.parse(localStorage.getItem('ww-pending')); } catch (_) {}
+  if (p && p.name) { await new Promise(r => setTimeout(r, 1500)); if (await sendLead(p)) { try { localStorage.removeItem('ww-pending'); } catch (_) {} } } })();
 </script>
 </body>
 </html>
