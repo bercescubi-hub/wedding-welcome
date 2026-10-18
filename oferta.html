@@ -228,14 +228,17 @@ async function sendLead(data) {
   lastErr = [];
   if (!CFG.scriptUrl) { lastErr.push('fără adresă de script'); return false; }
   const payload = { action:'submit', data };
-  if (!viaJsonp) {
-    try { const r = await fetch(CFG.scriptUrl, { method:'POST', body: JSON.stringify(payload) }); const t = await r.text();
-      let d; try { d = JSON.parse(t); } catch (_) { lastErr.push('POST: răspuns ' + r.status + ' ' + t.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120)); }
-      if (d && d.ok) return true; if (d && !d.ok) lastErr.push('POST: ' + (d.error || 'eroare')); }
-    catch (e) { lastErr.push('POST: ' + (e && e.message || e)); }
-  }
-  try { const d = await window.WWJsonp(CFG.scriptUrl, payload); if (d && d.ok) return true; lastErr.push('JSONP: ' + ((d && d.error) || 'eroare')); return false; }
-  catch (e) { lastErr.push('JSONP: ' + (e && e.message || e).toString().slice(0, 120)); return false; }
+  const url = CFG.scriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(payload));
+  const read = async (r, tag) => { const t = await r.text(); try { const d = JSON.parse(t); if (!d.ok) lastErr.push(tag + ': ' + (d.error || 'eroare')); return !!d.ok; }
+    catch (_) { lastErr.push(tag + ': răspuns ' + r.status + ' ' + t.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100)); return false; } };
+  // 1. ca un link deschis în browser (metoda care merge și pe iPhone)
+  try { if (await read(await fetch(url, { redirect: 'follow' }), 'GET')) return true; } catch (e) { lastErr.push('GET: ' + (e && e.message || e)); }
+  // 2. ca script (ocolește blocările de citire a răspunsului)
+  try { const d = await window.WWJsonp(CFG.scriptUrl, payload); if (d && d.ok) return true; lastErr.push('JSONP: ' + ((d && d.error) || 'eroare')); }
+  catch (e) { lastErr.push('JSONP: ' + String(e && e.message || e).slice(0, 100)); }
+  // 3. trimitere clasică
+  try { if (await read(await fetch(CFG.scriptUrl, { method:'POST', body: JSON.stringify(payload) }), 'POST')) return true; } catch (e) { lastErr.push('POST: ' + (e && e.message || e)); }
+  return false;
 }
 function fmtDay(s) { try { return new Date(s + 'T12:00:00').toLocaleDateString('ro-RO', {day:'numeric', month:'long', year:'numeric'}); } catch(_) { return s; } }
 function showDone(data) {

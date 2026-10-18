@@ -128,7 +128,17 @@ function submit(data) {
   row.staffMenuByClient = 'nu';
   row.source = row.source || 'formular';
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
-  try { sheet_().appendRow(KEYS.map(k => asText_(k, row[k] == null ? '' : row[k]))); }
+  try {
+    // aceeași cerere trimisă de două ori în 2 minute (de ex. browserul a reîncercat): păstrăm una singură
+    const sh = sheet_(), n = Math.min(20, sh.getLastRow() - 1);
+    if (n > 0) {
+      const recent = sh.getRange(sh.getLastRow() - n + 1, 1, n, KEYS.length).getDisplayValues();
+      const I = k => KEYS.indexOf(k), now = Date.now();
+      const dup = recent.find(r => r[I('name')] === row.name && r[I('email')] === row.email && r[I('eventDate')] === row.eventDate && now - Date.parse(r[I('createdAt')]) < 120000);
+      if (dup) return { ok: true, id: dup[0], duplicate: true };
+    }
+    sh.appendRow(KEYS.map(k => asText_(k, row[k] == null ? '' : row[k])));
+  }
   finally { lock.releaseLock(); }
   return { ok: true, id: row.id };
 }
