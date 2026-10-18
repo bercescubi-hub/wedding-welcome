@@ -78,6 +78,7 @@ function handle_(d) {
   if (d.action === 'accountMeta') return accountMeta_(d.id, d.role, d.email);
   if (d.action === 'shareSheet') return shareSheet_(d.id, d.access);
   if (d.action === 'accountDel') return accountDel_(d.id);
+  if (d.action === 'deleteLead') return deleteLead_(d.id);
   return { ok: false, error: 'Acțiune necunoscută' };
 }
 
@@ -153,6 +154,13 @@ function updateRow(id, fields) {
     sh.getRange(r, 1, 1, KEYS.length).setValues([cur]);
     return { ok: true };
   } finally { lock.releaseLock(); }
+}
+
+/** Șterge definitiv o cerere din foaia „Cereri” (doar administratori). */
+function deleteLead_(id) {
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try { const sh = sheet_(), r = findRow_(sh, id); if (r > 0) sh.deleteRow(r); return { ok: true, deleted: r > 0 }; }
+  finally { lock.releaseLock(); }
 }
 
 /* ---------------- setări ---------------- */

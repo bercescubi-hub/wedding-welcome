@@ -331,6 +331,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
 .stp{display:inline-block;font-size:.76rem;font-weight:600;padding:3px 10px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
 .st-new{color:var(--accent)} .st-c{color:var(--gold)} .st-o{color:var(--warn)} .st-ok{color:var(--ok)} .st-no{color:var(--muted)}
 .sheet.wide{max-width:680px}
+.sheet.still{animation:none}
 .shead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .info{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;font-size:.93rem}
 @media (max-width:520px){.info{grid-template-columns:1fr}}
@@ -395,7 +396,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.3.0';
+const APP_VERSION = '3.4.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();

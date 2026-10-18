@@ -122,7 +122,7 @@
   }
 
   function hubView() {
-    const leads = C.leads, nNew = leads.filter(l => (l.status || 'Nou') === 'Nou').length;
+    const leads = C.leads.filter(l => l.status !== 'Șters'), nNew = leads.filter(l => (l.status || 'Nou') === 'Nou').length;
     const live = W.live && W.published ? 'LIVE acum' : W.published ? (JSON.stringify(W.draft) === JSON.stringify(W.published) ? 'Publicat' : 'Modificări nepublicate') : 'Nepublicat';
     return `${header('Bună, ' + esc(USER.username) + '!', 'Wedding Welcome · Administrare', false)}
       <div class="hub">
@@ -158,7 +158,12 @@
     accBusy = true;
     try { const d = await api('POST', { action: 'accounts' }); accList = d.accounts || []; C.meId = d.me; }
     catch (e) { accList = accList || []; accMsg._ = e.message; }
-    accBusy = false; if (area === 'conturi') render();
+    accBusy = false; refreshAccPanel();
+  }
+  /** Redesenează doar lista de conturi, ca să nu se piardă ce scrii în restul paginii (de ex. parola nouă). */
+  function refreshAccPanel() {
+    const el = document.getElementById('accPanel');
+    if (el && area === 'conturi') el.innerHTML = accountsPanel(); else if (area === 'conturi') render();
   }
   const ROLE = { admin: 'Administrator', user: 'Utilizator' };
   const ACCESS = { none: 'Fără acces', view: 'Poate vedea', edit: 'Poate edita' };
@@ -188,7 +193,7 @@
   }
   function conturiView() {
     return `${header('Conturi', 'Administrare', true)}
-      ${accountsPanel()}
+      <div id="accPanel">${accountsPanel()}</div>
       ${adminAccount()}`;
   }
 
@@ -210,9 +215,9 @@
     const S = C.settings;
     const MONTHS = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
     const ym = l => { const m = /^(\d{4})-(\d{2})/.exec(String(l.eventDate || '')); return m ? [m[1], +m[2]] : ['', 0]; };
-    const years = [...new Set(C.leads.map(l => ym(l)[0]).filter(Boolean).concat(String(new Date().getFullYear())))].sort();
+    const years = [...new Set(C.leads.filter(l => l.status !== 'Șters').map(l => ym(l)[0]).filter(Boolean).concat(String(new Date().getFullYear())))].sort();
     const inPeriod = l => { const [y, m] = ym(l); return (fYear === 'Toate' || y === fYear) && (fMonth === 'Toate' || m === +fMonth); };
-    const all = C.leads.map(l => ({ l, c: P.calc(l, S), st: l.status || 'Nou' }));
+    const all = C.leads.filter(l => l.status !== 'Șters').map(l => ({ l, c: P.calc(l, S), st: l.status || 'Nou' }));
     const rows = all.filter(r => inPeriod(r.l));
     const period = fYear === 'Toate' && fMonth === 'Toate' ? 'toată perioada' : [fMonth === 'Toate' ? '' : MONTHS[+fMonth - 1], fYear === 'Toate' ? '' : fYear].filter(Boolean).join(' ');
     const sum = (arr, f) => arr.reduce((a, x) => a + f(x), 0);
@@ -289,7 +294,8 @@
   function renderLead() {
     const S = C.settings;
     if (compose) return renderCompose();
-    $('#modal').innerHTML = `<div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="ldT">
+    const anim = $('#modal').hidden ? '' : ' still';
+    $('#modal').innerHTML = `<div class="sheet wide${anim}" role="dialog" aria-modal="true" aria-labelledby="ldT">
       <div class="shead"><div><p class="eyebrow-a">${fmtD(L.eventDate)} · ${esc(L.eventType || 'Eveniment')}</p><h2 id="ldT">${esc(L.name)}</h2></div>
         <button type="button" class="x" data-act="crm-close" aria-label="Închide">×</button></div>
       <div class="info">
@@ -303,7 +309,7 @@
       ${L.clientMessage ? `<p class="note" style="border-style:solid">„${esc(L.clientMessage)}”</p>` : ''}
       <div class="row2">
         <div class="field"><label for="l-st">Status</label><select class="inp" id="l-st" data-l="status">${P.STATUSES.map(s => `<option ${s === L.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
-        <div class="field"><label for="l-pk">Pachet</label><select class="inp" id="l-pk" data-l="package">${S.packages.map(p => `<option value="${esc(p.id)}" ${P.pkgOf(S, L.package) === p ? 'selected' : ''}>${esc(p.name)} · ${lei(p.price)}</option>`).join('')}</select></div>
+        <div class="field"><label for="l-pk">Pachet</label><select class="inp" id="l-pk" data-l="package">${P.pkgOf(S, L.package) ? '' : '<option value="" selected>Alege pachetul</option>'}${S.packages.map(p => `<option value="${esc(p.id)}" ${P.pkgOf(S, L.package) === p ? 'selected' : ''}>${esc(p.name)} · ${lei(p.price)}</option>`).join('')}</select></div>
       </div>
       <div class="row2">
         <div class="field"><label for="l-km">Km de la București${S.pricing.roundTrip ? ' (sens unic; se facturează dus-întors)' : ''}</label>
@@ -318,7 +324,10 @@
       <div id="calcBox">${breakdown()}</div>
       <div class="field"><label for="l-notes">Note interne (nu le vede clientul)</label><textarea class="inp" id="l-notes" data-l="notes" rows="3" style="min-height:70px">${esc(L.notes || '')}</textarea></div>
       <p class="hint" id="ldMsg">${esc(L._msg || '')}</p>
+      ${L._del ? `<div class="draft dirty"><p>Ștergi definitiv cererea lui <b>${esc(L.name)}</b>? Dispare din aplicație și din Google Sheet și nu poate fi recuperată.</p>
+        <div class="btns"><button type="button" class="btn danger" data-act="crm-del-yes">Da, șterge</button><button type="button" class="btn" data-act="crm-del-no">Anulează</button></div></div>` : ''}
       <div class="btns" style="justify-content:flex-end">
+        ${isAdmin() && !L._del ? `<button type="button" class="btn danger" data-act="crm-del" style="margin-right:auto">Șterge cererea</button>` : ''}
         <button type="button" class="btn" data-act="crm-compose" ${L.email ? '' : 'disabled title="Cererea nu are email"'}>Trimite email</button>
         <button type="button" class="btn primary" data-act="crm-save">Salvează în Google Sheets</button></div>
     </div>`;
@@ -361,7 +370,8 @@
   }
   function renderCompose() {
     const S = C.settings;
-    $('#modal').innerHTML = `<div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="cpT">
+    const anim = $('#modal').hidden ? '' : ' still';
+    $('#modal').innerHTML = `<div class="sheet wide${anim}" role="dialog" aria-modal="true" aria-labelledby="cpT">
       <div class="shead"><div><p class="eyebrow-a">Email către ${esc(L.name)}</p><h2 id="cpT">Trimite email</h2></div>
         <button type="button" class="x" data-act="crm-close" aria-label="Închide">×</button></div>
       <div class="row2">
@@ -508,19 +518,36 @@
       if (role !== a.role || email !== (a.email || '')) { const d = await api('POST', { action: 'accountMeta', id, role, email }); a.role = d.role; a.email = d.email; }
       if (access !== (a.sheetAccess || 'none')) { await api('POST', { action: 'shareSheet', id, access }); a.sheetAccess = access; }
       accMsg[id] = '<span class="ok-msg">Aplicat.</span>';
-      if (id === USER.id && role === 'user') { C.role = 'user'; save(); }
+      if (id === USER.id && role === 'user') { C.role = 'user'; save(); return render(); }
     } catch (e) { accMsg[id] = `<span class="err-msg">${esc(e.message)}</span>`; }
-    render();
+    refreshAccPanel();
+  }
+  async function deleteLead() {
+    const id = L.id, m = $('#ldMsg');
+    if (m) { m.textContent = 'Se șterge…'; m.className = 'hint'; }
+    try {
+      try { await api('POST', { action: 'deleteLead', id }); }
+      catch (e) {
+        // scriptul publicat e încă versiunea fără ștergere: o marcăm „Șters”, ca să dispară din aplicație
+        if (!/necunoscut/i.test(e.message)) throw e;
+        await api('POST', { action: 'update', id, fields: { status: 'Șters' } });
+      }
+      C.leads = C.leads.filter(x => x.id !== id); save();
+      $('#modal').hidden = true; L = null; compose = null; note = 'Cererea a fost ștearsă.'; noteOk = true; rerender();
+    } catch (e) { L._del = false; renderLead(); const n = $('#ldMsg'); if (n) { n.textContent = 'Nu am putut șterge: ' + e.message; n.className = 'hint err-msg'; } }
   }
   Object.assign(A, {
+    'crm-del'() { L._del = true; renderLead(); },
+    'crm-del-no'() { L._del = false; renderLead(); },
+    'crm-del-yes'() { deleteLead(); },
     'crm-acc-save'(el) { saveAccount(el.dataset.id); },
-    'crm-acc-del'(el) { accMsg.del = el.dataset.id; render(); },
-    'crm-acc-del-no'() { accMsg.del = null; render(); },
+    'crm-acc-del'(el) { accMsg.del = el.dataset.id; refreshAccPanel(); },
+    'crm-acc-del-no'() { accMsg.del = null; refreshAccPanel(); },
     async 'crm-acc-del-yes'(el) {
       const id = el.dataset.id; accMsg.del = null;
       try { await api('POST', { action: 'accountDel', id }); accList = accList.filter(a => a.id !== id); }
       catch (e) { accMsg[id] = `<span class="err-msg">${esc(e.message)}</span>`; }
-      render();
+      refreshAccPanel();
     },
     'crm-view'(el) { view = el.dataset.k; note = ''; render(); window.scrollTo(0, 0); },
     'crm-filter'(el) { filter = el.dataset.k; render(); },
@@ -587,7 +614,7 @@
 
   window.CRM = {
     isAdmin() { if (!C) load(); return isAdmin(); },
-    reloadAccounts() { accList = null; if (area === 'conturi') render(); },
+    reloadAccounts() { accList = null; if (area === 'conturi') { const el = document.getElementById('accPanel'); if (el) { el.innerHTML = accountsPanel(); } } },
     pushAccounts() { if (!C) load(); return pushAccounts(false); },
     async deleteCloudAccount(id) { if (!C) load(); if (configured()) { try { await api('POST', { action: 'accountDel', id }); } catch (e) {} } },
     cloudStatus() {
