@@ -94,7 +94,7 @@
       const end = () => { done = true; clearTimeout(t); delete g[cb]; s.remove(); };
       const t = setTimeout(() => { if (!done) { end(); reject(new Error('Google nu a răspuns. Verifică internetul și dacă scriptul e publicat cu acces „Oricine”.')); } }, 25000);
       g[cb] = d => { end(); resolve(d); };
-      s.onerror = () => { if (!done) { end(); reject(new Error('Browserul a blocat conexiunea la Google. Încearcă dezactivarea extensiilor de blocare pentru acest site.')); } };
+      s.onerror = () => { if (!done) { end(); reject(new Error('Google a răspuns cu o pagină de eroare în loc de date. De obicei scriptul cere o autorizare nouă: în Apps Script alege funcția „setup”, apasă Run și acceptă permisiunile, apoi Deploy → Manage deployments → creion → New version → Deploy.')); } };
       s.src = src; document.head.appendChild(s);
     });
   };
