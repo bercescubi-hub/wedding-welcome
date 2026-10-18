@@ -293,6 +293,11 @@ select.inp{padding:9px 10px;font-size:15px}
 @keyframes c1{0%{transform:rotate(-30deg) translateX(-4px)}55%{transform:rotate(8deg) translateX(1px)}100%{transform:rotate(-6deg)}}
 @keyframes c2{0%{transform:rotate(30deg) translateX(4px)}55%{transform:rotate(-8deg) translateX(-1px)}100%{transform:rotate(6deg)}}
 .next .mods{margin-top:20px}
+/* totem vertical / ecran înalt: conținutul stă centrat, nu lipit sus */
+@media (orientation:portrait) and (min-height:860px){
+  .stage .sbody{justify-content:center;padding-bottom:5vh}
+  .stage .home,.stage .next{padding-top:0}
+}
 .ver{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
@@ -325,7 +330,7 @@ select.inp{padding:9px 10px;font-size:15px}
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.0.1';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
