@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagnostic · Wedding Welcome</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6efe3;color:#2f2118;font:15px/1.45 -apple-system,system-ui,sans-serif;padding:18px 16px 60px}
+h1{font:italic 500 1.6rem Georgia,serif;margin:0 0 4px}
+.hint{color:#6f5f52;font-size:.86rem}
+.card{background:#fff;border:1px solid #e3d6c3;border-radius:14px;padding:14px;margin-top:14px}
+.row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #efe6d8}
+.row:first-child{border-top:0}
+.ic{width:22px;flex:0 0 auto;text-align:center;font-weight:700}
+.ok{color:#2f7a4f}.no{color:#a3283a}.wait{color:#8a6630}
+.row small{display:block;color:#6f5f52;font-size:.78rem;overflow-wrap:anywhere}
+input{width:100%;box-sizing:border-box;border:1px solid #e3d6c3;border-radius:10px;padding:10px;font-size:16px;margin-top:6px}
+button{margin-top:10px;border:0;background:#5c2350;color:#fff;border-radius:99px;padding:12px 20px;font-weight:600;font-size:15px}
+.verdict{font-weight:600;font-size:1.05rem}
+</style>
+</head>
+<body>
+<h1>Diagnostic conexiune</h1>
+<p class="hint">Fă o captură de ecran cu toată pagina după ce se termină testele și trimite-o lui Claude.</p>
+
+<div class="card"><div class="verdict" id="verdict">Se testează…</div><div class="hint" id="meta"></div></div>
+<div class="card" id="tests"></div>
+
+<div class="card">
+  <b>Test autentificare</b>
+  <p class="hint">Opțional: scrie un utilizator și parola lui. Parola nu se afișează și nu se salvează.</p>
+  <input id="u" placeholder="Utilizator" autocapitalize="none" autocomplete="off">
+  <input id="p" placeholder="Parolă" type="password" autocomplete="off">
+  <button id="go">Testează autentificarea</button>
+  <div id="login"></div>
+</div>
+
+<script src="config.js"></script>
+<script src="pricing.js"></script>
+<script>
+const URL_ = (window.WW_CONFIG || {}).scriptUrl;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+$('#meta').textContent = navigator.userAgent + ' · ' + new Date().toLocaleString('ro-RO');
+const results = {};
+function row(id, label) { $('#tests').insertAdjacentHTML('beforeend', `<div class="row" id="r-${id}"><span class="ic wait">…</span><div>${esc(label)}<small></small></div></div>`); }
+function set(id, ok, detail) {
+  results[id] = ok; const r = $('#r-' + id);
+  r.querySelector('.ic').className = 'ic ' + (ok ? 'ok' : 'no'); r.querySelector('.ic').textContent = ok ? '✓' : '✗';
+  r.querySelector('small').textContent = detail;
+}
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('fără răspuns în ' + ms / 1000 + 's')), ms))]);
+const q = obj => URL_ + '?payload=' + encodeURIComponent(JSON.stringify(obj));
+
+/* fereastră invizibilă prin GET (iframe cu adresa directă) */
+function frameGet(payload) {
+  return new Promise((resolve, reject) => {
+    const nonce = 'g' + Date.now().toString(36);
+    const ifr = document.createElement('iframe'); ifr.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;border:0';
+    const onMsg = ev => { const m = ev.data; if (m && m.__ww === nonce) { window.removeEventListener('message', onMsg); ifr.remove(); resolve(m.data); } };
+    window.addEventListener('message', onMsg);
+    ifr.src = q(payload) + '&via=frame&nonce=' + nonce; document.body.appendChild(ifr);
+    setTimeout(() => { window.removeEventListener('message', onMsg); ifr.remove(); reject(new Error('fără răspuns')); }, 15000);
+  });
+}
+
+const TESTS = [
+  ['a', 'Cerere directă (GET)', async () => { const r = await fetch(q({ action: 'config' })); const t = await r.text(); return [/"ok":true/.test(t), 'HTTP ' + r.status + ' · ' + t.slice(0, 90)]; }],
+  ['b', 'Cerere directă fără cookie-uri Google', async () => { const r = await fetch(q({ action: 'config' }), { credentials: 'omit' }); const t = await r.text(); return [/"ok":true/.test(t), 'HTTP ' + r.status + ' · ' + t.slice(0, 90)]; }],
+  ['c', 'Cerere fără citirea răspunsului (no-cors)', async () => { const r = await fetch(q({ action: 'config' }), { mode: 'no-cors' }); return [true, 'tip răspuns: ' + r.type + ' (ajunge la Google, dar răspunsul nu poate fi citit)']; }],
+  ['d', 'Script (JSONP)', async () => { const d = await window.WWJsonp(URL_, { action: 'config' }); return [!!(d && d.ok), JSON.stringify(d).slice(0, 90)]; }],
+  ['e', 'Fereastră invizibilă (POST)', async () => { const d = await window.WWFrame(URL_, { action: 'config' }, 15000); return [!!(d && d.ok), JSON.stringify(d).slice(0, 90)]; }],
+  ['f', 'Fereastră invizibilă (GET)', async () => { const d = await frameGet({ action: 'config' }); return [!!(d && d.ok), JSON.stringify(d).slice(0, 90)]; }],
+];
+(async () => {
+  if (!URL_) { $('#verdict').textContent = 'Lipsește adresa scriptului din config.js'; return; }
+  TESTS.forEach(([id, l]) => row(id, l));
+  await Promise.all(TESTS.map(async ([id, , fn]) => {
+    try { const [ok, d] = await withTimeout(fn(), 20000); set(id, ok, d); }
+    catch (e) { set(id, false, String(e && e.message || e).slice(0, 140)); }
+  }));
+  const works = ['a', 'd', 'e', 'f'].filter(k => results[k]);
+  $('#verdict').innerHTML = works.length
+    ? `<span class="ok">Merge pe acest telefon</span> prin: ${works.map(k => TESTS.find(t => t[0] === k)[1]).join(', ')}`
+    : `<span class="no">Nicio cale nu merge pe acest telefon.</span> ${results.c ? 'Telefonul ajunge la Google, dar Google nu trimite date înapoi (de obicei: scriptul cere autentificare Google).' : ''}`;
+})();
+
+async function pbkdf2(pass, salt) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: Uint8Array.from(atob(salt), c => c.charCodeAt(0)), iterations: 150000 }, key, 256);
+  return btoa(String.fromCharCode(...new Uint8Array(bits)));
+}
+$('#go').onclick = async () => {
+  const u = $('#u').value.trim(), p = $('#p').value, box = $('#login');
+  box.innerHTML = '<p class="hint">Se testează…</p>';
+  try {
+    const s = await window.WWNet.call(URL_, { action: 'authSalt', username: u }, false);
+    const r = await window.WWNet.call(URL_, { action: 'login', username: u, hash: await pbkdf2(p, s.salt) }, false);
+    box.innerHTML = r.ok
+      ? `<p class="ok"><b>✓ Autentificarea merge</b> (rol: ${esc(r.role)}) · cale: ${esc(window.WWNet.mode)}</p>`
+      : `<p class="no"><b>✗ ${esc(r.error)}</b> · cale: ${esc(window.WWNet.mode)}</p><p class="hint">Dacă scrie „greșite”, legătura merge, dar utilizatorul nu e în foaia „Conturi” sau parola diferă.</p>`;
+  } catch (e) { box.innerHTML = `<p class="no"><b>✗ ${esc(String(e && e.message || e))}</b></p>`; }
+};
+</script>
+</body>
+</html>
