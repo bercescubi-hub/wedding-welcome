@@ -114,6 +114,7 @@ section{scroll-margin-top:16px}
 .pk label:has(input:checked) .pick{color:var(--plum);font-weight:600}
 .pk label:has(input:checked) .pick::before{border-color:var(--plum);background:radial-gradient(circle,var(--plum) 0 5px,#fff 6px)}
 .pk-note{font-size:.9rem;color:var(--muted);margin-top:16px}
+.promo{margin-top:16px!important;padding:14px 16px;border:1px solid var(--gold);border-radius:14px;background:var(--gold-soft);color:var(--ink)!important;font-size:.98rem}
 
 /* ---- formular ---- */
 form{display:flex;flex-direction:column;gap:18px}
@@ -244,6 +245,8 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
           <p class="eyebrow">Cerere de ofertă</p>
           <h2 id="fTitle">Hai să pregătim un bun venit perfect pentru evenimentul vostru.</h2>
           <p>Spuneți-ne câteva detalii despre eveniment, iar noi vom reveni cu o ofertă personalizată.</p>
+          <!-- PROMOȚIE: se ascunde singură după data din data-until -->
+          <p class="promo" data-until="2026-12-31"><b>Rezervați până la finalul anului</b> și puteți câștiga <b>40% reducere</b> la evenimentul vostru: în ianuarie 2027 alegem 3 evenimente dintre rezervările făcute până la 31 decembrie 2026.</p>
         </div>
 
         <div>
@@ -425,6 +428,7 @@ $('#waLink').addEventListener('click', () => {
 document.addEventListener('input', updateWa);
 
 /* ---------- pornire ---------- */
+document.querySelectorAll('[data-until]').forEach(el => { if (new Date() > new Date(el.dataset.until + 'T23:59:59')) el.hidden = true; });
 renderCounties();
 $('#eventDate').min = new Date().toISOString().slice(0, 10);
 renderPackages(); update();
