@@ -354,14 +354,15 @@ function esc_(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<
 function sendEmail(d) {
   if (!d.to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.to)) return { ok: false, error: 'Adresa de email a clientului nu e validă' };
   const me = Session.getEffectiveUser().getEmail();
-  const opts = { name: d.fromName || 'Wedding Welcome', replyTo: d.fromEmail || me,
-    htmlBody: '<div style="font-family:Georgia,serif;font-size:15px;line-height:1.6;color:#26182a">' + esc_(d.body || '').replace(/\n/g, '<br>') + '</div>' };
+  const opts = { name: d.fromName || 'WE WELCOME', replyTo: d.fromEmail || me,
+    htmlBody: (typeof d.html === 'string' && d.html.length > 20 && d.html.length < 200000) ? d.html   // emailul cu logo, făcut de aplicație
+      : '<div style="font-family:Georgia,serif;font-size:15px;line-height:1.6;color:#26182a">' + esc_(d.body || '').replace(/\n/g, '<br>') + '</div>' };
   if (d.fromEmail && d.fromEmail.toLowerCase() !== String(me).toLowerCase()) {
     const aliases = GmailApp.getAliases().map(a => a.toLowerCase());
     if (aliases.indexOf(d.fromEmail.toLowerCase()) < 0) return { ok: false, error: 'Adresa ' + d.fromEmail + ' nu e configurată ca alias în Gmail-ul contului ' + me + '. Folosește ' + me + ' sau adaug-o în Gmail → Setări → Conturi → Trimite mesaje ca.' };
     opts.from = d.fromEmail;
   }
-  GmailApp.sendEmail(d.to, d.subject || 'Wedding Welcome', d.body || '', opts);
+  GmailApp.sendEmail(d.to, d.subject || 'WE WELCOME', d.body || '', opts);
   const stamp = Utilities.formatDate(new Date(), 'Europe/Bucharest', 'yyyy-MM-dd HH:mm') + ' · ' + (d.template || 'email');
   const f = { lastEmail: stamp }; if (d.newStatus) f.status = d.newStatus;
   if (d.id) { const sh = sheet_(); const r = findRow_(sh, d.id);

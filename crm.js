@@ -368,6 +368,21 @@
   /* ---------- email ---------- */
   /** Numerele de contact din config.js, ca „0737 376 128 / 0752 425 550”. */
   const phones = () => ((window.WW_CONFIG || {}).contactPhones || []).map(t => String(t).replace(/\D/g, '').replace(/^(\d{4})(\d{3})(\d{3})$/, '$1 $2 $3')).join(' / ');
+  /** Oferta „scrisă frumos”: ce include pachetul + tabelul cu prețurile (marcaje pe care emailul le transformă în listă și tabel). */
+  function offerTable(l, S, c) {
+    if (!c.pkg) return '';
+    const n0 = v => Math.round(num(v)).toLocaleString('ro-RO');
+    const NAMES = { welcome: 'Mesaje video de bun venit, filmate de noi', seating: 'Fiecare invitat își găsește masa pe ecran', booth: 'Photo Booth pentru amintiri memorabile' };
+    const inc = (c.pkg.modules || []).map(m => NAMES[m] || P.MODULE_NAMES[m] || m);
+    if (c.hasBooth) { inc.push('Stick cu pozele de la eveniment'); if (c.album !== 'nu') inc.push('Albumul foto al serii'); }
+    const rows = [`| Pachet **${c.pkg.name}** · ${c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore'} | ${n0(c.price)} lei |`];
+    if (c.albumExtra) rows.push(`| Album foto | ${n0(c.albumExtra)} lei |`);
+    if (c.transport) rows.push(`| Transport · ${c.billedKm} km | ${n0(c.transport)} lei |`);
+    if (c.discount) rows.push(`| Reducere${l.discountType === '%' ? ' ' + num(l.discountValue) + '%' : ''} | − ${n0(c.discount)} lei |`);
+    if (c.vat && !c.vatIncluded) rows.push(`| TVA ${c.vatRate}% | ${n0(c.vat)} lei |`);
+    rows.push(`| **Total${c.vat && c.vatIncluded ? ' (TVA inclus)' : ''}** | **${n0(c.total)} lei** |`);
+    return 'Ce include:\n' + inc.map(x => '- ' + x).join('\n') + '\n\n' + rows.join('\n');
+  }
   function fill(t, l) {
     const S = C.settings, c = P.calc(l, S);
     // rândurile cu {reducere} apar doar dacă oferta are o reducere
@@ -379,7 +394,7 @@
       pachet: c.pkg ? c.pkg.name : '', ore: c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore',
       pret_pachet: n0(c.price), transport: n0(c.transport), km: String(c.billedKm), reducere: n0(c.discount), total: n0(c.total),
       tva: n0(c.vat), total_fara_tva: n0(c.net), cota_tva: String(c.vatRate),
-      expeditor: S.email.fromName || '', invitati: l.guests || '', telefoane: phones(),
+      expeditor: S.email.fromName || '', invitati: l.guests || '', telefoane: phones(), tabel_oferta: offerTable(l, S, c),
       procent_avans: String(num(S.pricing.advancePct)), zile_plata: String(num(S.pricing.payDays || 10)), avans: n0(c.total * num(S.pricing.advancePct) / 100),
       termen_plata: new Date(Date.now() + num(S.pricing.payDays || 10) * 864e5).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }),
       album: c.album === 'inclus' ? 'inclus în pachet' : c.albumExtra ? n0(c.albumExtra) + ' lei' : 'nu'
@@ -403,14 +418,18 @@
       </div>
       <div class="field"><label for="cp-to">Către</label><input class="inp" id="cp-to" value="${esc(compose.to)}"></div>
       <div class="field"><label for="cp-s">Subiect</label><input class="inp" id="cp-s" value="${esc(compose.subject)}"></div>
-      <div class="field"><label for="cp-b">Mesaj</label><textarea class="inp" id="cp-b" rows="12" style="min-height:260px">${esc(compose.body)}</textarea></div>
+      <div class="field"><label for="cp-b">Mesaj</label><textarea class="inp" id="cp-b" rows="12" style="min-height:260px">${esc(compose.body)}</textarea>
+        <p class="hint">Marcaje: <code>## Titlu</code> · <code>- listă</code> · <code>| text | sumă |</code> rând de tabel · <code>**îngroșat**</code>. Așa arată emailul:</p></div>
+      <iframe id="cp-prev" title="Previzualizare email" style="width:100%;height:520px;border:1px solid var(--line,#ddd);border-radius:12px;background:#f6efe3"></iframe>
       ${compose.newStatus ? `<p class="hint">După trimitere, statusul devine <b>${esc(compose.newStatus)}</b>.</p>` : ''}
       ${compose.err ? `<p class="hint err-msg">${esc(compose.err)}</p>` : ''}
       <div class="btns" style="justify-content:flex-end"><button type="button" class="btn" data-act="crm-compose-back" ${compose.sending ? 'disabled' : ''}>Înapoi la cerere</button>
         <button type="button" class="btn primary" data-act="crm-send" ${compose.sending ? 'disabled' : ''}>${compose.sending ? 'Se trimite…' : 'Trimite'}</button></div>
     </div>`;
     $('#modal').hidden = false;
+    updatePreview();
   }
+  function updatePreview() { const f = $('#cp-prev'), b = $('#cp-b'); if (f && b) f.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:0">' + P.emailHtml(b.value) + '</body>'; }
   async function send() {
     compose.to = $('#cp-to').value.trim(); compose.subject = $('#cp-s').value; compose.body = $('#cp-b').value;
     if (/\[COMPLETEAZĂ/i.test(compose.subject + compose.body)) { compose.err = 'Emailul are încă un loc de completat ([COMPLETEAZĂ…]). Completează-l aici sau în Șabloane email, apoi trimite.'; return renderCompose(); }
@@ -419,8 +438,11 @@
     try {
       // salvăm întâi prețul calculat, ca Sheet-ul să conțină exact ce i-am trimis clientului
       const f = leadFields(); await api('POST', { action: 'update', id: L.id, fields: f });
-      const d = await api('POST', { action: 'email', id: L.id, to: compose.to, subject: compose.subject, body: compose.body,
-        fromEmail: S.email.fromEmail, fromName: S.email.fromName, template: t ? t.name : 'email', newStatus: compose.newStatus || '' });
+      const msg = { action: 'email', id: L.id, to: compose.to, subject: compose.subject, body: P.emailText(compose.body), html: P.emailHtml(compose.body),
+        fromEmail: S.email.fromEmail, fromName: S.email.fromName, template: t ? t.name : 'email', newStatus: compose.newStatus || '' };
+      let d;
+      try { d = await api('POST', msg); }
+      catch (e) { if (!/prea lung/i.test(e.message)) throw e; delete msg.html; d = await api('POST', msg); }   // conexiunea de rezervă are limită de lungime: trimitem varianta simplă
       const i = C.leads.findIndex(x => x.id === L.id);
       if (i >= 0) { Object.assign(C.leads[i], f, { lastEmail: d.lastEmail }); if (compose.newStatus) C.leads[i].status = compose.newStatus; }
       Object.assign(L, f, { lastEmail: d.lastEmail }); if (compose.newStatus) L.status = compose.newStatus;
@@ -483,7 +505,7 @@
   /* ---------- Șabloane ---------- */
   function templatesView() {
     const S = C.settings;
-    const ph = ['avans', 'procent_avans', 'termen_plata', 'zile_plata', 'telefoane', 'album', 'prenume', 'nume_complet', 'data_eveniment', 'locatie_completa', 'localitate', 'pachet', 'ore', 'pret_pachet', 'transport', 'km', 'reducere', 'total', 'tva', 'total_fara_tva', 'cota_tva', 'invitati', 'expeditor'];
+    const ph = ['tabel_oferta', 'avans', 'procent_avans', 'termen_plata', 'zile_plata', 'telefoane', 'album', 'prenume', 'nume_complet', 'data_eveniment', 'locatie_completa', 'localitate', 'pachet', 'ore', 'pret_pachet', 'transport', 'km', 'reducere', 'total', 'tva', 'total_fara_tva', 'cota_tva', 'invitati', 'expeditor'];
     return `<section class="panel"><h2>Expeditor</h2>
         <div class="row2"><div class="field"><label>Emailul din care pleacă mesajele</label><input class="inp" type="email" data-s="email.fromEmail" value="${esc(S.email.fromEmail)}"></div>
           <div class="field"><label>Numele afișat</label><input class="inp" data-s="email.fromName" value="${esc(S.email.fromName)}"></div></div>
@@ -550,6 +572,9 @@
     let changed = false;
     if (t.body.includes(old)) { t.body = t.body.replace(old, 'Pentru rezervare, vă rugăm să ne confirmați pe email (răspunzând la acest mesaj) sau pe WhatsApp.'); changed = true; }
     if (changed && !t.body.includes('{telefoane}')) t.body = t.body.replace(/\{expeditor\}\s*$/, '{expeditor}\nTelefon / WhatsApp: {telefoane}');
+    if (S.email && S.email.fromName === 'Wedding Welcome') { S.email.fromName = 'WE WELCOME'; changed = true; }
+    if (t.subject === 'Oferta Wedding Welcome pentru {data_eveniment}') { t.subject = 'Oferta WE WELCOME pentru {data_eveniment}'; changed = true; }
+    if (t.body.includes('Pachet: {pret_pachet} lei') && t.body.includes('Vă mulțumim pentru interesul arătat')) { t.body = P.OFFER_BODY; changed = true; }
     const conf = (S.templates || []).find(x => x.id === 'confirmare');
     if (conf && conf.body.includes('vă vom cere lista invitaților cu mesele și videoclipurile')) { conf.body = P.CONFIRM_BODY; changed = true; }
     if (!(S.templates || []).some(x => x.id === 'reconfirmare')) {
@@ -686,6 +711,7 @@
     }
     if ((t.id === 'crmYear' || t.id === 'crmMonth') && e.type === 'change') { if (t.id === 'crmYear') fYear = t.value; else fMonth = t.value; render(); return; }
     if (t.id === 'crmQ' && e.type === 'input') { q = t.value; const pos = t.selectionStart; render(); const n = $('#crmQ'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } }
+    if (t.id === 'cp-b' && e.type === 'input') { clearTimeout(onField._pv); onField._pv = setTimeout(updatePreview, 250); }
     if (t.id === 'cp-t' && e.type === 'change' && compose) { const tpl = C.settings.templates.find(x => x.id === t.value); compose.tpl = t.value; compose.subject = fill(tpl.subject, L); compose.body = fill(tpl.body, L); compose.newStatus = tpl.status; compose.to = $('#cp-to').value; renderCompose(); }
   }
   document.addEventListener('input', onField);

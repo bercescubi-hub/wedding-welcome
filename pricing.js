@@ -2,6 +2,7 @@
    Folosit și de formularul public (oferta.html), și de aplicație (Evenimente), ca să calculeze la fel.
    Valorile de mai jos sunt cele implicite (fictive); cele reale se modifică din aplicație → Evenimente → Prețuri și costuri. */
 (function (g) {
+  const OFFER_BODY = 'Bună, {prenume}!\n\nVă mulțumim că v-ați gândit la WE WELCOME pentru evenimentul din {data_eveniment}.\n\n## Cum funcționează\nLa intrare, invitații sunt întâmpinați pe un ecran elegant de chiar voi, printr-un mesaj video. Își găsesc singuri masa în câteva secunde, iar la Photo Booth își fac o amintire de luat acasă. Voi vă bucurați de petrecere, noi ne ocupăm de primire.\n\n## Oferta pentru {data_eveniment}\n{tabel_oferta}\n\nOferta este valabilă 14 zile. Pentru rezervare, vă rugăm să ne confirmați pe email (răspunzând la acest mesaj) sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
   const CONFIRM_BODY = 'Bună, {prenume}!\n\nVă confirmăm rezervarea pachetului {pachet} pentru {data_eveniment}, la {locatie_completa}. Total: {total} lei.\n\nCu câteva săptămâni înainte vă vom contacta pentru lista finală a invitaților. Videoclipurile le vom realiza în ziua evenimentului.\n\nÎn ianuarie 2027 vă vom contacta pentru reconfirmare și achitarea unui avans de {procent_avans}%.\n\nVă mulțumim!\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
   const RECONFIRM_BODY = 'Bună, {prenume}!\n\nRevenim, așa cum am stabilit, pentru reconfirmarea rezervării pentru {data_eveniment}, la {locatie_completa} (pachetul {pachet}, total {total} lei).\n\nPentru a păstra rezervarea, vă rugăm să achitați avansul de {procent_avans}%, adică {avans} lei, în cel mult {zile_plata} zile de la primirea acestui email (până la {termen_plata}).\n\nDetalii pentru plată: [COMPLETEAZĂ: IBAN, titular, bancă]\n\nDupă primirea avansului vă trimitem confirmarea. Pentru orice întrebare ne găsiți pe email sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
   const DEFAULT_SETTINGS = {
@@ -17,10 +18,10 @@
     pricing: { kmRate: 2.5, roundTrip: true, maxKm: 300, vatPayer: true, vatRate: 21, pricesIncludeVat: true, albumPrice: 300, advancePct: 30, payDays: 10 },
     costs: { staffCount: 2, staffRate: 60, setupHours: 1, menuCost: 250, fuelPerKm: 1, boothConsumables: 250, equipment: 100, albumCost: 0,
       incomeTax: 1, payFee: 0, invoiceFixed: 0 },
-    email: { fromEmail: 'bercescubi@gmail.com', fromName: 'Wedding Welcome' },
+    email: { fromEmail: 'bercescubi@gmail.com', fromName: 'WE WELCOME' },
     templates: [
-      { id: 'oferta', name: 'Ofertă', status: 'Ofertă trimisă', subject: 'Oferta Wedding Welcome pentru {data_eveniment}',
-        body: 'Bună, {prenume}!\n\nVă mulțumim pentru interesul arătat. Pentru evenimentul din {data_eveniment}, de la {locatie_completa}, vă propunem pachetul {pachet} ({ore}).\n\nPachet: {pret_pachet} lei\nTransport: {transport} lei\nReducere: {reducere} lei\nTotal: {total} lei\n\nOferta este valabilă 14 zile. Pentru rezervare, vă rugăm să ne confirmați pe email (răspunzând la acest mesaj) sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}' },
+      { id: 'oferta', name: 'Ofertă', status: 'Ofertă trimisă', subject: 'Oferta WE WELCOME pentru {data_eveniment}',
+        body: OFFER_BODY },
       { id: 'confirmare', name: 'Confirmare rezervare', status: 'Confirmat', subject: 'Rezervarea pentru {data_eveniment} este confirmată',
         body: CONFIRM_BODY },
       { id: 'reconfirmare', name: 'Reconfirmare și avans', status: '', subject: 'Reconfirmare și avans pentru {data_eveniment}',
@@ -95,6 +96,40 @@
     return { outOfArea: outOfArea(km, S), pkg: p, price, hours, outside, km, billedKm, transport, subtotal, discount, base, total, vat, vatRate: vr, vatIncluded: !!(Pr.vatPayer && Pr.pricesIncludeVat), net,
       album, albumExtra, albumCost, hasBooth, staff, menu, fuel, consumables, equipment, cost, incomeTax, payFee, invoiceFee, taxes, profit, margin: net ? profit / net : 0 };
   }
+  /* ---------- emailuri frumoase: textul șablonului, cu marcaje simple, devine un email cu logo ----------
+     „## Titlu” = subtitlu · „- text” = listă · „| stânga | dreapta” = rând de tabel · „**text**” = îngroșat */
+  const LOGO_URL = 'https://bercescubi-hub.github.io/wedding-welcome/img/logo-light.png';
+  const escH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const inl = s => escH(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  function emailHtml(text) {
+    const lines = String(text || '').replace(/\r/g, '').split('\n'); let out = '', i = 0;
+    const P = 'margin:0 0 14px;font-size:15px;line-height:1.65;color:#2f2118';
+    while (i < lines.length) {
+      const l = lines[i];
+      if (!l.trim()) { i++; continue; }
+      if (/^##\s+/.test(l)) { out += `<h2 style="margin:26px 0 10px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:21px;color:#531c43">${inl(l.replace(/^##\s+/, ''))}</h2>`; i++; continue; }
+      if (/^\s*\|/.test(l)) {
+        let rows = '';
+        while (i < lines.length && /^\s*\|/.test(lines[i])) {
+          const c = lines[i].trim().replace(/^\||\|$/g, '').split('|').map(x => x.trim()); const tot = /^\*\*/.test(c[0] || '');
+          rows += `<tr><td style="padding:11px 14px;border-top:1px solid #eadfcd;font-size:15px;color:#2f2118${tot ? ';background:#f6efe3' : ''}">${inl(c[0] || '')}</td><td style="padding:11px 14px;border-top:1px solid #eadfcd;text-align:right;white-space:nowrap;font-size:15px;color:${tot ? '#531c43' : '#2f2118'}${tot ? ';background:#f6efe3;font-size:17px' : ''}">${inl(c[1] || '')}</td></tr>`; i++;
+        }
+        out += `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #eadfcd;border-radius:10px;margin:4px 0 18px">${rows}</table>`; continue;
+      }
+      if (/^\s*-\s+/.test(l)) {
+        let li = ''; while (i < lines.length && /^\s*-\s+/.test(lines[i])) { li += `<li style="margin:0 0 6px">${inl(lines[i].replace(/^\s*-\s+/, ''))}</li>`; i++; }
+        out += `<ul style="margin:0 0 16px;padding-left:20px;font-size:15px;line-height:1.6;color:#2f2118">${li}</ul>`; continue;
+      }
+      let para = []; while (i < lines.length && lines[i].trim() && !/^(##\s|\s*\||\s*-\s)/.test(lines[i])) { para.push(inl(lines[i])); i++; }
+      out += `<p style="${P}">${para.join('<br>')}</p>`;
+    }
+    return `<div style="background:#f6efe3;padding:24px 12px;font-family:Helvetica,Arial,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fffdf9;border-radius:16px;overflow:hidden;border-collapse:separate">
+<tr><td style="background:#531c43;padding:22px 16px;text-align:center"><img src="${LOGO_URL}" alt="WE WELCOME … You celebrate." width="190" height="109" style="display:inline-block;width:190px;max-width:70%;height:auto;border:0;color:#fff;font-family:Georgia,serif"></td></tr>
+<tr><td style="padding:28px 28px 14px">${out}</td></tr>
+<tr><td style="padding:16px 28px 22px;border-top:1px solid #eadfcd;text-align:center;font-size:12px;color:#8a7a6c;font-family:Georgia,serif;font-style:italic">WE WELCOME · … You celebrate.</td></tr></table></div>`;
+  }
+  /** Varianta text simplu (pentru programele de email fără HTML). */
+  const emailText = t => String(t || '').split('\n').map(l => /^\s*\|/.test(l) ? l.trim().replace(/^\||\|$/g, '').split('|').map(x => x.trim()).join(': ') : l.replace(/^##\s+/, '')).join('\n').replace(/\*\*(.+?)\*\*/g, '$1');
   const lei = n => Math.round(num(n)).toLocaleString('ro-RO') + ' lei';
   /** Tarif cu zecimale (ex. 2,5 lei), pentru lei/km. */
   const leiRate = n => num(n).toLocaleString('ro-RO', { maximumFractionDigits: 2 }) + ' lei';
@@ -175,5 +210,5 @@
       }
     }
   };
-  g.WWPricing = { CONFIRM_BODY, RECONFIRM_BODY, outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, albumIncluded, num, yes, lei, leiRate };
+  g.WWPricing = { emailHtml, emailText, OFFER_BODY, CONFIRM_BODY, RECONFIRM_BODY, outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, albumIncluded, num, yes, lei, leiRate };
 })(typeof window !== 'undefined' ? window : globalThis);
