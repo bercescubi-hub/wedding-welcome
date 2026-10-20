@@ -182,9 +182,12 @@ function lead(){
     km: outside ? P.estimateKm(county) : 0, discountType:'%', discountValue:0 };
 }
 function contactLinks(){
-  const mail = CFG.contactEmail, tel = (CFG.contactPhone || '').replace(/[^\d+]/g, '');
-  const wa = tel ? 'https://wa.me/' + tel.replace(/^\+/, '').replace(/^0/, '40') : '';
-  return [tel && `<a class="clink" href="tel:${esc(tel)}">Sună-ne</a>`, wa && `<a class="clink" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`,
+  const mail = CFG.contactEmail;
+  const phones = (CFG.contactPhones || (CFG.contactPhone ? [CFG.contactPhone] : [])).map(t => String(t).replace(/[^\d+]/g, '')).filter(Boolean);
+  const pretty = t => t.replace(/^(\d{4})(\d{3})(\d{3})$/, '$1 $2 $3');
+  const wa = phones[0] ? 'https://wa.me/' + phones[0].replace(/^\+/, '').replace(/^0/, '40') : '';
+  return [...phones.map(t => `<a class="clink" href="tel:${esc(t)}">Sună · ${esc(pretty(t))}</a>`),
+    wa && `<a class="clink" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`,
     mail && `<a class="clink" href="mailto:${esc(mail)}?subject=${encodeURIComponent('Ofertă specială Wedding Welcome')}">${esc(mail)}</a>`].filter(Boolean).join('');
 }
 let far = false;   // locația e în afara zonei acoperite
