@@ -69,6 +69,21 @@
     } catch (e) { note = navigator.onLine ? 'Nu am putut citi din Google Sheets: ' + e.message : 'Ești offline. Vezi ultimele cereri salvate pe laptop.'; noteOk = false; }
     busy = ''; rerender();
   }
+  /* Lista se reîncarcă singură din Sheets la fiecare intrare în Evenimente (dacă e mai veche de 20 s),
+     când revii în aplicație și la fiecare minut cât stă deschisă — ca telefonul și laptopul să arate același lucru. */
+  let lastTry = 0;
+  function autoSync(force) {
+    if (!C || !USER || mode !== 'admin' || area !== 'evenimente' || view !== 'cereri' || !configured() || busy || !navigator.onLine) return;
+    if (document.visibilityState === 'hidden') return;
+    const age = Date.now() - (Date.parse(C.lastSync || '') || 0);
+    if (!force && age < 20000) return;
+    if (Date.now() - lastTry < 15000) return;
+    lastTry = Date.now(); sync(true);
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') autoSync(true); });
+  window.addEventListener('focus', () => autoSync(true));
+  window.addEventListener('online', () => autoSync(true));
+  setInterval(() => autoSync(), 60000);
   /** Urcă în foaia „Conturi” conturile de pe acest dispozitiv (doar sarea și amprenta parolei), ca să meargă și de pe alte dispozitive. */
   async function pushAccounts(quiet) {
     if (!C || !configured()) return;
@@ -613,6 +628,6 @@
         + (cf.length ? ` <span class="warn-msg">Numele ${cf.map(esc).join(', ')} există deja în Google Sheet pentru alt cont; pe alte dispozitive se folosește acela.</span>` : '');
     },
     onLogin() { load(); view = 'cereri'; filter = 'Toate'; q = ''; note = ''; L = null; compose = null; if (configured() && navigator.onLine) sync(true); },
-    render() { if (!C) load(); if (area !== 'conturi') accList = null; renderArea(); if (area === 'evenimente' && view === 'cereri' && configured() && !C.lastSync && !busy) sync(); }
+    render() { if (!C) load(); if (area !== 'conturi') accList = null; renderArea(); autoSync(); }
   };
 })();
