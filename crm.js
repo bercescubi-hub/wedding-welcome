@@ -182,6 +182,11 @@
         </div>
         ${accMsg.del === a.id ? `<div class="btns"><span class="hint">Ștergi contul ${esc(a.username)}? Nu va mai putea intra, iar accesul la Sheet i se retrage.</span><button type="button" class="btn danger small" data-act="crm-acc-del-yes" data-id="${esc(a.id)}">Da, șterge</button><button type="button" class="btn small" data-act="crm-acc-del-no">Anulează</button></div>` : ''}
         <div class="btns"><button type="button" class="btn small primary" data-act="crm-acc-save" data-id="${esc(a.id)}">Aplică</button><span class="hint" id="am-${esc(a.id)}">${accMsg[a.id] || ''}</span></div>
+        <div class="row3" style="align-items:end">
+          <div class="field"><label>Parolă nouă (pentru toate dispozitivele)</label><input class="inp" type="text" data-acc="newpw" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="minim 6 caractere"></div>
+          <div class="field"><button type="button" class="btn small" data-act="crm-acc-pw" data-id="${esc(a.id)}">Setează parola</button></div>
+        </div>
+        ${accMsg['pw' + a.id] ? `<p class="hint" id="apw-${esc(a.id)}">${accMsg['pw' + a.id]}</p>` : ''}
       </div>`; }).join('')}
       <p class="hint">Accesul la Sheet trimite colaboratorului o invitație Google pe email. „Poate vedea” e suficient ca să urmărească cererile; „Poate edita” îi permite să modifice direct tabelul. Pentru lucrul în aplicație nu e nevoie de acces la Sheet. <a href="${sheetUrl}" target="_blank" rel="noopener">Deschide Sheet-ul</a></p>
     </section>`;
@@ -507,6 +512,29 @@
     try { await api('POST', { action: 'settings', settings: C.settings }); setDirty = false; save(); const n = $('#setMsg'); if (n) { n.textContent = 'Salvat automat în Google Sheets. Formularul public folosește aceste valori.'; n.className = 'hint ok-msg'; } }
     catch (e) { if (m) { m.textContent = 'Nu am putut salva: ' + e.message; m.className = 'hint err-msg'; } }
   }
+  /** Administratorul setează direct în Google Sheet parola unui cont (de ex. când pe telefon nu merge, deși pe laptop merge). */
+  async function setAccountPassword(id) {
+    const box = document.querySelector(`[data-accid="${CSS.escape(id)}"]`); if (!box) return;
+    const a = accList.find(x => x.id === id), pw = box.querySelector('[data-acc="newpw"]').value;
+    const k = 'pw' + id, say = (t) => { accMsg[k] = t; refreshAccPanel(); };
+    if (pw.length < 6) return say('<span class="err-msg">Parola trebuie să aibă cel puțin 6 caractere.</span>');
+    say('Se salvează…');
+    try {
+      const now = new Date().toISOString(), salt = newSalt(), rsalt = newSalt(), code = recoveryCode();
+      const u = { id: a.id, username: a.username, salt, hash: await hashPw(pw, salt), rsalt, rhash: await hashPw(code.replace(/-/g, ''), rsalt), created: a.created || now, updated: now };
+      const d = await api('POST', { action: 'accountsPut', users: [u] });
+      if (d.conflicts && d.conflicts.length) throw new Error('Google Sheet nu a acceptat schimbarea.');
+      // verificăm că din Sheet se poate intra acum cu parola nouă
+      const s2 = await window.WWNet.call(C.url, { action: 'authSalt', username: a.username }, false);
+      const r = await window.WWNet.call(C.url, { action: 'login', username: a.username, hash: await hashPw(pw, s2.salt) }, false);
+      if (r && !r.ok && /Prea multe/.test(r.error || '')) return say(`<span class="ok-msg">Parola nouă e salvată în Google Sheet.</span> Contul e blocat temporar după prea multe încercări greșite: pe telefon încearcă din nou peste 15 minute. Cod nou de recuperare: <b>${esc(code)}</b>`);
+      if (!r || !r.ok) throw new Error('Parola s-a trimis, dar verificarea a eșuat: ' + ((r && r.error) || 'fără răspuns'));
+      // dacă e și pe acest dispozitiv (același cont), îl actualizăm și aici
+      const acc = accounts(), loc = acc.users.find(x => x.id === a.id);
+      if (loc) { Object.assign(loc, { salt: u.salt, hash: u.hash, rsalt: u.rsalt, rhash: u.rhash, updated: now }); LS.set(K_ACC, acc); }
+      say(`<span class="ok-msg">Gata: ${esc(a.username)} intră acum cu parola nouă de pe orice dispozitiv (verificat în Google Sheet).</span> Cod nou de recuperare: <b>${esc(code)}</b> — păstrează-l.`);
+    } catch (e) { say(`<span class="err-msg">${esc(e.message || e)}</span>`); }
+  }
   async function saveAccount(id) {
     const box = document.querySelector(`[data-accid="${CSS.escape(id)}"]`); if (!box) return;
     const a = accList.find(x => x.id === id); const val = k => box.querySelector(`[data-acc="${k}"]`).value;
@@ -540,6 +568,7 @@
     'crm-del-no'() { L._del = false; renderLead(); },
     'crm-del-yes'() { deleteLead(); },
     'crm-acc-save'(el) { saveAccount(el.dataset.id); },
+    'crm-acc-pw'(el) { setAccountPassword(el.dataset.id); },
     'crm-acc-del'(el) { accMsg.del = el.dataset.id; refreshAccPanel(); },
     'crm-acc-del-no'() { accMsg.del = null; refreshAccPanel(); },
     async 'crm-acc-del-yes'(el) {
