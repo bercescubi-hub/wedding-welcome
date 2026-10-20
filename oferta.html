@@ -4,23 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Cere oferta · WE WELCOME</title>
-<meta name="description" content="WE WELCOME — We welcome. You celebrate. Noi îi întâmpinăm pe invitați și îi ajutăm să-și găsească locul; voi vă bucurați de nunta voastră. Cere oferta personalizată pentru nunțile Anuk din 2027.">
+<meta name="description" content="WE WELCOME — We welcome. You celebrate. Noi îi întâmpinăm pe invitați și îi ajutăm să-și găsească locul; voi vă bucurați de evenimentul vostru. Cere oferta personalizată.">
 <meta property="og:title" content="WE WELCOME · We welcome. You celebrate.">
-<meta property="og:description" content="În ziua nunții voastre, fiți miri. Nu gazde. Cere oferta personalizată pentru nunțile Anuk din 2027.">
+<meta property="og:description" content="În ziua voastră, fiți sărbătoriți. Nu gazde. Cere oferta personalizată.">
 <meta property="og:image" content="img/hero.jpg">
 <meta name="theme-color" content="#f6efe3">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Jost:wght@300..600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Manrope:wght@400..700&display=swap">
 <style>
 /* Layout: o singură coloană de lectură. Sus: marca, promisiunea și butonul, cu o imagine compactă alături (dedesubt pe telefon).
    Apoi trei beneficii, trei pași, pachetele (fără preț) și formularul în trei grupuri. Pe telefon, o bară jos duce la formular
    cât timp acesta nu e pe ecran. */
 :root{
-  --bg:#f6efe3; --bg2:#fbf7ef; --surface:#fffdf9; --ink:#2f2118; --muted:#6f5f52; --line:#e3d6c3; --gold:#8a6630; --gold-soft:rgba(138,102,48,.10);
+  --bg:#f6efe3; --bg2:#fbf7ef; --surface:#fffdf9; --ink:#2f2118; --muted:#594a3e; --line:#e3d6c3; --gold:#8a6630; --gold-soft:rgba(138,102,48,.10);
   --plum:#5c2350; --plum-2:#4a1c41; --plum-ink:#fff; --ok:#2f7a4f; --err:#a3283a;
-  --f-display:"Bodoni Moda",Georgia,serif; --f-body:"Jost","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --f-display:"Playfair Display",Georgia,serif; --f-body:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
   /* Imaginea principală: încadrarea (ce parte a pozei rămâne vizibilă când se decupează) */
   --hero-pos:50% 44%;
   color-scheme:light;
@@ -28,13 +28,17 @@
 *{box-sizing:border-box} [hidden]{display:none!important}
 html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{margin:0;background:radial-gradient(120% 50% at 50% 0%,var(--bg2),var(--bg) 70%) fixed,var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%}
+body{margin:0;background:radial-gradient(120% 50% at 50% 0%,var(--bg2),var(--bg) 70%) fixed,var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.6;font-weight:450;-webkit-text-size-adjust:100%}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--plum);outline-offset:3px}
 h1,h2,h3{margin:0;text-wrap:balance;font-weight:400} p{margin:0}
 .wrap{max-width:1040px;margin:0 auto;padding:0 max(18px,env(safe-area-inset-left,0px)) 0 max(18px,env(safe-area-inset-right,0px))}
 section{scroll-margin-top:16px}
 
+/* ---- bannerul de sus ---- */
+.banner{background:var(--plum);color:#fff;text-align:center;padding:30px 18px 26px}
+.banner .wm{display:block;font-family:var(--f-display);font-weight:600;font-size:clamp(1.9rem,6vw,3rem);letter-spacing:.2em;line-height:1.1;padding-left:.2em}
+.banner .sl{display:block;margin-top:10px;font-family:var(--f-display);font-style:italic;font-size:clamp(1.05rem,3.4vw,1.35rem);color:#f1dcb4}
 /* ---- marca ---- */
 .brand{display:flex;flex-direction:column;gap:6px}
 .brand .wm{font-family:var(--f-display);font-weight:500;font-size:1.02rem;letter-spacing:.34em;color:var(--ink)}
@@ -42,7 +46,7 @@ section{scroll-margin-top:16px}
 
 /* ---- hero ---- */
 .hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:56px;align-items:center;padding:56px 0 64px}
-.hero h1{font-family:var(--f-display);font-style:italic;font-size:clamp(2.35rem,6.2vw,4rem);line-height:1.04;margin:30px 0 18px;letter-spacing:-.01em}
+.hero h1{font-family:var(--f-display);font-weight:500;font-size:clamp(2.2rem,5.6vw,3.6rem);line-height:1.1;margin:0 0 18px;letter-spacing:-.01em}
 .hero .lead{font-size:1.12rem;color:var(--muted);max-width:46ch}
 .cta-row{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-top:30px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;background:var(--plum);color:var(--plum-ink);border-radius:99px;
@@ -155,7 +159,7 @@ textarea.inp{min-height:104px;resize:vertical}
 /* ---- confirmare ---- */
 .done{max-width:600px;margin:0 auto;min-height:100vh;min-height:100dvh;text-align:center;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;padding:40px 22px}
 .done .brand{align-items:center;margin-bottom:12px}
-.done h1{font-family:var(--f-display);font-style:italic;font-size:clamp(2.2rem,7vw,3rem);line-height:1.1}
+.done h1{font-family:var(--f-display);font-weight:500;font-size:clamp(2.2rem,7vw,3rem);line-height:1.1}
 .done p{color:var(--muted);font-size:1.05rem}
 
 footer{text-align:center;padding:40px 18px 120px;color:var(--muted);font-size:.86rem;display:flex;flex-direction:column;gap:6px;align-items:center}
@@ -165,21 +169,20 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
 </head>
 <body>
 <main id="page">
+  <div class="banner" role="banner"><span class="wm">WE WELCOME</span><span class="sl">We welcome. You celebrate.</span></div>
   <div class="wrap">
     <!-- ================= PRIMUL ECRAN ================= -->
     <header class="hero">
       <div>
-        <div class="brand"><span class="wm">WE WELCOME</span><span class="sl">We welcome. You celebrate.</span></div>
-        <h1>În ziua nunții voastre, fiți miri. Nu gazde.</h1>
+        <h1>În ziua voastră, fiți sărbătoriți. Nu gazde.</h1>
         <p class="lead">Noi îi întâmpinăm pe invitați și îi ajutăm să-și găsească locul. Voi vă bucurați de primele momente ale petrecerii, fără grija sosirii fiecăruia.</p>
         <div class="cta-row">
           <a class="btn" href="#cerere" id="heroCta">Cere oferta personalizată
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M5 11l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-          <span class="for">Pentru nunțile Anuk din 2027.</span>
         </div>
       </div>
       <!-- IMAGINEA PRINCIPALĂ: înlocuiește fișierul img/hero.jpg (păstrează numele). Încadrarea se reglează din --hero-pos, sus în <style>. -->
-      <figure class="hero-img"><img src="img/hero.jpg" alt="Ecran de bun venit WE WELCOME la intrarea în sala de nuntă, între flori albe și lumânări" width="1024" height="1536" fetchpriority="high"></figure>
+      <figure class="hero-img"><img src="img/hero.jpg" alt="Ecran de bun venit WE WELCOME la intrarea în sala de eveniment, între flori albe și lumânări" width="1024" height="1536" fetchpriority="high"></figure>
     </header>
   </div>
   <hr class="rule">
@@ -196,7 +199,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
         <article class="benefit">
           <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5.5 3h5l-.6 6.2a1.9 1.9 0 0 1-3.8 0z"/><path d="M8 11.2V19M5.8 19h4.4"/><path d="M13.5 3h5l-.6 6.2a1.9 1.9 0 0 1-3.8 0z"/><path d="M16 11.2V19M13.8 19h4.4"/></svg></span>
           <h3>Oaspeți întâmpinați cu stil</h3>
-          <p>Un mesaj video de bun venit de la voi, personalizat pentru fiecare categorie de invitați: familie, nași, prieteni, colegi.</p>
+          <p>Videourile cu voi de pe ecran sunt incluse în pachete: le filmăm noi înainte de eveniment, pentru fiecare categorie de invitați aleasă (familie, prieteni, colegi…).</p>
         </article>
         <article class="benefit">
           <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="3.2" r="1.3"/><circle cx="12" cy="20.8" r="1.3"/><circle cx="3.2" cy="12" r="1.3"/><circle cx="20.8" cy="12" r="1.3"/></svg></span>
@@ -206,7 +209,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
         <article class="benefit">
           <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 8h3l1.6-2.2h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.6"/></svg></span>
           <h3>O amintire de luat acasă</h3>
-          <p>Photo Booth cu numărătoare și fotografie, în pachetele care îl includ.</p>
+          <p>Photo Booth pentru amintiri memorabile.</p>
         </article>
       </div>
     </div>
@@ -218,11 +221,11 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
     <div class="wrap">
       <div class="sec-head">
         <p class="eyebrow">Cum funcționează</p>
-        <h2 id="sTitle">Simplu pentru voi, de la cerere până la nuntă.</h2>
+        <h2 id="sTitle">Simplu pentru voi, de la cerere până la eveniment.</h2>
       </div>
       <ol class="steps">
-        <li><b>Ne spuneți despre nuntă</b><span>Completați cererea de mai jos, iar noi revenim cu oferta personalizată.</span></li>
-        <li><b>Pregătim totul împreună</b><span>Înainte de nuntă, ne trimiteți lista invitaților cu mesele și, dacă vreți, mesajul vostru video.</span></li>
+        <li><b>Ne spuneți despre eveniment</b><span>Completați cererea de mai jos, iar noi revenim cu oferta personalizată.</span></li>
+        <li><b>Pregătim totul împreună</b><span>Înainte de eveniment, filmăm împreună mesajele video și ne trimiteți lista invitaților cu mesele.</span></li>
         <li><b>Voi vă bucurați de seară</b><span>La intrare, ecranul îi întâmpină pe invitați și îi ajută să-și găsească masa.</span></li>
       </ol>
     </div>
@@ -235,8 +238,8 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
       <form id="f" novalidate>
         <div class="sec-head" style="margin-bottom:6px">
           <p class="eyebrow">Cerere de ofertă</p>
-          <h2 id="fTitle">Hai să pregătim un bun venit perfect pentru nunta voastră.</h2>
-          <p>Spuneți-ne câteva detalii despre eveniment, iar noi revenim cu o ofertă adaptată nunții voastre.</p>
+          <h2 id="fTitle">Hai să pregătim un bun venit perfect pentru evenimentul vostru.</h2>
+          <p>Spuneți-ne câteva detalii despre eveniment, iar noi revenim cu o ofertă adaptată evenimentului vostru.</p>
         </div>
 
         <div>
@@ -248,18 +251,19 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
         <section class="card" aria-labelledby="g1">
           <h3 id="g1"><span>01</span>Despre eveniment</h3>
           <div class="grid g3">
-            <div class="field"><label for="eventDate">Data nunții<i>*</i></label><input class="inp" type="date" id="eventDate" required></div>
+            <div class="field full"><label for="eventType">Tipul evenimentului<i>*</i></label><select class="inp" id="eventType" required><option>Nuntă</option><option>Botez</option><option>Aniversare</option><option>Eveniment corporate</option><option>Alt eveniment</option></select></div>
+            <div class="field"><label for="eventDate">Data evenimentului<i>*</i></label><input class="inp" type="date" id="eventDate" required></div>
             <div class="field"><label for="startTime">Ora de început <em>(opțional)</em></label><input class="inp" type="time" id="startTime"></div>
             <div class="field"><label for="guests">Număr estimat de invitați <em>(opțional)</em></label><input class="inp" type="number" id="guests" min="1" inputmode="numeric" placeholder="ex. 150"></div>
           </div>
         </section>
 
         <section class="card" aria-labelledby="g2">
-          <h3 id="g2"><span>02</span>Locația nunții</h3>
+          <h3 id="g2"><span>02</span>Locația evenimentului</h3>
           <div class="grid">
             <div class="field"><label for="county">Județul<i>*</i></label><select class="inp" id="county" required></select></div>
             <div class="field"><label for="city">Orașul sau localitatea<i>*</i></label><input class="inp" id="city" required autocomplete="address-level2" placeholder="ex. București"></div>
-            <div class="field full"><label for="venue">Restaurantul sau locația <em>(opțional)</em></label><input class="inp" id="venue" placeholder="ex. Anuk"></div>
+            <div class="field full"><label for="venue">Restaurantul sau locația <em>(opțional)</em></label><input class="inp" id="venue" placeholder="ex. numele restaurantului"></div>
           </div>
           <p class="km" id="kmNote" hidden></p>
         </section>
@@ -288,7 +292,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
 
   <footer>
     <span class="wm">WE WELCOME</span>
-    <span>We welcome. You celebrate. · Pentru nunțile Anuk din 2027.</span>
+    <span>We welcome. You celebrate.</span>
   </footer>
   <div class="bar" id="bar"><a class="btn" href="#cerere">Cere oferta personalizată</a></div>
 </main>
@@ -296,7 +300,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
 <!-- ================= CONFIRMARE ================= -->
 <section class="done" id="done" hidden>
   <div class="brand"><span class="wm">WE WELCOME</span><span class="sl">We welcome. You celebrate.</span></div>
-  <h1>Mulțumim! Abia așteptăm să aflăm mai multe despre nunta voastră.</h1>
+  <h1>Mulțumim! Abia așteptăm să aflăm mai multe despre evenimentul vostru.</h1>
   <p>Am primit cererea pentru <b id="dWhen"></b> și revenim cu oferta personalizată pe email<span id="dTime"></span>.</p>
   <p class="wa-or"><a id="waDone" class="wa-ic" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#25D366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Z"/><path fill="#fff" d="M16.5 14.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>Ne puteți scrie și pe WhatsApp</a></p>
 </section>
@@ -312,7 +316,7 @@ const BRAND = 'WE WELCOME';
 let S = JSON.parse(JSON.stringify(P.DEFAULT_SETTINGS));
 
 /* ---------- pachete (fără preț) ---------- */
-const BENEFIT = { welcome: 'Mesaj video de bun venit de la voi', seating: 'Fiecare invitat își găsește masa', booth: 'Photo Booth cu fotografie amintire' };
+const BENEFIT = { welcome: 'Videouri de bun venit cu voi, filmate de noi', seating: 'Fiecare invitat își găsește masa', booth: 'Photo Booth pentru amintiri memorabile' };
 const ALL_MODULES = ['welcome', 'seating', 'booth'];
 /** Pachetul recomandat: cel marcat în aplicație; altfel primul care include toate cele trei momente. */
 function recommendedId() {
@@ -360,7 +364,7 @@ function update(){
   const n = $('#kmNote'); n.classList.toggle('far', far);
   if (far) { n.hidden = false;
     n.innerHTML = `<b>Momentan nu acoperim zona aceasta.</b> Județul ${esc(l.county)} este la aproximativ ${l.km} km de București, iar în prezent mergem la evenimente aflate la cel mult ${esc(S.pricing.maxKm)} km.
-      Dacă vă doriți totuși ${BRAND} la nunta voastră, trimiteți cererea mai jos sau scrieți-ne direct și vă pregătim o ofertă specială.
+      Dacă vă doriți totuși ${BRAND} la evenimentul vostru, trimiteți cererea mai jos sau scrieți-ne direct și vă pregătim o ofertă specială.
       ${contactLinks() ? `<span class="clinks">${contactLinks()}</span>` : ''}`; }
   else if (l.outside === 'da') { n.hidden = false;
     n.textContent = 'Pentru locațiile din afara Bucureștiului și Ilfovului, costul de transport îl includem în oferta personalizată.'; }
@@ -377,7 +381,7 @@ function renderCounties(){
 function formData(){
   const l = lead(), c = P.calc(l, S);
   return { name: $('#name').value.trim(), phone: $('#phone').value.trim(), email: $('#email').value.trim(),
-    eventType: 'Nuntă', eventDate: $('#eventDate').value, startTime: $('#startTime').value, guests: $('#guests').value,
+    eventType: $('#eventType').value, eventDate: $('#eventDate').value, startTime: $('#startTime').value, guests: $('#guests').value,
     county: l.county, city: $('#city').value.trim(), venue: $('#venue').value.trim(), package: l.package, outside: l.outside, km: String(l.km),
     // sumele de mai jos nu se afișează vizitatorului; ajung doar în Sheet, pentru administrator
     transport: far ? '' : String(c.transport), packagePrice: String(c.price), total: far ? '' : String(c.total),
@@ -389,11 +393,12 @@ function fmtDay(s) { if (!s) return ''; try { return new Date(s + 'T12:00:00').t
 function requestText(d){
   const pk = (S.packages.find(p => p.id === d.package) || {}).name || d.package || '';
   const place = [d.venue, d.city, d.county ? 'jud. ' + d.county : ''].filter(Boolean).join(', ');
-  const lines = [`Bună ziua! Aș dori o ofertă ${BRAND} pentru nunta noastră.`, ''];
+  const FOR = { 'Nuntă': 'nunta noastră', 'Botez': 'botezul nostru', 'Aniversare': 'aniversarea noastră', 'Eveniment corporate': 'evenimentul nostru corporate' };
+  const lines = [`Bună ziua! Aș dori o ofertă ${BRAND} pentru ${FOR[d.eventType] || 'evenimentul nostru'}.`, ''];
   const add = (k, v) => { if (v) lines.push(`${k}: ${v}`); };
   add('Nume', d.name); add('Telefon', d.phone); add('Email', d.email);
   lines.push('');
-  add('Data nunții', [fmtDay(d.eventDate), d.startTime ? 'ora ' + d.startTime : ''].filter(Boolean).join(', '));
+  add('Tip eveniment', d.eventType); add('Data', [fmtDay(d.eventDate), d.startTime ? 'ora ' + d.startTime : ''].filter(Boolean).join(', '));
   add('Invitați', d.guests); add('Locație', place); add('Pachet', pk);
   if (far) lines.push('Locația e în afara zonei acoperite; aș dori o ofertă specială.');
   const msg = $('#clientMessage').value.trim(); if (msg) { lines.push(''); lines.push('Observații: ' + msg); }

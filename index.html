@@ -396,7 +396,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.7.0';
+const APP_VERSION = '3.8.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
@@ -676,8 +676,9 @@ function renderAuth(){
   } else {
     h = `${brand('Wedding Welcome', 'Intră în contul tău')}
       <form id="fLogin" class="acard" style="gap:12px">
-        <div><label for="li-u">Utilizator</label><input class="ai" id="li-u" autocomplete="username" autocapitalize="none" required></div>
-        <div><label for="li-p">Parolă</label><input class="ai" id="li-p" type="password" autocomplete="current-password" required></div>
+        <div><label for="li-u">Utilizator</label><input class="ai" id="li-u" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></div>
+        <div><label for="li-p">Parolă</label><input class="ai" id="li-p" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+          <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:.85rem;opacity:.8"><input type="checkbox" onchange="document.getElementById('li-p').type=this.checked?'text':'password'"> Arată parola</label></div>
         <p class="err" aria-live="polite">${esc(authErr)}</p>
         <button class="go" type="submit">INTRĂ</button>
       </form>
