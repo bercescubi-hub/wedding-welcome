@@ -5,11 +5,11 @@
   const DEFAULT_SETTINGS = {
     packages: [
       { id: 'esential', name: 'Esențial', hours: 3, price: 1500, modules: ['welcome', 'seating'], staffMenu: false,
-        desc: 'Mesajul de bun venit al mirilor și găsirea mesei, 3 ore' },
-      { id: 'complet', name: 'Complet', hours: 5, price: 2500, modules: ['welcome', 'seating', 'booth'], staffMenu: false,
-        desc: 'Bun venit, găsirea mesei și Photo Booth, 5 ore' },
+        desc: 'Primirea invitaților: mesajul vostru de bun venit și găsirea mesei.' },
+      { id: 'complet', name: 'Complet', hours: 5, price: 2500, modules: ['welcome', 'seating', 'booth'], staffMenu: false, recommended: true,
+        desc: 'Toată experiența pentru primele ore ale petrecerii.' },
       { id: 'allnight', name: 'All Night', hours: 10, price: 3300, modules: ['welcome', 'seating', 'booth'], staffMenu: true,
-        desc: 'Toate cele trei, toată noaptea' }
+        desc: 'Toată experiența, pe toată durata petrecerii.' }
     ],
     /* TVA stă la „pricing” ca să ajungă și în formularul public (prețul afișat clientului); restul taxelor sunt interne, la „costs”. */
     pricing: { kmRate: 2.5, roundTrip: true, maxKm: 300, vatPayer: true, vatRate: 21, pricesIncludeVat: true },

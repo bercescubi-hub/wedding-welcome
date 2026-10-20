@@ -390,13 +390,15 @@
     const S = C.settings;
     const f = (path, label, val, suf, type) => `<div class="field"><label>${label}</label><div class="suf"><input class="inp" data-s="${path}" data-num="1" inputmode="decimal" value="${esc(val)}">${suf ? `<span>${suf}</span>` : ''}</div></div>`;
     return `<section class="panel">
-        <h2>Pachete</h2><p class="hint">Apar în formularul public, în această ordine. Prețurile sunt fictive până le schimbi.</p>
+        <h2>Pachete</h2><p class="hint">Apar în formularul public, în această ordine, fără preț: clientul vede numele, durata, ce include și descrierea. Pachetul recomandat primește eticheta „Pachet recomandat” și e ales implicit. Prețurile le folosește aplicația pentru ofertă și profit.</p>
         ${S.packages.map((p, i) => `<div class="cat">
           <div class="cat-head"><input class="inp" data-s="packages.${i}.name" value="${esc(p.name)}" aria-label="Numele pachetului">
             ${S.packages.length > 1 ? `<button type="button" class="x" data-act="crm-delpkg" data-i="${i}" aria-label="Șterge pachetul">×</button>` : ''}</div>
           <div class="row3">${f(`packages.${i}.price`, 'Preț', p.price, 'lei')}${f(`packages.${i}.hours`, 'Durată', p.hours, 'ore')}
             <div class="field"><label>Include</label><div class="mods-in">${Object.entries(P.MODULE_NAMES).map(([k, n]) => `<label class="tog"><input type="checkbox" data-s="packages.${i}.modules" data-m="${k}" ${p.modules.includes(k) ? 'checked' : ''}> ${n}</label>`).join('')}</div></div></div>
+          <div class="field"><label>Descriere scurtă (apare în formularul pentru clienți)</label><input class="inp" data-s="packages.${i}.desc" value="${esc(p.desc || '')}" placeholder="ex. Toată experiența pentru primele ore ale petrecerii."></div>
           <label class="tog"><input type="checkbox" data-s="packages.${i}.staffMenu" ${p.staffMenu ? 'checked' : ''}> Stăm toată noaptea (se socotește meniu pentru staff)</label>
+          <label class="tog"><input type="radio" name="recPkg" data-rec="${i}" ${p.recommended ? 'checked' : ''}> Pachet recomandat în formular</label>
         </div>`).join('')}
         <div class="btns"><button type="button" class="btn" data-act="crm-addpkg">+ Adaugă pachet</button></div>
       </section>
@@ -572,6 +574,10 @@
       else setPath(C.settings, path, t.dataset.num ? P.num(t.value) : t.value);
       setDirty = true; save(); autoSave();
       return;
+    }
+    if (t.dataset.rec !== undefined) {
+      C.settings.packages.forEach((p, i) => { p.recommended = i === +t.dataset.rec; });
+      setDirty = true; save(); autoSave(); return;
     }
     if (t.dataset.l !== undefined && L) {
       const k = t.dataset.l;
