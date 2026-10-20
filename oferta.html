@@ -211,7 +211,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
         <article class="benefit">
           <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 8h3l1.6-2.2h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.6"/></svg></span>
           <h3>O amintire de luat acasă</h3>
-          <p>Photo Booth pentru amintiri memorabile. Vă oferim stick cu pozele de la eveniment, iar la cerere ne putem ocupa și de albumul serii voastre.</p>
+          <p>Photo Booth pentru amintiri memorabile. Vă oferim stick cu pozele de la eveniment; albumul serii e inclus în pachetul All Night, iar la celelalte pachete îl puteți adăuga la cerere.</p>
         </article>
       </div>
     </div>
@@ -337,7 +337,7 @@ function renderPackages(){
       <span class="dur">${+p.hours >= 8 ? 'Toată noaptea' : esc(p.hours) + ' ore'}</span>
       <b>${esc(p.name)}</b>
       ${p.desc ? `<span class="desc">${esc(p.desc)}</span>` : ''}
-      <ul>${(p.modules || []).map(m => `<li>${esc(BENEFIT[m] || P.MODULE_NAMES[m] || m)}</li>`).join('')}</ul>
+      <ul>${(p.modules || []).map(m => `<li>${esc(BENEFIT[m] || P.MODULE_NAMES[m] || m)}</li>`).join('')}${(p.modules || []).includes('booth') ? `<li>Stick cu pozele de la eveniment</li><li>${P.albumIncluded(p) ? 'Albumul foto al serii, inclus' : 'Album foto, la cerere'}</li>` : ''}</ul>
       ${isRec && full ? '<span class="why">Experiența completă: primirea, orientarea la mese și o amintire de luat acasă, într-o singură soluție.</span>' : ''}
       <span class="pick">${p.id === cur ? 'Ales' : 'Alege'}</span></label>`;
   }).join('');

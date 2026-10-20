@@ -8,12 +8,12 @@
         desc: 'Primirea invitaților: mesajul vostru de bun venit și găsirea mesei.' },
       { id: 'complet', name: 'Complet', hours: 5, price: 2500, modules: ['welcome', 'seating', 'booth'], staffMenu: false, recommended: true,
         desc: 'Toată experiența pentru primele ore ale petrecerii.' },
-      { id: 'allnight', name: 'All Night', hours: 10, price: 3300, modules: ['welcome', 'seating', 'booth'], staffMenu: true,
+      { id: 'allnight', name: 'All Night', hours: 10, price: 3300, modules: ['welcome', 'seating', 'booth'], staffMenu: true, album: true,
         desc: 'Toată experiența, pe toată durata petrecerii.' }
     ],
     /* TVA stă la „pricing” ca să ajungă și în formularul public (prețul afișat clientului); restul taxelor sunt interne, la „costs”. */
-    pricing: { kmRate: 2.5, roundTrip: true, maxKm: 300, vatPayer: true, vatRate: 21, pricesIncludeVat: true },
-    costs: { staffCount: 2, staffRate: 60, setupHours: 1, menuCost: 250, fuelPerKm: 1, boothConsumables: 250, equipment: 100,
+    pricing: { kmRate: 2.5, roundTrip: true, maxKm: 300, vatPayer: true, vatRate: 21, pricesIncludeVat: true, albumPrice: 300 },
+    costs: { staffCount: 2, staffRate: 60, setupHours: 1, menuCost: 250, fuelPerKm: 1, boothConsumables: 250, equipment: 100, albumCost: 0,
       incomeTax: 1, payFee: 0, invoiceFixed: 0 },
     email: { fromEmail: 'bercescubi@gmail.com', fromName: 'Wedding Welcome' },
     templates: [
@@ -52,6 +52,8 @@
   const outOfArea = (km, S) => { const m = +((S && S.pricing && S.pricing.maxKm) || 0); return m > 0 && +km > m; };
   const num = v => { const n = parseFloat(String(v ?? '').replace(',', '.').replace(/[^\d.\-]/g, '')); return isFinite(n) ? n : 0; };
   const yes = v => v === true || /^(da|true|1|yes)$/i.test(String(v ?? '').trim());
+  /** Albumul foto: inclus în pachetul marcat (implicit All Night); la celelalte pachete cu Photo Booth se adaugă la cerere. */
+  const albumIncluded = p => !!p && p.modules.includes('booth') && (p.album === true || (p.album === undefined && p.id === 'allnight'));
   function pkgOf(S, id) { return S.packages.find(p => p.id === id) || S.packages.find(p => p.name === id) || null; }
   /** Prețul pentru client, costurile și profitul unei cereri. */
   function calc(lead, S) {
@@ -60,7 +62,10 @@
     const outside = yes(lead.outside), km = num(lead.km);
     const billedKm = outside ? km * (S.pricing.roundTrip ? 2 : 1) : 0;
     const transport = Math.round(billedKm * num(S.pricing.kmRate));
-    const subtotal = price + transport;
+    const hasBooth = !!(p && p.modules.includes('booth')), albumIncl = albumIncluded(p);
+    const albumExtra = hasBooth && !albumIncl && yes(lead.album) ? Math.round(num(S.pricing.albumPrice)) : 0;
+    const album = albumIncl ? 'inclus' : albumExtra ? 'extra' : 'nu';
+    const subtotal = price + transport + albumExtra;
     const dv = num(lead.discountValue);
     const discount = Math.min(subtotal, Math.round(lead.discountType === 'lei' ? dv : subtotal * dv / 100));
     const base = subtotal - discount;
@@ -75,7 +80,8 @@
     const fuel = outside ? Math.round(km * 2 * num(C.fuelPerKm)) : 0;
     const consumables = p && p.modules.includes('booth') ? num(C.boothConsumables) : 0;
     const equipment = p ? num(C.equipment) : 0;
-    const cost = staff + menu + fuel + consumables + equipment;
+    const albumCost = album !== 'nu' ? num(C.albumCost) : 0;
+    const cost = staff + menu + fuel + consumables + equipment + albumCost;
     /* taxe și costuri de facturare: impozit pe venit (fără TVA), comision la încasare, cost fix pe factură */
     const incomeTax = Math.round(net * num(C.incomeTax) / 100);
     const payFee = Math.round(total * num(C.payFee) / 100);
@@ -83,7 +89,7 @@
     const taxes = vat + incomeTax + payFee + invoiceFee;
     const profit = total - cost - taxes;
     return { outOfArea: outOfArea(km, S), pkg: p, price, hours, outside, km, billedKm, transport, subtotal, discount, base, total, vat, vatRate: vr, vatIncluded: !!(Pr.vatPayer && Pr.pricesIncludeVat), net,
-      staff, menu, fuel, consumables, equipment, cost, incomeTax, payFee, invoiceFee, taxes, profit, margin: net ? profit / net : 0 };
+      album, albumExtra, albumCost, hasBooth, staff, menu, fuel, consumables, equipment, cost, incomeTax, payFee, invoiceFee, taxes, profit, margin: net ? profit / net : 0 };
   }
   const lei = n => Math.round(num(n)).toLocaleString('ro-RO') + ' lei';
   /** Tarif cu zecimale (ex. 2,5 lei), pentru lei/km. */
@@ -165,5 +171,5 @@
       }
     }
   };
-  g.WWPricing = { outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, num, yes, lei, leiRate };
+  g.WWPricing = { outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, albumIncluded, num, yes, lei, leiRate };
 })(typeof window !== 'undefined' ? window : globalThis);

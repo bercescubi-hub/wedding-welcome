@@ -61,7 +61,7 @@
     busy = 'Se încarcă cererile din Google Sheets…'; if (!quiet) rerender();
     try {
       const d = await api('GET', { action: 'list' });
-      C.leads = d.rows || []; C.account = d.account || C.account; if (d.role) C.role = d.role;
+      C.leads = d.rows || []; C.scriptOld = !!(C.leads.length && !('album' in C.leads[0])); C.account = d.account || C.account; if (d.role) C.role = d.role;
       if (d.settings) C.settings = merge(P.DEFAULT_SETTINGS, d.settings);
       else await api('POST', { action: 'settings', settings: C.settings });   // prima conectare: urcă prețurile implicite
       C.lastSync = new Date().toISOString(); save(); note = ''; setDirty = false;
@@ -263,6 +263,7 @@
     const l = C.leads.find(x => x.id === id); if (!l) return;
     L = clone(l); L.status = L.status || 'Nou'; L.discountType = L.discountType === 'lei' ? 'lei' : '%';
     L.outside = P.yes(L.outside) ? 'da' : 'nu'; L.staffMenuByClient = P.yes(L.staffMenuByClient) ? 'da' : 'nu';
+    L.album = P.yes(L.album) ? 'da' : 'nu';
     compose = null; renderLead();
   }
   function breakdown() {
@@ -271,6 +272,7 @@
     return `<div class="calc">
       <div class="sum">
         ${row('Pachet ' + esc(c.pkg ? c.pkg.name : '—') + (c.pkg ? ` · ${c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore'}` : ''), lei(c.price))}
+        ${c.album === 'inclus' ? row('Album foto · inclus în pachet', '—') : c.albumExtra ? row('Album foto', lei(c.albumExtra)) : ''}
         ${row(c.outside ? `Transport · ${c.billedKm} km × ${P.leiRate(S.pricing.kmRate)}` : 'Transport (București-Ilfov)', lei(c.transport))}
         ${c.discount ? row('Reducere' + (L.discountType === '%' ? ` ${num(L.discountValue)}%` : ''), '− ' + lei(c.discount)) : ''}
         ${c.vat && !c.vatIncluded ? row(`TVA ${c.vatRate}%`, '+ ' + lei(c.vat)) : ''}
@@ -283,6 +285,7 @@
         ${c.pkg && c.pkg.staffMenu ? row(P.yes(L.staffMenuByClient) ? 'Meniu staff · oferit de client' : `Meniu staff · ${num(S.costs.staffCount)} × ${lei(S.costs.menuCost)}`, lei(c.menu)) : ''}
         ${c.outside ? row(`Combustibil · ${c.km * 2} km dus-întors`, lei(c.fuel)) : ''}
         ${c.consumables ? row('Consumabile Photo Booth', lei(c.consumables)) : ''}
+        ${c.albumCost ? row('Album foto (cost)', lei(c.albumCost)) : ''}
         ${row('Echipament (uzură)', lei(c.equipment))}
         ${c.vat ? row(`TVA de plată ${c.vatRate}%`, lei(c.vat)) : ''}
         ${c.incomeTax ? row(`Impozit pe venit ${num(S.costs.incomeTax)}%`, lei(c.incomeTax)) : ''}
@@ -290,6 +293,16 @@
         ${c.invoiceFee ? row('Cost facturare', lei(c.invoiceFee)) : ''}
         ${row('Profit net estimat' + (c.net ? ` · ${Math.round(c.margin * 100)}%` : ''), lei(c.profit), 'tot ' + (c.profit < 0 ? 'neg' : 'pos'))}
       </div></div>`;
+  }
+  /** Butonul „Album foto”: la pachetul cu album inclus apare ca inclus; la celelalte cu Photo Booth îl adaugi (+ prețul albumului). */
+  function albumField() {
+    const S = C.settings, p = P.pkgOf(S, L.package);
+    if (!p || !p.modules.includes('booth')) return `<p class="hint">Album foto: doar la pachetele cu Photo Booth.</p>`;
+    if (P.albumIncluded(p)) return `<p class="hint"><b>Album foto inclus</b> în pachetul ${esc(p.name)} (plus stick cu pozele).</p>`;
+    const on = P.yes(L.album);
+    const old = C.scriptOld ? `<p class="hint err-msg">Scriptul Google e o versiune veche și nu salvează încă albumul în Sheet. Actualizează-l (Code.gs → Implementare → Gestionează implementările → Versiune nouă).</p>` : '';
+    return `<div class="btns" style="align-items:center"><button type="button" class="btn ${on ? 'danger' : 'primary'} small" data-act="crm-album">${on ? 'Scoate albumul foto' : '+ Adaugă album foto · ' + lei(S.pricing.albumPrice)}</button>
+      <span class="hint">${on ? `Album adăugat: +${lei(S.pricing.albumPrice)} la total.` : 'Pachetul include stick cu pozele; albumul se adaugă la cerere.'}</span></div>${old}`;
   }
   function renderLead() {
     const S = C.settings;
@@ -322,6 +335,7 @@
           <select class="inp" data-l="discountType" aria-label="Tipul reducerii"><option value="%" ${L.discountType === '%' ? 'selected' : ''}>%</option><option value="lei" ${L.discountType === 'lei' ? 'selected' : ''}>lei</option></select></div></div>
         <div class="field"><label>&nbsp;</label><label class="tog"><input type="checkbox" data-l="staffMenuByClient" ${L.staffMenuByClient === 'da' ? 'checked' : ''}> Clientul asigură meniul pentru staff</label></div>
       </div>
+      <div id="albumBox">${albumField()}</div>
       <div id="calcBox">${breakdown()}</div>
       <div class="field"><label for="l-notes">Note interne (nu le vede clientul)</label><textarea class="inp" id="l-notes" data-l="notes" rows="3" style="min-height:70px">${esc(L.notes || '')}</textarea></div>
       <p class="hint" id="ldMsg">${esc(L._msg || '')}</p>
@@ -338,7 +352,7 @@
     const c = P.calc(L, C.settings);
     return { status: L.status, package: c.pkg ? c.pkg.id : L.package, outside: L.outside, km: String(num(L.km)), transport: String(c.transport), packagePrice: String(c.price),
       discountType: L.discountType, discountValue: String(num(L.discountValue)), total: String(c.total), cost: String(c.cost), profit: String(c.profit),
-      staffMenuByClient: L.staffMenuByClient, notes: L.notes || '' };
+      staffMenuByClient: L.staffMenuByClient, notes: L.notes || '', album: c.album === 'extra' ? 'da' : c.album === 'inclus' ? 'inclus' : 'nu' };
   }
   async function saveLead() {
     const m = $('#ldMsg'); if (m) { m.textContent = 'Se salvează…'; m.className = 'hint'; }
@@ -360,7 +374,8 @@
       pachet: c.pkg ? c.pkg.name : '', ore: c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore',
       pret_pachet: n0(c.price), transport: n0(c.transport), km: String(c.billedKm), reducere: n0(c.discount), total: n0(c.total),
       tva: n0(c.vat), total_fara_tva: n0(c.net), cota_tva: String(c.vatRate),
-      expeditor: S.email.fromName || '', invitati: l.guests || ''
+      expeditor: S.email.fromName || '', invitati: l.guests || '',
+      album: c.album === 'inclus' ? 'inclus în pachet' : c.albumExtra ? n0(c.albumExtra) + ' lei' : 'nu'
     };
     return String(t || '').replace(/\{(\w+)\}/g, (m, k) => k in map ? map[k] : m);
   }
@@ -417,10 +432,15 @@
           <div class="row3">${f(`packages.${i}.price`, 'Preț', p.price, 'lei')}${f(`packages.${i}.hours`, 'Durată', p.hours, 'ore')}
             <div class="field"><label>Include</label><div class="mods-in">${Object.entries(P.MODULE_NAMES).map(([k, n]) => `<label class="tog"><input type="checkbox" data-s="packages.${i}.modules" data-m="${k}" ${p.modules.includes(k) ? 'checked' : ''}> ${n}</label>`).join('')}</div></div></div>
           <div class="field"><label>Descriere scurtă (apare în formularul pentru clienți)</label><input class="inp" data-s="packages.${i}.desc" value="${esc(p.desc || '')}" placeholder="ex. Toată experiența pentru primele ore ale petrecerii."></div>
+          <label class="tog"><input type="checkbox" data-s="packages.${i}.album" ${P.albumIncluded(p) ? 'checked' : ''}> Album foto inclus în pachet (nebifat: se poate adăuga la cerere, contra cost)</label>
           <label class="tog"><input type="checkbox" data-s="packages.${i}.staffMenu" ${p.staffMenu ? 'checked' : ''}> Stăm toată noaptea (se socotește meniu pentru staff)</label>
           <label class="tog"><input type="radio" name="recPkg" data-rec="${i}" ${p.recommended ? 'checked' : ''}> Pachet recomandat în formular</label>
         </div>`).join('')}
         <div class="btns"><button type="button" class="btn" data-act="crm-addpkg">+ Adaugă pachet</button></div>
+      </section>
+      <section class="panel"><h2>Album foto</h2>
+        <div class="row3">${f('pricing.albumPrice', 'Preț album (când se adaugă la cerere)', S.pricing.albumPrice, 'lei')}${f('costs.albumCost', 'Costul tău pe album', S.costs.albumCost, 'lei')}</div>
+        <p class="hint">Stick-ul cu pozele e inclus la pachetele cu Photo Booth. Albumul e inclus la pachetele bifate mai sus; la celelalte îl adaugi din cerere cu butonul „+ Adaugă album foto”. Pune costul albumului ca profitul să fie corect. În emailuri poți folosi {album}.</p>
       </section>
       <section class="panel"><h2>Transport</h2>
         <div class="row3">${f('pricing.kmRate', 'Tarif pentru client', S.pricing.kmRate, 'lei/km')}
@@ -568,6 +588,7 @@
     'crm-del-no'() { L._del = false; renderLead(); },
     'crm-del-yes'() { deleteLead(); },
     'crm-acc-save'(el) { saveAccount(el.dataset.id); },
+    'crm-album'() { if (!L) return; L.album = P.yes(L.album) ? 'nu' : 'da'; const a = $('#albumBox'); if (a) a.innerHTML = albumField(); const b = $('#calcBox'); if (b) b.innerHTML = breakdown(); },
     'crm-acc-pw'(el) { setAccountPassword(el.dataset.id); },
     'crm-acc-del'(el) { accMsg.del = el.dataset.id; refreshAccPanel(); },
     'crm-acc-del-no'() { accMsg.del = null; refreshAccPanel(); },
@@ -626,6 +647,7 @@
     if (t.dataset.l !== undefined && L) {
       const k = t.dataset.l;
       L[k] = t.type === 'checkbox' ? (t.checked ? 'da' : 'nu') : t.value;
+      if (k === 'package') { const a = $('#albumBox'); if (a) a.innerHTML = albumField(); }
       if (k === 'outside') { const km = $('#l-km'); km.disabled = !t.checked; if (t.checked && !num(L.km)) { L.km = String(P.estimateKm(L.county)); km.value = L.km || ''; } }
       const b = $('#calcBox'); if (b) b.innerHTML = breakdown();
       return;

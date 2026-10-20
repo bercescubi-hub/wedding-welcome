@@ -28,12 +28,13 @@ const FIELDS = [
   ['venue','Locație'], ['guests','Invitați'], ['package','Pachet'], ['outside','În afara București-Ilfov'], ['km','Km'],
   ['transport','Transport (lei)'], ['packagePrice','Preț pachet (lei)'], ['discountType','Reducere tip'], ['discountValue','Reducere valoare'],
   ['total','Total (lei)'], ['cost','Cost estimat (lei)'], ['profit','Profit estimat (lei)'], ['staffMenuByClient','Meniu staff de la client'],
-  ['clientMessage','Mesaj client'], ['notes','Note interne'], ['lastEmail','Ultimul email'], ['source','Sursa']
+  ['clientMessage','Mesaj client'], ['notes','Note interne'], ['lastEmail','Ultimul email'], ['source','Sursa'],
+  ['album','Album foto']
 ];
 const KEYS = FIELDS.map(f => f[0]);
 const TEXT_COLS = ['id','createdAt','phone','eventDate','startTime','lastEmail'];
 const CLIENT_KEYS = ['name','phone','email','eventType','eventDate','startTime','county','city','venue','guests','package','outside','km','transport','packagePrice','total','clientMessage','source'];
-const ADMIN_KEYS = ['status','package','outside','km','transport','packagePrice','discountType','discountValue','total','cost','profit','staffMenuByClient','notes','name','phone','email','eventDate','startTime','county','city','venue','guests','eventType'];
+const ADMIN_KEYS = ['status','package','outside','km','transport','packagePrice','discountType','discountValue','total','cost','profit','staffMenuByClient','notes','name','phone','email','eventDate','startTime','county','city','venue','guests','eventType','album'];
 
 /* ---------------- intrări web ----------------
    Aplicația vorbește cu scriptul prin fetch (GET/POST). Dacă browserul blochează citirea răspunsului,
@@ -107,6 +108,10 @@ function sheet_() {
     sh.setFrozenRows(1);
     TEXT_COLS.forEach(k => sh.getRange(2, KEYS.indexOf(k) + 1, sh.getMaxRows() - 1, 1).setNumberFormat('@'));
   }
+  // coloane noi adăugate în versiuni mai noi (ex. „Album foto”): le punem la capătul foii existente
+  if (sh.getMaxColumns() < FIELDS.length) sh.insertColumnsAfter(sh.getMaxColumns(), FIELDS.length - sh.getMaxColumns());
+  if (sh.getRange(1, FIELDS.length).getValue() !== FIELDS[FIELDS.length - 1][1])
+    sh.getRange(1, 1, 1, FIELDS.length).setValues([FIELDS.map(f => f[1])]).setFontWeight('bold').setBackground('#6a2a5e').setFontColor('#ffffff');
   return sh;
 }
 function settingsSheet_() {
