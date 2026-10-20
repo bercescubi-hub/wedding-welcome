@@ -52,6 +52,15 @@ section{scroll-margin-top:16px}
 .hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:56px;align-items:center;padding:56px 0 64px}
 .hero h1{font-family:var(--f-display);font-weight:500;font-size:clamp(2.2rem,5.6vw,3.6rem);line-height:1.1;margin:0 0 18px;letter-spacing:-.01em}
 .hero .lead{font-size:1.12rem;color:var(--muted);max-width:46ch}
+.hero h1 .h1a{display:block}
+.hero h1 .h1b{display:block;margin-top:.12em;color:var(--plum);font-weight:600;letter-spacing:.06em;white-space:nowrap;font-size:1.12em}
+@media (max-width:820px){
+  .hero > div:first-child{text-align:center}
+  .hero .cta-row{align-items:center}
+  .hero h1{font-size:clamp(1.75rem,7.4vw,2.4rem);line-height:1.18}
+  .hero h1 .h1b{font-size:1.18em}
+  .hero .lead{font-size:1.02rem;margin-left:auto;margin-right:auto}
+}
 .hero .lead2{margin-top:12px;color:var(--ink);font-weight:600}
 .cta-row{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-top:30px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;background:var(--plum);color:var(--plum-ink);border-radius:99px;
@@ -200,7 +209,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
     <!-- ================= PRIMUL ECRAN ================= -->
     <header class="hero">
       <div>
-        <h1>De ziua voastră, fiți sărbătoriți cum se cuvine.</h1>
+        <h1><span class="h1a">De ziua voastră, fiți sărbătoriți</span><span class="h1b">CUM SE CUVINE!</span></h1>
         <p class="lead">Știm cu toții cât de dificil de gestionat poate fi un eveniment. Întâmpinarea oaspeților poate dura chiar și 2h. Aici intervenim noi. Tu ocupă-te cu distracția, noi venim în ajutorul tău.</p>
         <p class="lead lead2">Timpul este esențial, meritați să vă bucurați de momentele voastre speciale!</p>
         <div class="cta-row">
