@@ -379,6 +379,8 @@
       pret_pachet: n0(c.price), transport: n0(c.transport), km: String(c.billedKm), reducere: n0(c.discount), total: n0(c.total),
       tva: n0(c.vat), total_fara_tva: n0(c.net), cota_tva: String(c.vatRate),
       expeditor: S.email.fromName || '', invitati: l.guests || '', telefoane: phones(),
+      procent_avans: String(num(S.pricing.advancePct)), zile_plata: String(num(S.pricing.payDays || 10)), avans: n0(c.total * num(S.pricing.advancePct) / 100),
+      termen_plata: new Date(Date.now() + num(S.pricing.payDays || 10) * 864e5).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }),
       album: c.album === 'inclus' ? 'inclus în pachet' : c.albumExtra ? n0(c.albumExtra) + ' lei' : 'nu'
     };
     return String(t || '').replace(/\{(\w+)\}/g, (m, k) => k in map ? map[k] : m);
@@ -410,6 +412,7 @@
   }
   async function send() {
     compose.to = $('#cp-to').value.trim(); compose.subject = $('#cp-s').value; compose.body = $('#cp-b').value;
+    if (/\[COMPLETEAZĂ/i.test(compose.subject + compose.body)) { compose.err = 'Emailul are încă un loc de completat ([COMPLETEAZĂ…]). Completează-l aici sau în Șabloane email, apoi trimite.'; return renderCompose(); }
     compose.sending = true; compose.err = ''; renderCompose();
     const S = C.settings, t = S.templates.find(x => x.id === compose.tpl);
     try {
@@ -479,7 +482,7 @@
   /* ---------- Șabloane ---------- */
   function templatesView() {
     const S = C.settings;
-    const ph = ['telefoane', 'album', 'prenume', 'nume_complet', 'data_eveniment', 'locatie_completa', 'localitate', 'pachet', 'ore', 'pret_pachet', 'transport', 'km', 'reducere', 'total', 'tva', 'total_fara_tva', 'cota_tva', 'invitati', 'expeditor'];
+    const ph = ['avans', 'procent_avans', 'termen_plata', 'zile_plata', 'telefoane', 'album', 'prenume', 'nume_complet', 'data_eveniment', 'locatie_completa', 'localitate', 'pachet', 'ore', 'pret_pachet', 'transport', 'km', 'reducere', 'total', 'tva', 'total_fara_tva', 'cota_tva', 'invitati', 'expeditor'];
     return `<section class="panel"><h2>Expeditor</h2>
         <div class="row2"><div class="field"><label>Emailul din care pleacă mesajele</label><input class="inp" type="email" data-s="email.fromEmail" value="${esc(S.email.fromEmail)}"></div>
           <div class="field"><label>Numele afișat</label><input class="inp" data-s="email.fromName" value="${esc(S.email.fromName)}"></div></div>
@@ -487,6 +490,7 @@
         ${C.account && S.email.fromEmail && C.account.toLowerCase() !== S.email.fromEmail.toLowerCase() ? `<p class="hint warn-msg">Atenție: scriptul rulează pe ${esc(C.account)}, dar expeditorul ales e ${esc(S.email.fromEmail)}.</p>` : ''}
       </section>
       <section class="panel"><h2>Șabloane</h2>
+        <div class="row3">${[['pricing.advancePct', 'Avans la reconfirmare', S.pricing.advancePct, '% din total'], ['pricing.payDays', 'Termen de plată a avansului', S.pricing.payDays, 'zile de la email']].map(([pa, la, v, su]) => `<div class="field"><label>${la}</label><div class="suf"><input class="inp" data-s="${pa}" data-num="1" inputmode="decimal" value="${esc(v)}"><span>${su}</span></div></div>`).join('')}</div>
         <p class="hint">Câmpuri pe care le completez automat: ${ph.map(p => `<code>{${p}}</code>`).join(' ')}. Rândul care conține <code>{reducere}</code> apare doar dacă oferta are o reducere; <code>{telefoane}</code> pune numerele din config.js.</p>
         ${S.templates.map((t, i) => `<div class="cat">
           <div class="cat-head"><input class="inp" data-s="templates.${i}.name" value="${esc(t.name)}" aria-label="Numele șablonului">
@@ -538,6 +542,13 @@
     let changed = false;
     if (t.body.includes(old)) { t.body = t.body.replace(old, 'Pentru rezervare, vă rugăm să ne confirmați pe email (răspunzând la acest mesaj) sau pe WhatsApp.'); changed = true; }
     if (changed && !t.body.includes('{telefoane}')) t.body = t.body.replace(/\{expeditor\}\s*$/, '{expeditor}\nTelefon / WhatsApp: {telefoane}');
+    const conf = (S.templates || []).find(x => x.id === 'confirmare');
+    if (conf && conf.body.includes('vă vom cere lista invitaților cu mesele și videoclipurile')) { conf.body = P.CONFIRM_BODY; changed = true; }
+    if (!(S.templates || []).some(x => x.id === 'reconfirmare')) {
+      const def = P.DEFAULT_SETTINGS.templates.find(x => x.id === 'reconfirmare');
+      const i = S.templates.findIndex(x => x.id === 'confirmare');
+      S.templates.splice(i < 0 ? S.templates.length : i + 1, 0, clone(def)); changed = true;
+    }
     return changed;
   }
   async function saveSettingsRemote() {

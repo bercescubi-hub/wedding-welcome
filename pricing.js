@@ -2,6 +2,8 @@
    Folosit și de formularul public (oferta.html), și de aplicație (Evenimente), ca să calculeze la fel.
    Valorile de mai jos sunt cele implicite (fictive); cele reale se modifică din aplicație → Evenimente → Prețuri și costuri. */
 (function (g) {
+  const CONFIRM_BODY = 'Bună, {prenume}!\n\nVă confirmăm rezervarea pachetului {pachet} pentru {data_eveniment}, la {locatie_completa}. Total: {total} lei.\n\nCu câteva săptămâni înainte vă vom contacta pentru lista finală a invitaților. Videoclipurile le vom realiza în ziua evenimentului.\n\nÎn ianuarie 2027 vă vom contacta pentru reconfirmare și achitarea unui avans de {procent_avans}%.\n\nVă mulțumim!\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
+  const RECONFIRM_BODY = 'Bună, {prenume}!\n\nRevenim, așa cum am stabilit, pentru reconfirmarea rezervării pentru {data_eveniment}, la {locatie_completa} (pachetul {pachet}, total {total} lei).\n\nPentru a păstra rezervarea, vă rugăm să achitați avansul de {procent_avans}%, adică {avans} lei, în cel mult {zile_plata} zile de la primirea acestui email (până la {termen_plata}).\n\nDetalii pentru plată: [COMPLETEAZĂ: IBAN, titular, bancă]\n\nDupă primirea avansului vă trimitem confirmarea. Pentru orice întrebare ne găsiți pe email sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
   const DEFAULT_SETTINGS = {
     packages: [
       { id: 'esential', name: 'Esențial', hours: 3, price: 1500, modules: ['welcome', 'seating'], staffMenu: false,
@@ -12,7 +14,7 @@
         desc: 'Toată experiența, pe toată durata petrecerii.' }
     ],
     /* TVA stă la „pricing” ca să ajungă și în formularul public (prețul afișat clientului); restul taxelor sunt interne, la „costs”. */
-    pricing: { kmRate: 2.5, roundTrip: true, maxKm: 300, vatPayer: true, vatRate: 21, pricesIncludeVat: true, albumPrice: 300 },
+    pricing: { kmRate: 2.5, roundTrip: true, maxKm: 300, vatPayer: true, vatRate: 21, pricesIncludeVat: true, albumPrice: 300, advancePct: 30, payDays: 10 },
     costs: { staffCount: 2, staffRate: 60, setupHours: 1, menuCost: 250, fuelPerKm: 1, boothConsumables: 250, equipment: 100, albumCost: 0,
       incomeTax: 1, payFee: 0, invoiceFixed: 0 },
     email: { fromEmail: 'bercescubi@gmail.com', fromName: 'Wedding Welcome' },
@@ -20,7 +22,9 @@
       { id: 'oferta', name: 'Ofertă', status: 'Ofertă trimisă', subject: 'Oferta Wedding Welcome pentru {data_eveniment}',
         body: 'Bună, {prenume}!\n\nVă mulțumim pentru interesul arătat. Pentru evenimentul din {data_eveniment}, de la {locatie_completa}, vă propunem pachetul {pachet} ({ore}).\n\nPachet: {pret_pachet} lei\nTransport: {transport} lei\nReducere: {reducere} lei\nTotal: {total} lei\n\nOferta este valabilă 14 zile. Pentru rezervare, vă rugăm să ne confirmați pe email (răspunzând la acest mesaj) sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}' },
       { id: 'confirmare', name: 'Confirmare rezervare', status: 'Confirmat', subject: 'Rezervarea pentru {data_eveniment} este confirmată',
-        body: 'Bună, {prenume}!\n\nVă confirmăm rezervarea pachetului {pachet} pentru {data_eveniment}, la {locatie_completa}. Total: {total} lei.\n\nCu câteva săptămâni înainte vă vom cere lista invitaților cu mesele și videoclipurile pentru mesajul de bun venit.\n\nVă mulțumim!\n{expeditor}' },
+        body: CONFIRM_BODY },
+      { id: 'reconfirmare', name: 'Reconfirmare și avans', status: '', subject: 'Reconfirmare și avans pentru {data_eveniment}',
+        body: RECONFIRM_BODY },
       { id: 'revenire', name: 'Revenire', status: '', subject: 'Ați avut ocazia să vă uitați pe ofertă?',
         body: 'Bună, {prenume}!\n\nRevin cu privire la oferta pentru {data_eveniment}. Dacă aveți întrebări sau doriți să ajustăm pachetul, sunt aici.\n\nCu drag,\n{expeditor}' }
     ]
@@ -171,5 +175,5 @@
       }
     }
   };
-  g.WWPricing = { outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, albumIncluded, num, yes, lei, leiRate };
+  g.WWPricing = { CONFIRM_BODY, RECONFIRM_BODY, outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, albumIncluded, num, yes, lei, leiRate };
 })(typeof window !== 'undefined' ? window : globalThis);
