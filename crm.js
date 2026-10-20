@@ -265,7 +265,16 @@
     L = clone(l); L.status = L.status || 'Nou'; L.discountType = L.discountType === 'lei' ? 'lei' : '%';
     L.outside = P.yes(L.outside) ? 'da' : 'nu'; L.staffMenuByClient = P.yes(L.staffMenuByClient) ? 'da' : 'nu';
     L.album = P.yes(L.album) ? 'da' : 'nu';
+    L._promo = applyEarlyPromo(L);
     compose = null; renderLead();
+  }
+  /** Promoția de final de an: cererile primite până la data din config.js (promo.until) vin cu reducerea (10%) completată,
+      dacă cererea e încă nouă și n-a fost salvată sau trimisă din aplicație. O poți schimba înainte de salvare. */
+  function applyEarlyPromo(l) {
+    const pr = (window.WW_CONFIG || {}).promo; if (!pr || !pr.until || !num(pr.earlyPct)) return false;
+    const got = Date.parse(l.createdAt || ''), end = Date.parse(pr.until + 'T23:59:59');
+    if (!got || got > end || (l.status || 'Nou') !== 'Nou' || l.lastEmail || num(l.discountValue) || String(l.cost || '') !== '') return false;   // cost completat = cererea a fost deja salvată din aplicație
+    l.discountType = '%'; l.discountValue = String(num(pr.earlyPct)); return true;
   }
   function breakdown() {
     const S = C.settings, c = P.calc(L, S);
@@ -336,6 +345,7 @@
           <select class="inp" data-l="discountType" aria-label="Tipul reducerii"><option value="%" ${L.discountType === '%' ? 'selected' : ''}>%</option><option value="lei" ${L.discountType === 'lei' ? 'selected' : ''}>lei</option></select></div></div>
         <div class="field"><label>&nbsp;</label><label class="tog"><input type="checkbox" data-l="staffMenuByClient" ${L.staffMenuByClient === 'da' ? 'checked' : ''}> Clientul asigură meniul pentru staff</label></div>
       </div>
+      ${L._promo ? `<p class="hint ok-msg">Reducerea de ${esc(L.discountValue)}% din promoția de final de an e completată automat (cerere primită până la 31 decembrie). Se salvează când apeși „Salvează” sau trimiți oferta.</p>` : ''}
       <div id="albumBox">${albumField()}</div>
       <div id="calcBox">${breakdown()}</div>
       <div class="field"><label for="l-notes">Note interne (nu le vede clientul)</label><textarea class="inp" id="l-notes" data-l="notes" rows="3" style="min-height:70px">${esc(L.notes || '')}</textarea></div>
