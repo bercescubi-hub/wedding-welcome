@@ -62,7 +62,7 @@
     try {
       const d = await api('GET', { action: 'list' });
       C.leads = d.rows || []; C.scriptOld = !!(C.leads.length && !('album' in C.leads[0])); C.account = d.account || C.account; if (d.role) C.role = d.role;
-      if (d.settings) C.settings = merge(P.DEFAULT_SETTINGS, d.settings);
+      if (d.settings) { C.settings = merge(P.DEFAULT_SETTINGS, d.settings); if (migrateTemplates(C.settings) && isAdmin()) saveSettingsRemote(); }
       else await api('POST', { action: 'settings', settings: C.settings });   // prima conectare: urcă prețurile implicite
       C.lastSync = new Date().toISOString(); save(); note = ''; setDirty = false;
       await pushAccounts(true);
@@ -365,8 +365,12 @@
   }
 
   /* ---------- email ---------- */
+  /** Numerele de contact din config.js, ca „0737 376 128 / 0752 425 550”. */
+  const phones = () => ((window.WW_CONFIG || {}).contactPhones || []).map(t => String(t).replace(/\D/g, '').replace(/^(\d{4})(\d{3})(\d{3})$/, '$1 $2 $3')).join(' / ');
   function fill(t, l) {
     const S = C.settings, c = P.calc(l, S);
+    // rândurile cu {reducere} apar doar dacă oferta are o reducere
+    t = String(t || '').split('\n').filter(line => c.discount || !line.includes('{reducere}')).join('\n');
     const n0 = v => Math.round(num(v)).toLocaleString('ro-RO');
     const map = {
       prenume: String(l.name || '').trim().split(/\s+/)[0] || '', nume_complet: l.name || '', data_eveniment: fmtDLong(l.eventDate),
@@ -374,7 +378,7 @@
       pachet: c.pkg ? c.pkg.name : '', ore: c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore',
       pret_pachet: n0(c.price), transport: n0(c.transport), km: String(c.billedKm), reducere: n0(c.discount), total: n0(c.total),
       tva: n0(c.vat), total_fara_tva: n0(c.net), cota_tva: String(c.vatRate),
-      expeditor: S.email.fromName || '', invitati: l.guests || '',
+      expeditor: S.email.fromName || '', invitati: l.guests || '', telefoane: phones(),
       album: c.album === 'inclus' ? 'inclus în pachet' : c.albumExtra ? n0(c.albumExtra) + ' lei' : 'nu'
     };
     return String(t || '').replace(/\{(\w+)\}/g, (m, k) => k in map ? map[k] : m);
@@ -475,7 +479,7 @@
   /* ---------- Șabloane ---------- */
   function templatesView() {
     const S = C.settings;
-    const ph = ['prenume', 'nume_complet', 'data_eveniment', 'locatie_completa', 'localitate', 'pachet', 'ore', 'pret_pachet', 'transport', 'km', 'reducere', 'total', 'tva', 'total_fara_tva', 'cota_tva', 'invitati', 'expeditor'];
+    const ph = ['telefoane', 'album', 'prenume', 'nume_complet', 'data_eveniment', 'locatie_completa', 'localitate', 'pachet', 'ore', 'pret_pachet', 'transport', 'km', 'reducere', 'total', 'tva', 'total_fara_tva', 'cota_tva', 'invitati', 'expeditor'];
     return `<section class="panel"><h2>Expeditor</h2>
         <div class="row2"><div class="field"><label>Emailul din care pleacă mesajele</label><input class="inp" type="email" data-s="email.fromEmail" value="${esc(S.email.fromEmail)}"></div>
           <div class="field"><label>Numele afișat</label><input class="inp" data-s="email.fromName" value="${esc(S.email.fromName)}"></div></div>
@@ -483,7 +487,7 @@
         ${C.account && S.email.fromEmail && C.account.toLowerCase() !== S.email.fromEmail.toLowerCase() ? `<p class="hint warn-msg">Atenție: scriptul rulează pe ${esc(C.account)}, dar expeditorul ales e ${esc(S.email.fromEmail)}.</p>` : ''}
       </section>
       <section class="panel"><h2>Șabloane</h2>
-        <p class="hint">Câmpuri pe care le completez automat: ${ph.map(p => `<code>{${p}}</code>`).join(' ')}</p>
+        <p class="hint">Câmpuri pe care le completez automat: ${ph.map(p => `<code>{${p}}</code>`).join(' ')}. Rândul care conține <code>{reducere}</code> apare doar dacă oferta are o reducere; <code>{telefoane}</code> pune numerele din config.js.</p>
         ${S.templates.map((t, i) => `<div class="cat">
           <div class="cat-head"><input class="inp" data-s="templates.${i}.name" value="${esc(t.name)}" aria-label="Numele șablonului">
             ${S.templates.length > 1 ? `<button type="button" class="x" data-act="crm-deltpl" data-i="${i}" aria-label="Șterge șablonul">×</button>` : ''}</div>
@@ -526,6 +530,15 @@
     if (!configured() || !isAdmin()) { if (m) { m.textContent = 'Salvat pe acest dispozitiv.'; m.className = 'hint'; } return; }
     if (m) { m.textContent = 'Se salvează…'; m.className = 'hint'; }
     clearTimeout(autoT); autoT = setTimeout(saveSettingsRemote, 1000);
+  }
+  /** O singură dată: șablonul „Ofertă” vechi primește textul nou de rezervare (email sau WhatsApp) și telefoanele la final. */
+  function migrateTemplates(S) {
+    const t = (S.templates || []).find(x => x.id === 'oferta'); if (!t) return false;
+    const old = 'Pentru rezervare, răspundeți la acest email sau sunați-ne.';
+    let changed = false;
+    if (t.body.includes(old)) { t.body = t.body.replace(old, 'Pentru rezervare, vă rugăm să ne confirmați pe email (răspunzând la acest mesaj) sau pe WhatsApp.'); changed = true; }
+    if (changed && !t.body.includes('{telefoane}')) t.body = t.body.replace(/\{expeditor\}\s*$/, '{expeditor}\nTelefon / WhatsApp: {telefoane}');
+    return changed;
   }
   async function saveSettingsRemote() {
     const m = $('#setMsg'); if (m) m.textContent = 'Se salvează…';

@@ -18,7 +18,7 @@
     email: { fromEmail: 'bercescubi@gmail.com', fromName: 'Wedding Welcome' },
     templates: [
       { id: 'oferta', name: 'Ofertă', status: 'Ofertă trimisă', subject: 'Oferta Wedding Welcome pentru {data_eveniment}',
-        body: 'Bună, {prenume}!\n\nVă mulțumim pentru interesul arătat. Pentru evenimentul din {data_eveniment}, de la {locatie_completa}, vă propunem pachetul {pachet} ({ore}).\n\nPachet: {pret_pachet} lei\nTransport: {transport} lei\nReducere: {reducere} lei\nTotal: {total} lei\n\nOferta este valabilă 14 zile. Pentru rezervare, răspundeți la acest email sau sunați-ne.\n\nCu drag,\n{expeditor}' },
+        body: 'Bună, {prenume}!\n\nVă mulțumim pentru interesul arătat. Pentru evenimentul din {data_eveniment}, de la {locatie_completa}, vă propunem pachetul {pachet} ({ore}).\n\nPachet: {pret_pachet} lei\nTransport: {transport} lei\nReducere: {reducere} lei\nTotal: {total} lei\n\nOferta este valabilă 14 zile. Pentru rezervare, vă rugăm să ne confirmați pe email (răspunzând la acest mesaj) sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}' },
       { id: 'confirmare', name: 'Confirmare rezervare', status: 'Confirmat', subject: 'Rezervarea pentru {data_eveniment} este confirmată',
         body: 'Bună, {prenume}!\n\nVă confirmăm rezervarea pachetului {pachet} pentru {data_eveniment}, la {locatie_completa}. Total: {total} lei.\n\nCu câteva săptămâni înainte vă vom cere lista invitaților cu mesele și videoclipurile pentru mesajul de bun venit.\n\nVă mulțumim!\n{expeditor}' },
       { id: 'revenire', name: 'Revenire', status: '', subject: 'Ați avut ocazia să vă uitați pe ofertă?',
