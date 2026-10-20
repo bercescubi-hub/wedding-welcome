@@ -1,7 +1,7 @@
 {
-  "name": "Wedding Welcome",
-  "short_name": "Welcome",
-  "description": "Ecranul de bun venit pentru invitați: mesajul mirilor, găsirea mesei și photo booth.",
+  "name": "WE WELCOME",
+  "short_name": "WE WELCOME",
+  "description": "WE WELCOME — ecranul de bun venit pentru invitați, cererile de ofertă și conturile.",
   "lang": "ro",
   "start_url": "./",
   "scope": "./",

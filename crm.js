@@ -119,14 +119,14 @@
   function hubView() {
     const leads = C.leads.filter(l => l.status !== 'Șters'), nNew = leads.filter(l => (l.status || 'Nou') === 'Nou').length;
     const live = W.live && W.published ? 'LIVE acum' : W.published ? (JSON.stringify(W.draft) === JSON.stringify(W.published) ? 'Publicat' : 'Modificări nepublicate') : 'Nepublicat';
-    return `${header('Bună, ' + esc(USER.username) + '!', 'Wedding Welcome · Administrare', false)}
+    return `${header('Bună, ' + esc(USER.username) + '!', 'WE WELCOME · Administrare', false)}
       <div class="hub">
         <button type="button" class="hcard" data-act="area" data-k="evenimente">
           <span class="hic">${ICON.cal}</span><b>Evenimente</b>
           <span>${configured() ? `${leads.length} ${leads.length === 1 ? 'cerere' : 'cereri'}${nNew ? ` · <em>${nNew} ${nNew === 1 ? 'nouă' : 'noi'}</em>` : ''}` : 'Conectează Google Sheets'}</span>
           <small>Cereri de ofertă, prețuri, profit, emailuri</small></button>
         <button type="button" class="hcard" data-act="area" data-k="tool">
-          <span class="hic">${ICON.screen}</span><b>Wedding Welcome</b>
+          <span class="hic">${ICON.screen}</span><b>Ecran de bun venit</b>
           <span>${esc(W.draft.couple || 'Evenimentul tău')} · ${live}</span>
           <small>Ecranul invitaților: bun venit, mese, Photo Booth</small></button>
         <button type="button" class="hcard" data-act="area" data-k="conturi">
@@ -138,7 +138,8 @@
         <h2>Linkul pentru clienți</h2>
         <p class="hint">Pune-l în anunțurile de pe Facebook și OLX. Cererile ajung în Google Sheets și le vezi în Evenimente.</p>
         ${linkBox()}
-      </section>`;
+      </section>
+      <div class="hub-logo"><img src="img/logo-dark.png" alt="WE WELCOME … You celebrate." width="900" height="527"></div>`;
   }
   function linkBox() {
     return `<div class="linkbox"><code>${esc(formUrl())}</code>

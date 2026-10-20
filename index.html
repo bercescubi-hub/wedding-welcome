@@ -3,12 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Wedding Welcome</title>
+<title>WE WELCOME</title>
 <meta name="theme-color" content="#160b18">
 <meta name="description" content="Ecranul de bun venit pentru invitați: mesajul mirilor, găsirea mesei și photo booth.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-title" content="WE WELCOME">
+<meta name="application-name" content="WE WELCOME">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,7 +49,9 @@ p{margin:0}
   background:radial-gradient(120% 70% at 50% -5%,#2b1531 0%,#160b18 62%),#160b18;color:#f0e3cb}
 .acard{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
 .acard .brand{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:8px}
-.acard .brand .w{width:62px;height:62px;border-radius:50%;border:1px solid rgba(207,174,114,.6);display:grid;place-items:center;font-family:var(--f-display);font-style:italic;font-size:1.7rem;color:#f0e3cb}
+.acard .brand .w{width:120px;height:auto;display:block}
+.acard .brand h1{letter-spacing:.18em}
+.hub-logo{display:flex;justify-content:center;padding:34px 0 10px}.hub-logo img{width:min(320px,70vw);height:auto;opacity:.95}
 .acard h1{font-family:var(--f-display);font-style:italic;font-weight:400;font-size:2rem}
 .acard .sub{color:rgba(240,227,203,.66);font-size:.92rem;text-align:center}
 .acard label{font-size:.82rem;color:rgba(240,227,203,.7);display:block;margin-bottom:6px}
@@ -367,7 +371,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
 </style>
 </head>
 <body>
-<div id="auth" class="auth"><div class="acard"><div class="brand"><span class="w">W</span><h1>Wedding Welcome</h1><p class="sub">Se încarcă aplicația…</p></div></div></div>
+<div id="auth" class="auth"><div class="acard"><div class="brand"><img class="w" src="img/mono-light.png" alt=""><h1>WE WELCOME</h1><p class="sub">Se încarcă aplicația…</p></div></div></div>
 <div id="admin" class="admin" hidden></div>
 <div id="actionbar" class="actionbar" hidden>
   <div class="in">
@@ -396,7 +400,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.12.0';
+const APP_VERSION = '3.13.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
@@ -643,10 +647,10 @@ const fmtDate = iso => { try { return new Date(iso).toLocaleString('ro-RO', {day
 /* ============================ AUTH ============================ */
 function renderAuth(){
   const n = accounts().users.length;
-  const brand = (t, s) => `<div class="brand"><span class="w">W</span><h1>${t}</h1>${s ? `<p class="sub">${s}</p>` : ''}</div>`;
+  const brand = (t, s) => `<div class="brand"><img class="w" src="img/mono-light.png" alt=""><h1>${t}</h1>${s ? `<p class="sub">${s}</p>` : ''}</div>`;
   let h = '';
   if (!window.isSecureContext || !crypto.subtle) {
-    h = brand('Wedding Welcome', 'Conturile au nevoie ca aplicația să fie deschisă de pe adresa ei (https), nu ca fișier local.');
+    h = brand('WE WELCOME', 'Conturile au nevoie ca aplicația să fie deschisă de pe adresa ei (https), nu ca fișier local.');
   } else if (authView === 'code') {
     h = `${brand('Cont creat', `Contul <b>${esc(authInfo.username)}</b> e gata.`)}
       <p class="sub">Acesta este codul de recuperare. Notează-l într-un loc sigur: e singura cale de a schimba parola dacă o uiți.</p>
@@ -674,7 +678,7 @@ function renderAuth(){
       </form>
       <div class="links"><button type="button" class="lnk" data-act="auth-view" data-v="login">Înapoi la autentificare</button></div>`;
   } else {
-    h = `${brand('Wedding Welcome', 'Intră în contul tău')}
+    h = `${brand('WE WELCOME', 'Intră în contul tău')}
       <form id="fLogin" class="acard" style="gap:12px">
         <div><label for="li-u">Utilizator</label><input class="ai" id="li-u" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></div>
         <div><label for="li-p">Parolă</label><input class="ai" id="li-p" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
@@ -732,7 +736,7 @@ function renderAdmin(){
       <div class="btns"><button type="button" class="btn small danger" data-act="discard-yes">Da, renunță</button><button type="button" class="btn small" data-act="ask" data-k="">Anulează</button></div></div>` : '';
   $('#admin').innerHTML = `<div class="wrap">
     <header class="top">
-      <div><button type="button" class="crumb" data-act="area" data-k="home">‹ Administrare</button><p class="eyebrow-a">Wedding Welcome</p><h1 id="hName">${esc(c.couple || 'Evenimentul tău')}</h1></div>
+      <div><button type="button" class="crumb" data-act="area" data-k="home">‹ Administrare</button><p class="eyebrow-a">Ecran de bun venit</p><h1 id="hName">${esc(c.couple || 'Evenimentul tău')}</h1></div>
       <div class="top-r"><span class="state-pill"><span class="dot${navigator.onLine?'':' no'}"></span>${navigator.onLine?'Online':'Offline'}</span>
         <button type="button" class="state-pill" data-act="area" data-k="conturi" aria-label="Contul meu">${esc(USER.username)}</button></div>
     </header>
