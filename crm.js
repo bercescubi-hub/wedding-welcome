@@ -584,7 +584,7 @@
     if (changed && !t.body.includes('{telefoane}')) t.body = t.body.replace(/\{expeditor\}\s*$/, '{expeditor}\nTelefon / WhatsApp: {telefoane}');
     if (S.email && S.email.fromName === 'Wedding Welcome') { S.email.fromName = 'WE WELCOME'; changed = true; }
     if (t.subject === 'Oferta Wedding Welcome pentru {data_eveniment}') { t.subject = 'Oferta WE WELCOME pentru {data_eveniment}'; changed = true; }
-    if ((t.body.includes('Pachet: {pret_pachet} lei') && t.body.includes('Vă mulțumim pentru interesul arătat')) || t.body === P.OFFER_BODY_V2) { t.body = P.OFFER_BODY; changed = true; }
+    if ((t.body.includes('Pachet: {pret_pachet} lei') && t.body.includes('Vă mulțumim pentru interesul arătat')) || t.body === P.OFFER_BODY_V2 || t.body === P.OFFER_BODY_V3) { t.body = P.OFFER_BODY; changed = true; }
     const conf = (S.templates || []).find(x => x.id === 'confirmare');
     if (conf && conf.body.includes('vă vom cere lista invitaților cu mesele și videoclipurile')) { conf.body = P.CONFIRM_BODY; changed = true; }
     if (!(S.templates || []).some(x => x.id === 'reconfirmare')) {
