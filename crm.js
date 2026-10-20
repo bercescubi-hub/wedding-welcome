@@ -62,7 +62,7 @@
     try {
       const d = await api('GET', { action: 'list' });
       C.leads = d.rows || []; C.scriptOld = !!(C.leads.length && !('album' in C.leads[0])); C.account = d.account || C.account; if (d.role) C.role = d.role;
-      if (d.settings) { C.settings = merge(P.DEFAULT_SETTINGS, d.settings); if (migrateTemplates(C.settings) && isAdmin()) saveSettingsRemote(); }
+      if (d.settings) { C.settings = merge(P.DEFAULT_SETTINGS, d.settings); const m1 = migrateTemplates(C.settings), m2 = migratePackages(C.settings); if ((m1 || m2) && isAdmin()) saveSettingsRemote(); }
       else await api('POST', { action: 'settings', settings: C.settings });   // prima conectare: urcă prețurile implicite
       C.lastSync = new Date().toISOString(); save(); note = ''; setDirty = false;
       await pushAccounts(true);
@@ -535,6 +535,13 @@
     if (!configured() || !isAdmin()) { if (m) { m.textContent = 'Salvat pe acest dispozitiv.'; m.className = 'hint'; } return; }
     if (m) { m.textContent = 'Se salvează…'; m.className = 'hint'; }
     clearTimeout(autoT); autoT = setTimeout(saveSettingsRemote, 1000);
+  }
+  /** O singură dată: pachetele cu numele și prețurile vechi implicite primesc numele și prețurile noi (Welcome 1.300, Celebrate 2.600, All Night 4.200). */
+  function migratePackages(S) {
+    const NEW = { esential: ['Esențial', 1500, 'Welcome', 1300], complet: ['Complet', 2500, 'Celebrate', 2600], allnight: ['All Night', 3300, 'All Night', 4200] };
+    let changed = false;
+    (S.packages || []).forEach(p => { const n = NEW[p.id]; if (n && p.name === n[0] && num(p.price) === n[1]) { p.name = n[2]; p.price = n[3]; changed = true; } });
+    return changed;
   }
   /** O singură dată: șablonul „Ofertă” vechi primește textul nou de rezervare (email sau WhatsApp) și telefoanele la final. */
   function migrateTemplates(S) {

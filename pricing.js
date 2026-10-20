@@ -6,11 +6,11 @@
   const RECONFIRM_BODY = 'Bună, {prenume}!\n\nRevenim, așa cum am stabilit, pentru reconfirmarea rezervării pentru {data_eveniment}, la {locatie_completa} (pachetul {pachet}, total {total} lei).\n\nPentru a păstra rezervarea, vă rugăm să achitați avansul de {procent_avans}%, adică {avans} lei, în cel mult {zile_plata} zile de la primirea acestui email (până la {termen_plata}).\n\nDetalii pentru plată: [COMPLETEAZĂ: IBAN, titular, bancă]\n\nDupă primirea avansului vă trimitem confirmarea. Pentru orice întrebare ne găsiți pe email sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
   const DEFAULT_SETTINGS = {
     packages: [
-      { id: 'esential', name: 'Esențial', hours: 3, price: 1500, modules: ['welcome', 'seating'], staffMenu: false,
+      { id: 'esential', name: 'Welcome', hours: 3, price: 1300, modules: ['welcome', 'seating'], staffMenu: false,
         desc: 'Primirea invitaților: mesajul vostru de bun venit și găsirea mesei.' },
-      { id: 'complet', name: 'Complet', hours: 5, price: 2500, modules: ['welcome', 'seating', 'booth'], staffMenu: false, recommended: true,
+      { id: 'complet', name: 'Celebrate', hours: 5, price: 2600, modules: ['welcome', 'seating', 'booth'], staffMenu: false, recommended: true,
         desc: 'Toată experiența pentru primele ore ale petrecerii.' },
-      { id: 'allnight', name: 'All Night', hours: 10, price: 3300, modules: ['welcome', 'seating', 'booth'], staffMenu: true, album: true,
+      { id: 'allnight', name: 'All Night', hours: 10, price: 4200, modules: ['welcome', 'seating', 'booth'], staffMenu: true, album: true,
         desc: 'Toată experiența, pe toată durata petrecerii.' }
     ],
     /* TVA stă la „pricing” ca să ajungă și în formularul public (prețul afișat clientului); restul taxelor sunt interne, la „costs”. */

@@ -372,11 +372,11 @@ const untilText = () => new Date(PROMO.until + 'T12:00:00').toLocaleDateString('
 const plusVat = () => S.pricing.vatPayer && !S.pricing.pricesIncludeVat ? ' + TVA' : '';
 const after = (price, pct) => Math.round(P.num(price) * (1 - P.num(pct) / 100));
 function priceHtml(p){
-  if (!promoOn() || !P.num(p.price)) return '';
+  if (!P.num(p.price)) return '';
+  if (!promoOn()) return `<span class="price"><b>${esc(P.lei(p.price))}${plusVat()}</b></span>`;
   return `<span class="price"><s>${esc(P.lei(p.price))}</s><b>${esc(P.lei(after(p.price, PROMO.earlyPct)))}${plusVat()}</b><small>−${esc(PROMO.earlyPct)}% pentru rezervările până la ${esc(untilText())}</small></span>`;
 }
 function renderPromoNote(){
-  if (!promoOn()) return;
   $('#pkNote').textContent = `Prețurile sunt pentru pachet${plusVat() ? ', fără TVA' : ', cu TVA inclus'}. Pentru locațiile din afara Bucureștiului și Ilfovului, transportul se adaugă în oferta personalizată. Puteți schimba pachetul oricând până la confirmare.`;
 }
 function renderWin(){
