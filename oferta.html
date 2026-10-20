@@ -138,20 +138,6 @@ section{scroll-margin-top:16px}
 .pk .price s{color:var(--muted);font-size:.95rem}
 .pk .price b{font-family:var(--f-body);font-size:1.3rem;font-weight:700;color:var(--plum)}
 .pk .price small{flex-basis:100%;font-size:.78rem;color:var(--gold);font-weight:600;letter-spacing:.02em}
-.promo-btn{display:inline-block;margin-top:8px;border:0;background:none;padding:0;color:var(--plum);font-weight:700;text-decoration:underline;cursor:pointer;font-size:.95rem}
-.win{position:fixed;inset:0;z-index:50;background:rgba(30,12,26,.55);display:flex;align-items:center;justify-content:center;padding:16px}
-.win-card{background:var(--surface);border-radius:20px;max-width:440px;width:100%;padding:26px 22px 20px;box-shadow:0 30px 80px rgba(0,0,0,.3);position:relative;max-height:calc(100dvh - 32px);overflow:auto}
-.win-card .x{position:absolute;top:10px;right:12px;border:0;background:none;font-size:1.6rem;line-height:1;color:var(--muted);cursor:pointer;padding:6px}
-.win-card .big{font-family:var(--f-display);font-size:2.1rem;line-height:1.1;color:var(--plum);margin:4px 0 8px}
-.win-card p{color:var(--muted);font-size:.95rem;margin:0 0 12px}
-.win-card table{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:.98rem}
-.win-card td{padding:9px 0;border-top:1px solid var(--line)}
-.win-card td:last-child{text-align:right;white-space:nowrap}
-.win-card td s{color:var(--muted);margin-right:8px;font-size:.88rem}
-.win-card td b{color:var(--plum)}
-.win-card .btn{width:100%}
-.win-card a:not(.btn){color:var(--plum)}
-.win-card .fine{font-size:.8rem;margin:12px 0 0;text-align:center}
 .promo a{color:var(--plum);white-space:nowrap}
 .promo{margin-top:16px!important;padding:14px 16px;border:1px solid var(--gold);border-radius:14px;background:var(--gold-soft);color:var(--ink)!important;font-size:.98rem}
 
@@ -289,7 +275,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
           <h2 id="fTitle">Hai să pregătim un bun venit perfect pentru evenimentul vostru.</h2>
           <p>Spuneți-ne câteva detalii despre eveniment, iar noi vom reveni cu o ofertă personalizată.</p>
           <!-- PROMOȚIE: se ascunde singură după data din data-until -->
-          <p class="promo" data-until="2026-12-31"><b>Rezervați până la finalul anului</b> și puteți câștiga <b>40% reducere</b> la evenimentul vostru: în ianuarie 2027 tragem la sorți 3 evenimente dintre rezervările confirmate până la 31 decembrie 2026, iar câștigătorii sunt anunțați pe email. <a href="regulament.html" target="_blank" rel="noopener">Regulamentul campaniei</a><br><button type="button" class="promo-btn" id="winOpen">Vezi cât ați plăti dacă rezervarea voastră e extrasă</button></p>
+          <p class="promo" data-until="2026-12-31"><b>Rezervați până la finalul anului</b> și puteți câștiga <b>40% reducere</b> la evenimentul vostru: în ianuarie 2027 tragem la sorți 3 evenimente dintre rezervările confirmate până la 31 decembrie 2026, iar câștigătorii sunt anunțați pe email. <a href="regulament.html" target="_blank" rel="noopener">Regulamentul campaniei</a></p>
         </div>
 
         <div>
@@ -348,19 +334,6 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
 </main>
 
 <!-- ================= CONFIRMARE ================= -->
-<!-- ================= FEREASTRA CU 40% (doar în perioada promoției) ================= -->
-<div class="win" id="win" hidden role="dialog" aria-modal="true" aria-labelledby="winT">
-  <div class="win-card">
-    <button type="button" class="x" id="winClose" aria-label="Închide">×</button>
-    <p class="eyebrow" style="margin:0">Tragere la sorți · ianuarie 2027</p>
-    <h2 class="big" id="winT">Puteți câștiga <span id="winPct">40%</span> reducere</h2>
-    <p id="winTxt"></p>
-    <table><tbody id="winRows"></tbody></table>
-    <a class="btn" href="#cerere" id="winCta">Cere oferta personalizată</a>
-    <p class="fine"><span id="winFine"></span> <a href="regulament.html" target="_blank" rel="noopener">Regulamentul campaniei</a></p>
-  </div>
-</div>
-
 <section class="done" id="done" hidden>
   <div class="brand"><span class="wm">WE WELCOME</span><span class="sl">We welcome. You celebrate.</span></div>
   <h1>Mulțumim! Abia așteptăm să aflăm mai multe despre evenimentul vostru.</h1>
@@ -400,18 +373,6 @@ function priceHtml(p){
 function renderPromoNote(){
   $('#pkNote').textContent = `Prețurile sunt pentru pachet${plusVat() ? ', fără TVA' : ', cu TVA inclus'}. Pentru locațiile din afara Bucureștiului și Ilfovului, transportul se adaugă în oferta personalizată. Puteți schimba pachetul oricând până la confirmare.`;
 }
-function renderWin(){
-  const rows = S.packages.filter(p => P.num(p.price)).map(p => `<tr><td>${esc(p.name)}</td><td><s>${esc(P.lei(p.price))}</s><b>${esc(P.lei(after(p.price, PROMO.prizePct)))}${plusVat()}</b></td></tr>`).join('');
-  $('#winRows').innerHTML = rows;
-}
-let winShown = false;
-function openWin(){
-  if (!promoOn()) return;
-  renderWin(); $('#win').hidden = false; winShown = true;
-  try { sessionStorage.setItem('ww-win', '1'); } catch (_) {}
-  setTimeout(() => $('#winClose').focus(), 30);
-}
-function closeWin(){ $('#win').hidden = true; }
 function renderPackages(){
   const rec = recommendedId();
   const cur = (document.querySelector('input[name=pkg]:checked') || {}).value || new URLSearchParams(location.search).get('pachet') || rec || S.packages[0].id;
@@ -429,7 +390,7 @@ function renderPackages(){
       ${isRec && full ? '<span class="why">Experiența completă: primirea, orientarea la mese și o amintire de luat acasă, într-o singură soluție.</span>' : ''}
       <span class="pick">${p.id === cur ? 'Ales' : 'Alege'}</span></label>`;
   }).join('');
-  renderPromoNote(); if (!$('#win').hidden) renderWin();
+  renderPromoNote();
 }
 document.addEventListener('change', e => { if (e.target.name === 'pkg') document.querySelectorAll('.pk label').forEach(l => { const on = l.querySelector('input').checked; l.querySelector('.pick').textContent = on ? 'Ales' : 'Alege'; }); });
 
@@ -513,22 +474,6 @@ document.addEventListener('input', updateWa);
 
 /* ---------- pornire ---------- */
 document.querySelectorAll('[data-until]').forEach(el => { el.dataset.until = PROMO.until || el.dataset.until; if (!promoOn()) el.hidden = true; });
-$('#winPct').textContent = PROMO.prizePct + '%';
-$('#winTxt').textContent = `În ianuarie 2027 tragem la sorți ${PROMO.prizeCount} evenimente dintre rezervările confirmate până la ${untilText()}. Dacă rezervarea voastră e extrasă, pentru pachet plătiți:`;
-$('#winFine').textContent = `Reducerea de ${PROMO.prizePct}% se aplică la totalul ofertei și o înlocuiește pe cea de ${PROMO.earlyPct}%.`;
-$('#winOpen').addEventListener('click', openWin);
-$('#winClose').addEventListener('click', closeWin);
-$('#win').addEventListener('click', e => { if (e.target.id === 'win') closeWin(); });
-$('#winCta').addEventListener('click', closeWin);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#win').hidden) closeWin(); });
-/* fereastra apare singură o dată pe vizită, când clientul ajunge la pachete */
-if (promoOn() && 'IntersectionObserver' in window) {
-  let seen = false; try { seen = sessionStorage.getItem('ww-win') === '1'; } catch (_) {}
-  if (!seen) {
-    const io = new IntersectionObserver(es => { if (es.some(x => x.isIntersecting) && !winShown) { io.disconnect(); setTimeout(() => { if (!winShown && $('#done').hidden) openWin(); }, 900); } }, { threshold: 0.35 });
-    io.observe($('#pk'));
-  }
-}
 renderCounties();
 $('#eventDate').min = new Date().toISOString().slice(0, 10);
 renderPackages(); update();
