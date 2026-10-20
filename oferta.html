@@ -70,6 +70,9 @@ textarea.inp{min-height:96px;resize:vertical}
 .inp[aria-invalid="true"]{border-color:var(--err)}
 .hint{font-size:.86rem;color:var(--muted)}
 .km{border-radius:12px;background:var(--gold-soft);padding:12px 14px;font-size:.93rem}
+.km.far{background:#fbeef0;border:1px solid #e8c3ca}
+.clinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.clink{display:inline-block;border:1px solid var(--plum);color:var(--plum);border-radius:99px;padding:8px 14px;font-weight:600;font-size:.88rem;text-decoration:none;overflow-wrap:anywhere}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:.92rem;color:var(--muted)}
 .check input{margin-top:4px;width:18px;height:18px;accent-color:var(--plum)}
 .err{color:var(--err);font-size:.9rem}
@@ -79,7 +82,7 @@ textarea.inp{min-height:96px;resize:vertical}
 .bar .in{max-width:980px;margin:0 auto;display:flex;gap:14px;align-items:center;justify-content:space-between}
 .bar .est{display:flex;flex-direction:column;line-height:1.25;min-width:0}
 .bar .est small{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar .est b{font-size:1.35rem;font-variant-numeric:tabular-nums}
+.bar .est b{font-size:1.35rem;font-variant-numeric:tabular-nums;white-space:nowrap}
 .send{border:0;background:var(--plum);color:var(--plum-ink);border-radius:99px;padding:15px 26px;font-weight:600;letter-spacing:.08em;cursor:pointer;white-space:nowrap}
 .send:disabled{opacity:.6;cursor:default}
 .done{max-width:560px;margin:10vh auto;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center;padding:0 16px}
@@ -178,16 +181,35 @@ function lead(){
   return { package: (document.querySelector('input[name=pkg]:checked') || {}).value, county, outside: outside ? 'da' : 'nu',
     km: outside ? P.estimateKm(county) : 0, discountType:'%', discountValue:0 };
 }
+function contactLinks(){
+  const mail = CFG.contactEmail, tel = (CFG.contactPhone || '').replace(/[^\d+]/g, '');
+  const wa = tel ? 'https://wa.me/' + tel.replace(/^\+/, '').replace(/^0/, '40') : '';
+  return [tel && `<a class="clink" href="tel:${esc(tel)}">Sună-ne</a>`, wa && `<a class="clink" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`,
+    mail && `<a class="clink" href="mailto:${esc(mail)}?subject=${encodeURIComponent('Ofertă specială Wedding Welcome')}">${esc(mail)}</a>`].filter(Boolean).join('');
+}
+let far = false;   // locația e în afara zonei acoperite
 function update(){
   const l = lead(), c = P.calc(l, S);
-  $('#est').textContent = c.pkg ? P.lei(c.total) : '—';
-  $('#estLbl').textContent = c.pkg ? `Estimare · ${c.pkg.name}${c.transport ? ' + transport' : ''}${S.pricing.vatPayer ? ' · TVA inclus' : ''}` : 'Estimare';
-  const n = $('#kmNote');
-  if (l.outside === 'da' && l.km) { n.hidden = false;
-    n.innerHTML = `Pentru evenimente în afara Bucureștiului și Ilfovului adăugăm transportul: aproximativ <b>${l.km} km</b> până în județul ${esc(l.county)} × ${P.lei(S.pricing.kmRate)}/km${S.pricing.roundTrip ? ' (dus-întors)' : ''} = <b>${P.lei(c.transport)}</b>. Distanța exactă o confirmăm în ofertă.`; }
+  far = !!c.outOfArea;
+  $('#est').textContent = far ? 'La cerere' : c.pkg ? P.lei(c.total) : '—';
+  $('#estLbl').textContent = far ? 'Zonă neacoperită' : c.pkg ? `Estimare · ${c.pkg.name}${c.transport ? ' + transport' : ''}${S.pricing.vatPayer ? ' · TVA inclus' : ''}` : 'Estimare';
+  $('#send').textContent = far ? 'OFERTĂ SPECIALĂ' : 'CERE OFERTA';
+  const n = $('#kmNote'); n.classList.toggle('far', far);
+  if (far) { n.hidden = false;
+    n.innerHTML = `<b>Momentan nu acoperim zona aceasta.</b> Județul ${esc(l.county)} este la aproximativ ${l.km} km de București, iar în prezent mergem la evenimente aflate la cel mult ${S.pricing.maxKm} km.
+      Dacă vă doriți totuși Wedding Welcome la evenimentul dumneavoastră, trimiteți cererea mai jos sau contactați-ne direct și vă pregătim o ofertă specială.
+      ${contactLinks() ? `<span class="clinks">${contactLinks()}</span>` : ''}`; }
+  else if (l.outside === 'da' && l.km) { n.hidden = false;
+    const billed = S.pricing.roundTrip ? l.km * 2 : l.km;
+    n.innerHTML = `Pentru evenimente în afara Bucureștiului și Ilfovului adăugăm transportul: aproximativ <b>${l.km} km</b> până în județul ${esc(l.county)}${S.pricing.roundTrip ? `, adică ${billed} km dus-întors,` : ''} × ${P.leiRate(S.pricing.kmRate)}/km = <b>${P.lei(c.transport)}</b>. Distanța exactă o confirmăm în ofertă.`; }
   else n.hidden = true;
 }
-$('#county').innerHTML = '<option value="">Alegeți județul</option>' + Object.keys(P.COUNTIES).map(c => `<option>${c}</option>`).join('');
+function renderCounties(){
+  const cur = $('#county').value;
+  $('#county').innerHTML = '<option value="">Alegeți județul</option>' + Object.keys(P.COUNTIES).map(c =>
+    `<option value="${c}" ${c === cur ? 'selected' : ''}>${c}${P.outOfArea(P.estimateKm(c), S) ? ' · ofertă la cerere' : ''}</option>`).join('');
+}
+renderCounties();
 const today = new Date(); $('#eventDate').min = today.toISOString().slice(0,10);
 renderPackages(); update();
 document.addEventListener('change', update); document.addEventListener('input', e => { if (e.target.getAttribute('aria-invalid')) e.target.removeAttribute('aria-invalid'); });
@@ -195,7 +217,7 @@ document.addEventListener('change', update); document.addEventListener('input', 
 /* prețurile reale, dacă scriptul Google e conectat */
 /* prețurile reale, dacă scriptul Google e conectat; tot acum aflăm ce cale de comunicare merge pe acest telefon */
 if (CFG.scriptUrl) window.WWNet.call(CFG.scriptUrl, { action:'config' }, false).then(d => {
-  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages; S.pricing = Object.assign({}, S.pricing, d.config.pricing || {}); renderPackages(); update(); }
+  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages; S.pricing = Object.assign({}, S.pricing, d.config.pricing || {}); renderPackages(); renderCounties(); update(); }
 }).catch(() => {});
 
 $('#f').addEventListener('submit', async e => {
@@ -212,7 +234,8 @@ $('#f').addEventListener('submit', async e => {
   const data = { name: $('#name').value.trim(), phone: $('#phone').value.trim(), email: $('#email').value.trim(),
     eventType: $('#eventType').value, eventDate: $('#eventDate').value, startTime: $('#startTime').value, guests: $('#guests').value,
     county: l.county, city: $('#city').value.trim(), venue: $('#venue').value.trim(), package: l.package, outside: l.outside, km: String(l.km),
-    transport: String(c.transport), packagePrice: String(c.price), total: String(c.total), clientMessage: $('#clientMessage').value.trim(),
+    transport: far ? '' : String(c.transport), packagePrice: String(c.price), total: far ? '' : String(c.total),
+    clientMessage: (far ? '[Ofertă specială: zonă neacoperită, ~' + l.km + ' km] ' : '') + $('#clientMessage').value.trim(),
     website: $('#website').value, source: new URLSearchParams(location.search).get('sursa') || 'formular' };
   const btn = $('#send'); btn.disabled = true; btn.textContent = 'SE TRIMITE…';
   if (await sendLead(data)) { showDone(data); return; }

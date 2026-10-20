@@ -251,7 +251,7 @@
     return `<div class="calc">
       <div class="sum">
         ${row('Pachet ' + esc(c.pkg ? c.pkg.name : '—') + (c.pkg ? ` · ${c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore'}` : ''), lei(c.price))}
-        ${row(c.outside ? `Transport · ${c.billedKm} km × ${lei(S.pricing.kmRate)}` : 'Transport (București-Ilfov)', lei(c.transport))}
+        ${row(c.outside ? `Transport · ${c.billedKm} km × ${P.leiRate(S.pricing.kmRate)}` : 'Transport (București-Ilfov)', lei(c.transport))}
         ${c.discount ? row('Reducere' + (L.discountType === '%' ? ` ${num(L.discountValue)}%` : ''), '− ' + lei(c.discount)) : ''}
         ${c.vat && !c.vatIncluded ? row(`TVA ${c.vatRate}%`, '+ ' + lei(c.vat)) : ''}
         ${row('Total client', lei(c.total), 'tot')}
@@ -286,6 +286,7 @@
         <div><span>Primit</span>${esc(fmtDate(L.createdAt))}</div>
         <div><span>Ultimul email</span>${esc(L.lastEmail || '—')}</div>
       </div>
+      ${P.outOfArea(L.km, S) ? `<p class="note" style="border-style:solid;color:var(--danger)"><b>Zonă neacoperită</b> · ~${esc(num(L.km))} km (limita e ${esc(S.pricing.maxKm)} km). Cerere de ofertă specială.</p>` : ''}
       ${L.clientMessage ? `<p class="note" style="border-style:solid">„${esc(L.clientMessage)}”</p>` : ''}
       <div class="row2">
         <div class="field"><label for="l-st">Status</label><select class="inp" id="l-st" data-l="status">${P.STATUSES.map(s => `<option ${s === L.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
@@ -401,8 +402,9 @@
       </section>
       <section class="panel"><h2>Transport</h2>
         <div class="row3">${f('pricing.kmRate', 'Tarif pentru client', S.pricing.kmRate, 'lei/km')}
-          <div class="field"><label>&nbsp;</label><label class="tog"><input type="checkbox" data-s="pricing.roundTrip" ${S.pricing.roundTrip ? 'checked' : ''}> Facturez dus-întors</label></div></div>
-        <p class="hint">Se aplică doar în afara Bucureștiului și Ilfovului. Formularul estimează km de la București până la reședința județului; corectezi distanța exactă în fiecare cerere.</p>
+          <div class="field"><label>&nbsp;</label><label class="tog"><input type="checkbox" data-s="pricing.roundTrip" ${S.pricing.roundTrip ? 'checked' : ''}> Facturez dus-întors</label></div>
+          ${f('pricing.maxKm', 'Zonă acoperită: până la', S.pricing.maxKm, 'km (0 = fără limită)')}</div>
+        <p class="hint">Se aplică doar în afara Bucureștiului și Ilfovului. Formularul estimează km de la București până la reședința județului; corectezi distanța exactă în fiecare cerere. Peste limita zonei acoperite, formularul nu mai arată un preț și le spune clienților că zona nu e acoperită momentan, cu varianta de ofertă specială.</p>
       </section>
       <section class="panel"><h2>TVA, taxe și facturare</h2>
         <div class="row3">
@@ -416,7 +418,7 @@
       </section>
       <section class="panel"><h2>Costuri (pentru calculul profitului)</h2>
         <div class="row3">${f('costs.staffCount', 'Staff', S.costs.staffCount, 'persoane')}${f('costs.staffRate', 'Plată staff', S.costs.staffRate, 'lei/oră/pers.')}${f('costs.setupHours', 'Montaj + demontaj', S.costs.setupHours, 'ore')}</div>
-        <div class="row3">${f('costs.menuCost', 'Meniu staff (toată noaptea)', S.costs.menuCost, 'lei/pers.')}${f('costs.fuelPerKm', 'Combustibil', S.costs.fuelPerKm, 'lei/km')}${f('costs.boothConsumables', 'Consumabile Photo Booth', S.costs.boothConsumables, 'lei/ev.')}</div>
+        <div class="row3">${f('costs.menuCost', 'Meniu staff (toată noaptea)', S.costs.menuCost, 'lei/pers.')}${f('costs.fuelPerKm', 'Combustibil + uzură mașină', S.costs.fuelPerKm, 'lei/km condus')}${f('costs.boothConsumables', 'Consumabile Photo Booth', S.costs.boothConsumables, 'lei/ev.')}</div>
         <div class="row3">${f('costs.equipment', 'Uzură echipament', S.costs.equipment, 'lei/ev.')}</div>
         <p class="hint">Costurile nu apar în formularul public și nici în emailuri.</p>
       </section>

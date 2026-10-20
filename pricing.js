@@ -12,8 +12,8 @@
         desc: 'Toate cele trei, toată noaptea' }
     ],
     /* TVA stă la „pricing” ca să ajungă și în formularul public (prețul afișat clientului); restul taxelor sunt interne, la „costs”. */
-    pricing: { kmRate: 10, roundTrip: false, vatPayer: true, vatRate: 21, pricesIncludeVat: true },
-    costs: { staffCount: 2, staffRate: 60, setupHours: 1, menuCost: 250, fuelPerKm: 1.2, boothConsumables: 250, equipment: 100,
+    pricing: { kmRate: 2.5, roundTrip: true, maxKm: 300, vatPayer: true, vatRate: 21, pricesIncludeVat: true },
+    costs: { staffCount: 2, staffRate: 60, setupHours: 1, menuCost: 250, fuelPerKm: 1, boothConsumables: 250, equipment: 100,
       incomeTax: 1, payFee: 0, invoiceFixed: 0 },
     email: { fromEmail: 'bercescubi@gmail.com', fromName: 'Wedding Welcome' },
     templates: [
@@ -48,6 +48,8 @@
     const h = Math.sin(r(b[0] - a[0]) / 2) ** 2 + Math.cos(r(a[0])) * Math.cos(r(b[0])) * Math.sin(r(b[1] - a[1]) / 2) ** 2;
     return Math.round(2 * R * Math.asin(Math.sqrt(h)) * 1.25 / 5) * 5;
   }
+  /** Peste această distanță (km de la București) zona nu e acoperită: ofertă doar la cerere. 0 = fără limită. */
+  const outOfArea = (km, S) => { const m = +((S && S.pricing && S.pricing.maxKm) || 0); return m > 0 && +km > m; };
   const num = v => { const n = parseFloat(String(v ?? '').replace(',', '.').replace(/[^\d.\-]/g, '')); return isFinite(n) ? n : 0; };
   const yes = v => v === true || /^(da|true|1|yes)$/i.test(String(v ?? '').trim());
   function pkgOf(S, id) { return S.packages.find(p => p.id === id) || S.packages.find(p => p.name === id) || null; }
@@ -80,10 +82,12 @@
     const invoiceFee = p ? Math.round(num(C.invoiceFixed)) : 0;
     const taxes = vat + incomeTax + payFee + invoiceFee;
     const profit = total - cost - taxes;
-    return { pkg: p, price, hours, outside, km, billedKm, transport, subtotal, discount, base, total, vat, vatRate: vr, vatIncluded: !!(Pr.vatPayer && Pr.pricesIncludeVat), net,
+    return { outOfArea: outOfArea(km, S), pkg: p, price, hours, outside, km, billedKm, transport, subtotal, discount, base, total, vat, vatRate: vr, vatIncluded: !!(Pr.vatPayer && Pr.pricesIncludeVat), net,
       staff, menu, fuel, consumables, equipment, cost, incomeTax, payFee, invoiceFee, taxes, profit, margin: net ? profit / net : 0 };
   }
   const lei = n => Math.round(num(n)).toLocaleString('ro-RO') + ' lei';
+  /** Tarif cu zecimale (ex. 2,5 lei), pentru lei/km. */
+  const leiRate = n => num(n).toLocaleString('ro-RO', { maximumFractionDigits: 2 }) + ' lei';
   /** Apel JSONP către scriptul Google: ocolește blocările de tip CORS. */
   g.WWJsonp = function (url, payload) {
     return new Promise((resolve, reject) => {
@@ -161,5 +165,5 @@
       }
     }
   };
-  g.WWPricing = { DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, num, yes, lei };
+  g.WWPricing = { outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, num, yes, lei, leiRate };
 })(typeof window !== 'undefined' ? window : globalThis);
