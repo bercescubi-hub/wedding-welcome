@@ -106,7 +106,7 @@
 
   /* ---------------- randare ---------------- */
   function renderArea() {
-    const html = area === 'conturi' ? conturiView() : area === 'evenimente' ? eventsView() : hubView();
+    const html = area === 'conturi' ? conturiView() : area === 'evenimente' ? eventsView() : area === 'lumini' ? lightsView() : hubView();
     $('#admin').innerHTML = `<div class="wrap">${html}</div>`;
   }
   function header(title, eyebrow, back) {
@@ -129,6 +129,10 @@
           <span class="hic">${ICON.screen}</span><b>Ecran de bun venit</b>
           <span>${esc(W.draft.couple || 'Evenimentul tău')} · ${live}</span>
           <small>Ecranul invitaților: bun venit, mese, Photo Booth</small></button>
+        <button type="button" class="hcard${LT.on ? ' hot' : ''}" data-act="area" data-k="lumini">
+          <span class="hic">${ICON.bulb}</span><b>Cheamă invitații</b>
+          <span>${LT.on ? '<em>Beculețele clipesc acum</em>' : LT.info && LT.info.configured ? 'Priza e configurată' : 'Beculețe prin priză smart'}</span>
+          <small>Un buton ON / OFF care face beculețele să clipească</small></button>
         <button type="button" class="hcard" data-act="area" data-k="conturi">
           <span class="hic">${ICON.user}</span><b>Conturi</b>
           <span>${isAdmin() ? 'Administrator' : 'Utilizator'}</span>
@@ -655,6 +659,19 @@
     'crm-del-no'() { L._del = false; renderLead(); },
     'crm-del-yes'() { deleteLead(); },
     'crm-acc-save'(el) { saveAccount(el.dataset.id); },
+    'lt-toggle'() { if (LT.on) lightsStop(); else lightsStart(); },
+    async 'lt-save'() {
+      const host = $('#lt-host').value.trim(), deviceId = $('#lt-id').value.trim(), authKey = $('#lt-key').value.trim();
+      const m = $('#ltMsg'); m.className = 'hint'; m.textContent = 'Se salvează…';
+      if (!authKey && LT.info && LT.info.configured) { m.className = 'hint err-msg'; m.textContent = 'Completează și cheia (din motive de siguranță nu o afișăm).'; return; }
+      try { const d = await api('POST', { action: 'lightsSetup', host, deviceId, authKey }); LT.info = d; LT.setupMsg = '<span class="ok-msg">Salvat. Apasă „Test” ca să verifici.</span>'; render(); }
+      catch (e) { m.className = 'hint err-msg'; m.textContent = /necunoscut/i.test(e.message) ? 'Scriptul Google e o versiune veche: actualizează-l (Code.gs) ca să poți folosi beculețele.' : e.message; }
+    },
+    async 'lt-test'() {
+      const m = $('#ltMsg'); m.className = 'hint'; m.textContent = 'Se trimite…';
+      try { await api('POST', { action: 'lights', on: true, pulse: 3 }); m.className = 'hint ok-msg'; m.textContent = 'Comandă trimisă: beculețele ar trebui să stea aprinse 3 secunde.'; }
+      catch (e) { m.className = 'hint err-msg'; m.textContent = e.message; }
+    },
     'crm-album'() { if (!L) return; L.album = P.yes(L.album) ? 'nu' : 'da'; const a = $('#albumBox'); if (a) a.innerHTML = albumField(); const b = $('#calcBox'); if (b) b.innerHTML = breakdown(); },
     'crm-acc-pw'(el) { setAccountPassword(el.dataset.id); },
     'crm-acc-del'(el) { accMsg.del = el.dataset.id; refreshAccPanel(); },
@@ -731,8 +748,80 @@
   const ICON = {
     cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
     screen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="2.5" width="10" height="16" rx="1.5"/><path d="M12 18.5v3M8.5 21.5h7"/></svg>',
+    bulb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 17.5h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3Z"/></svg>',
     user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4.1-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg>'
   };
+
+  /* ---------- Cheamă invitații: beculețele clipesc prin priza smart Shelly ----------
+     Cât e pornit: la fiecare 2 s cerem „aprinde 1 secundă”; priza se stinge singură după o secundă.
+     Dacă telefonul se blochează sau pierde netul, beculețele rămân stinse (nu rămân aprinse din greșeală). */
+  const LT = { on: false, timer: null, err: '', info: null, busy: false, sent: 0, since: 0, lock: null, setupMsg: '' };
+  async function lightsLoad() {
+    if (!configured()) return;
+    try { const d = await api('POST', { action: 'lightsInfo' }); LT.info = d; } catch (e) { LT.info = { configured: false, err: e.message }; }
+    if (area === 'lumini' || area === 'home') rerender();
+  }
+  async function lightsTick() {
+    if (!LT.on) return;
+    const t0 = Date.now();
+    try {
+      const d = await window.WWNet.call(C.url, Object.assign({ action: 'lights', on: true, pulse: 1 }, C.key ? { key: C.key } : { token: C.token }), true);
+      if (d && d.ok) { LT.sent++; LT.err = ''; }
+      else if (d && d.busy) { /* trecem peste o clipire */ }
+      else { LT.err = (d && d.error) || 'Comanda nu a ajuns la priză.'; if (d && (d.notConfigured || d.auth)) return lightsStop(true); }
+    } catch (e) { LT.err = navigator.onLine ? 'Nu am putut trimite comanda: ' + e.message : 'Telefonul nu are internet.'; }
+    if (area === 'lumini') lightsPaint();
+    if (LT.on) LT.timer = setTimeout(lightsTick, Math.max(300, 2000 - (Date.now() - t0)));
+  }
+  async function lightsStart() {
+    if (LT.on) return;
+    LT.on = true; LT.err = ''; LT.sent = 0; LT.since = Date.now();
+    try { if ('wakeLock' in navigator) LT.lock = await navigator.wakeLock.request('screen'); } catch (e) {}
+    lightsPaint(); lightsTick();
+  }
+  async function lightsStop(keepErr) {
+    LT.on = false; clearTimeout(LT.timer); LT.timer = null;
+    try { LT.lock && LT.lock.release(); } catch (e) {} LT.lock = null;
+    if (!keepErr) LT.err = '';
+    lightsPaint();
+    try { await api('POST', { action: 'lights', on: false }); } catch (e) {}
+  }
+  function lightsPaint() { const el = document.getElementById('ltBox'); if (el) el.innerHTML = lightsButton(); else if (area === 'home') rerender(); }
+  function lightsButton() {
+    const ready = LT.info && LT.info.configured;
+    return `<button type="button" class="lt-btn${LT.on ? ' on' : ''}" data-act="lt-toggle" ${ready || LT.on ? '' : 'disabled'} aria-pressed="${LT.on}">
+        <span class="lt-state">${LT.on ? 'ON' : 'OFF'}</span><span class="lt-sub">${LT.on ? 'Beculețele clipesc · apasă ca să oprești' : 'Apasă ca să chemi invitații'}</span></button>
+      <p class="hint" style="text-align:center">${LT.on ? 'Ține ecranul deschis cât clipesc. Dacă închizi aplicația sau se blochează telefonul, beculețele se sting singure.' : ready ? 'Beculețele clipesc până apeși din nou.' : LT.info ? 'Configurează întâi priza (mai jos).' : 'Se verifică priza…'}</p>
+      ${LT.err ? `<p class="hint err-msg" style="text-align:center">${esc(LT.err)}</p>` : ''}
+      ${LT.info && LT.info.err ? `<p class="hint err-msg" style="text-align:center">${/necunoscut/i.test(LT.info.err) ? 'Scriptul Google e o versiune veche: actualizează-l (Code.gs) ca să poți folosi beculețele.' : esc(LT.info.err)}</p>` : ''}`;
+  }
+  function lightsView() {
+    if (!LT.info) lightsLoad();
+    const i = LT.info || {};
+    return `${header('Cheamă invitații', 'WE WELCOME · Beculețe', true)}
+      ${!configured() ? `<section class="panel"><p class="hint">Conectează întâi Evenimentele la Google Sheets (Evenimente → Conectare). Comanda pentru beculețe trece prin același script Google.</p></section>` : `
+      <section class="panel lt-panel"><div id="ltBox">${lightsButton()}</div></section>
+      ${isAdmin() ? `<section class="panel"><h2>Configurare priză</h2>
+        <p class="hint">${i.configured ? `Priza e configurată: <b>${esc(i.deviceId)}</b> pe <b>${esc(i.host)}</b>. Completează din nou doar dacă schimbi priza sau cheia.` : 'Încă nu e configurată nicio priză.'}</p>
+        <div class="row3">
+          <div class="field"><label for="lt-host">Server Shelly</label><input class="inp" id="lt-host" placeholder="shelly-123-eu.shelly.cloud" value="${esc(i.host || '')}" autocapitalize="none" spellcheck="false"></div>
+          <div class="field"><label for="lt-id">ID dispozitiv</label><input class="inp" id="lt-id" placeholder="ex. b48a0a1cd978" value="${esc(i.deviceId || '')}" autocapitalize="none" spellcheck="false"></div>
+          <div class="field"><label for="lt-key">Cheie de autorizare (cloud)</label><input class="inp" id="lt-key" type="password" placeholder="${i.configured ? 'salvată · completează doar ca s-o schimbi' : 'cheia lungă din aplicația Shelly'}" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+        </div>
+        <div class="btns"><button type="button" class="btn primary" data-act="lt-save">Salvează</button>
+          <button type="button" class="btn" data-act="lt-test" ${i.configured ? '' : 'disabled'}>Test: aprinde 3 secunde</button>
+          <span class="hint" id="ltMsg">${LT.setupMsg || ''}</span></div>
+        <details class="hint" style="margin-top:14px"><summary><b>Cum pregătești priza (o singură dată)</b></summary>
+          <ol style="margin:10px 0 0;padding-left:20px;display:grid;gap:6px">
+            <li>Cumpără o priză <b>Shelly Plug S Gen3</b> (sau orice priză Shelly cu Wi-Fi) și un set de beculețe LED care se aprind direct când primesc curent (fără să trebuiască apăsat un buton).</li>
+            <li>Instalează aplicația <b>Shelly Smart Control</b>, fă-ți cont și adaugă priza în rețeaua Wi-Fi.</li>
+            <li>În aplicația Shelly: <b>Setări utilizator → Cheie de autorizare cloud</b> (Authorization cloud key). Copiază <b>cheia</b> și <b>serverul</b> afișat (de forma shelly-XXX-eu.shelly.cloud).</li>
+            <li>La priză: <b>Setări → Informații dispozitiv → Device ID</b>. Copiază ID-ul.</li>
+            <li>Pune-le aici, apasă <b>Salvează</b>, apoi <b>Test</b>: beculețele trebuie să se aprindă 3 secunde.</li>
+            <li>La eveniment, priza trebuie să aibă internet: conecteaz-o la Wi-Fi-ul locației sau la hotspotul unui telefon (îl adaugi din aplicația Shelly înainte).</li>
+          </ol></details>
+      </section>` : ''}`}`;
+  }
 
   window.CRM = {
     isAdmin() { if (!C) load(); return isAdmin(); },

@@ -85,6 +85,8 @@ function handle_(d) {
   if (d.action === 'update') return updateRow(d.id, d.fields || {});
   if (d.action === 'email') return sendEmail(d);
   if (d.action === 'accountsPut') return accountsPut_(d.users || [], me);
+  if (d.action === 'lights') return lights_(d);
+  if (d.action === 'lightsInfo') return Object.assign({ ok: true }, lightsInfo_());
   if (d.action === 'logout') { if (d.token) PropertiesService.getScriptProperties().deleteProperty('tok:' + d.token); return { ok: true }; }
   /* doar administratori */
   if (!admin) return { ok: false, error: 'Doar un administrator poate face asta.' };
@@ -94,7 +96,38 @@ function handle_(d) {
   if (d.action === 'shareSheet') return shareSheet_(d.id, d.access);
   if (d.action === 'accountDel') return accountDel_(d.id);
   if (d.action === 'deleteLead') return deleteLead_(d.id);
+  if (d.action === 'lightsSetup') return lightsSetup_(d);
   return { ok: false, error: 'Acțiune necunoscută' };
+}
+
+/* ---------------- Cheamă invitații: beculețele, prin priza smart Shelly (Shelly Cloud) ----------------
+   Datele prizei (server, cheie, ID) stau în proprietățile scriptului, nu în Sheet și nu ajung în pagina publică.
+   Aplicația cere „aprinde 1 secundă” la fiecare 2 secunde, iar priza se stinge singură (toggle_after): așa clipesc. */
+function lightsCfg_() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('lights') || '{}'); } catch (e) { return {}; } }
+function lightsInfo_() { const c = lightsCfg_(); return c.id ? { configured: true, host: c.host, deviceId: c.id } : { configured: false }; }
+function lightsSetup_(d) {
+  const host = String(d.host || '').trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+  const key = String(d.authKey || '').trim(), id = String(d.deviceId || '').trim().toLowerCase();
+  if (!/^[a-z0-9.-]+\.shelly\.cloud(:\d+)?$/.test(host)) return { ok: false, error: 'Serverul arată de obicei așa: shelly-123-eu.shelly.cloud' };
+  if (key.length < 20) return { ok: false, error: 'Cheia de autorizare pare incompletă. Copiaz-o întreagă din aplicația Shelly.' };
+  if (!/^[a-z0-9]{6,24}$/.test(id)) return { ok: false, error: 'ID-ul dispozitivului are doar litere și cifre (ex. b48a0a1cd978).' };
+  PropertiesService.getScriptProperties().setProperty('lights', JSON.stringify({ host: host, key: key, id: id, channel: Number(d.channel) || 0 }));
+  return Object.assign({ ok: true }, lightsInfo_());
+}
+function lights_(d) {
+  const c = lightsCfg_();
+  if (!c.id) return { ok: false, notConfigured: true, error: 'Priza pentru beculețe nu e configurată încă.' };
+  const body = { id: c.id, channel: c.channel || 0, on: !!d.on };
+  const pulse = Math.round(Number(d.pulse) || 0);
+  if (d.on && pulse > 0) body.toggle_after = Math.min(Math.max(pulse, 1), 60);
+  const r = UrlFetchApp.fetch('https://' + c.host + '/v2/devices/api/set/switch?auth_key=' + encodeURIComponent(c.key),
+    { method: 'post', contentType: 'application/json', payload: JSON.stringify(body), muteHttpExceptions: true });
+  const code = r.getResponseCode(), txt = String(r.getContentText() || '');
+  if (code >= 200 && code < 300) return { ok: true };
+  if (code === 429) return { ok: false, busy: true, error: 'Prea multe comenzi deodată' };
+  if (/DEVICE_OFFLINE/.test(txt)) return { ok: false, offline: true, error: 'Priza nu e conectată la internet. Verifică Wi-Fi-ul de la locație.' };
+  if (code === 401 || code === 403 || /UNAUTHORIZED|auth/i.test(txt)) return { ok: false, error: 'Cheia Shelly nu e corectă. Verific-o în aplicație → Cheamă invitații → Configurare.' };
+  return { ok: false, error: 'Shelly a răspuns: ' + txt.slice(0, 160) };
 }
 
 /* ---------------- foi ---------------- */

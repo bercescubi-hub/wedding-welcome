@@ -300,7 +300,17 @@ select.inp{padding:9px 10px;font-size:15px}
 @keyframes c2{0%{transform:rotate(30deg) translateX(4px)}55%{transform:rotate(-8deg) translateX(-1px)}100%{transform:rotate(6deg)}}
 .next .mods{margin-top:20px}
 /* ---------- ADMINISTRARE: hub, evenimente ---------- */
-.hub{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.hcard.hot{border-color:#e7b54a;box-shadow:0 0 0 3px rgba(231,181,74,.25)}
+.lt-panel{display:flex;flex-direction:column;align-items:center;padding:34px 18px}
+.lt-btn{width:min(260px,70vw);aspect-ratio:1;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;font:inherit;transition:background .2s,box-shadow .2s,border-color .2s;margin:0 auto 14px}
+.lt-btn .lt-state{font-size:3rem;font-weight:700;letter-spacing:.08em}
+.lt-btn .lt-sub{font-size:.85rem;max-width:72%;text-align:center;color:var(--muted)}
+.lt-btn:disabled{opacity:.5;cursor:default}
+.lt-btn.on{background:#e7b54a;border-color:#e7b54a;color:#2a1608;animation:ltglow 2s infinite}
+.lt-btn.on .lt-sub{color:#4a2c10}
+@keyframes ltglow{0%,49%{box-shadow:0 0 0 0 rgba(231,181,74,.0),0 0 60px 18px rgba(231,181,74,.75)}50%,100%{box-shadow:0 0 0 0 rgba(231,181,74,0),0 0 18px 2px rgba(231,181,74,.25)}}
+@media (prefers-reduced-motion:reduce){.lt-btn.on{animation:none}}
 @media (max-width:760px){.hub{grid-template-columns:1fr}}
 .hcard{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:20px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:190px;transition:border-color .15s,transform .15s}
 .hcard:hover{border-color:var(--accent)} .hcard:active{transform:scale(.99)}
@@ -400,7 +410,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.18.0';
+const APP_VERSION = '3.19.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
