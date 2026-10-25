@@ -10,7 +10,7 @@
   const DEFAULT_SETTINGS = {
     packages: [
       { id: 'esential', name: 'Welcome', hours: 3, price: 1300, modules: ['welcome', 'seating'], staffMenu: false,
-        desc: 'Primirea invitaților: mesajul vostru de bun venit și găsirea mesei.' },
+        desc: 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale' },
       { id: 'complet', name: 'Celebrate', hours: 5, price: 2600, modules: ['welcome', 'seating', 'booth'], staffMenu: false, recommended: true,
         desc: 'Toată experiența pentru primele ore ale petrecerii.' },
       { id: 'allnight', name: 'All Night', hours: 10, price: 4200, modules: ['welcome', 'seating', 'booth'], staffMenu: true, album: true,

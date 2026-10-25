@@ -576,6 +576,7 @@
   function migratePackages(S) {
     const NEW = { esential: ['Esențial', 1500, 'Welcome', 1300], complet: ['Complet', 2500, 'Celebrate', 2600], allnight: ['All Night', 3300, 'All Night', 4200] };
     let changed = false;
+    (S.packages || []).forEach(p => { if (/^\s*Mesajul de bun venit al mirilor și găsirea mesei/i.test(p.desc || '')) { p.desc = 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale'; changed = true; } });
     (S.packages || []).forEach(p => { const n = NEW[p.id]; if (n && p.name === n[0] && num(p.price) === n[1]) { p.name = n[2]; p.price = n[3]; changed = true; } });
     return changed;
   }
