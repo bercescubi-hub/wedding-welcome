@@ -201,7 +201,9 @@ function settingsSheet_() {
   return sh;
 }
 /** Rulează o dată din editor dacă vrei să vezi foile create înainte de prima cerere. */
-function setup() { sheet_(); settingsSheet_(); accSheet_(); }
+function setup() { sheet_(); settingsSheet_(); accSheet_(); autorizeaza(); }
+/** Rulează-o o dată din editor după o actualizare: Google cere permisiunile noi (Drive pentru atașamente, servicii externe pentru beculețe). */
+function autorizeaza() { DriveApp.getRootFolder(); UrlFetchApp.fetch('https://www.google.com', { muteHttpExceptions: true }); }
 
 /* ---------------- cereri ---------------- */
 function clean_(v, max) {
