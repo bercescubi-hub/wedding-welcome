@@ -86,6 +86,7 @@ function handle_(d) {
   if (d.action === 'email') return sendEmail(d);
   if (d.action === 'accountsPut') return accountsPut_(d.users || [], me);
   if (d.action === 'lights') return lights_(d);
+  if (d.action === 'files') return { ok: true, files: listFiles_() };
   if (d.action === 'lightsInfo') return Object.assign({ ok: true }, lightsInfo_());
   if (d.action === 'logout') { if (d.token) PropertiesService.getScriptProperties().deleteProperty('tok:' + d.token); return { ok: true }; }
   /* doar administratori */
@@ -97,7 +98,49 @@ function handle_(d) {
   if (d.action === 'accountDel') return accountDel_(d.id);
   if (d.action === 'deleteLead') return deleteLead_(d.id);
   if (d.action === 'lightsSetup') return lightsSetup_(d);
+  if (d.action === 'uploadFile') return uploadFile_(d);
+  if (d.action === 'fileDel') return fileDel_(d.id);
   return { ok: false, error: 'Acțiune necunoscută' };
+}
+
+/* ---------------- fișiere de atașat la emailuri (ex. oferta în PDF) ----------------
+   Stau în Google Drive-ul contului care a publicat scriptul, în dosarul „WE WELCOME · atașamente”.
+   Se pot atașa doar fișiere din acest dosar. */
+const FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+function filesFolder_() {
+  const p = PropertiesService.getScriptProperties(), id = p.getProperty('filesFolder');
+  if (id) { try { const f = DriveApp.getFolderById(id); if (!f.isTrashed()) return f; } catch (e) {} }
+  const f = DriveApp.createFolder('WE WELCOME · atașamente'); p.setProperty('filesFolder', f.getId()); return f;
+}
+function fileInfo_(f) { return { id: f.getId(), name: f.getName(), size: f.getSize(), type: f.getMimeType(), updated: f.getLastUpdated().toISOString() }; }
+function listFiles_() {
+  const it = filesFolder_().getFiles(), out = [];
+  while (it.hasNext()) { const f = it.next(); if (!f.isTrashed()) out.push(fileInfo_(f)); }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+function uploadFile_(d) {
+  const name = String(d.name || '').replace(/[\\/:*?"<>|]+/g, '-').trim().slice(0, 120), type = String(d.type || '');
+  if (!name || !d.data) return { ok: false, error: 'Lipsește fișierul.' };
+  if (FILE_TYPES.indexOf(type) < 0) return { ok: false, error: 'Poți încărca PDF, JPG, PNG sau Word (.docx).' };
+  const bytes = Utilities.base64Decode(String(d.data));
+  if (bytes.length > 15 * 1024 * 1024) return { ok: false, error: 'Fișierul e prea mare (cel mult 15 MB).' };
+  const f = filesFolder_().createFile(Utilities.newBlob(bytes, type, name));
+  return { ok: true, file: fileInfo_(f) };
+}
+function inFolder_(f) { const id = filesFolder_().getId(), ps = f.getParents(); while (ps.hasNext()) if (ps.next().getId() === id) return true; return false; }
+function fileDel_(id) {
+  try { const f = DriveApp.getFileById(String(id)); if (!inFolder_(f)) return { ok: false, error: 'Fișier necunoscut.' }; f.setTrashed(true); return { ok: true }; }
+  catch (e) { return { ok: false, error: 'Fișierul nu mai există.' }; }
+}
+function attachmentBlobs_(ids) {
+  const blobs = []; let total = 0;
+  for (const id of (Array.isArray(ids) ? ids : []).slice(0, 10)) {
+    let f; try { f = DriveApp.getFileById(String(id)); } catch (e) { return { blobs: [], error: 'Un fișier atașat nu mai există. Scoate-l din email și încearcă din nou.' }; }
+    if (!inFolder_(f) || f.isTrashed()) return { blobs: [], error: 'Un fișier atașat nu mai există. Scoate-l din email și încearcă din nou.' };
+    total += f.getSize(); if (total > 20 * 1024 * 1024) return { blobs: [], error: 'Atașamentele depășesc 20 MB.' };
+    blobs.push(f.getBlob());
+  }
+  return { blobs: blobs };
 }
 
 /* ---------------- Cheamă invitații: beculețele, prin priza smart Shelly (Shelly Cloud) ----------------
@@ -226,11 +269,19 @@ function deleteLead_(id) {
 }
 
 /* ---------------- setări ---------------- */
+/* Setările se scriu în coloana A, începând cu A2, în bucăți de 40.000 de caractere (o celulă ține cel mult 50.000). */
 function getSettings() {
-  const v = settingsSheet_().getRange('A2').getValue();
+  const sh = settingsSheet_(), n = Math.max(1, sh.getLastRow() - 1);
+  const v = sh.getRange(2, 1, n, 1).getValues().map(r => String(r[0] || '')).join('');
   try { return v ? JSON.parse(v) : null; } catch (e) { return null; }
 }
-function saveSettings(s) { settingsSheet_().getRange('A2').setValue(JSON.stringify(s)); }
+function saveSettings(s) {
+  const sh = settingsSheet_(), txt = JSON.stringify(s), parts = [];
+  for (let i = 0; i < txt.length; i += 40000) parts.push([txt.slice(i, i + 40000)]);
+  const old = Math.max(0, sh.getLastRow() - 1);
+  if (old > parts.length) sh.getRange(2 + parts.length, 1, old - parts.length, 1).clearContent();
+  sh.getRange(2, 1, parts.length, 1).setNumberFormat('@').setValues(parts);
+}
 function publicConfig() {
   const s = getSettings(); if (!s) return null;
   return { packages: s.packages, pricing: s.pricing };   // fără costuri și șabloane
@@ -395,12 +446,15 @@ function sendEmail(d) {
     if (aliases.indexOf(d.fromEmail.toLowerCase()) < 0) return { ok: false, error: 'Adresa ' + d.fromEmail + ' nu e configurată ca alias în Gmail-ul contului ' + me + '. Folosește ' + me + ' sau adaug-o în Gmail → Setări → Conturi → Trimite mesaje ca.' };
     opts.from = d.fromEmail;
   }
+  const att = attachmentBlobs_(d.attachments);
+  if (att.error) return { ok: false, error: att.error };
+  if (att.blobs.length) opts.attachments = att.blobs;
   GmailApp.sendEmail(d.to, d.subject || 'WE WELCOME', d.body || '', opts);
   const stamp = Utilities.formatDate(new Date(), 'Europe/Bucharest', 'yyyy-MM-dd HH:mm') + ' · ' + (d.template || 'email');
   const f = { lastEmail: stamp }; if (d.newStatus) f.status = d.newStatus;
   if (d.id) { const sh = sheet_(); const r = findRow_(sh, d.id);
     if (r > 0) { sh.getRange(r, KEYS.indexOf('lastEmail') + 1).setValue(stamp); if (d.newStatus) sh.getRange(r, KEYS.indexOf('status') + 1).setValue(d.newStatus); } }
-  return { ok: true, lastEmail: stamp, sentFrom: opts.from || me };
+  return { ok: true, lastEmail: stamp, sentFrom: opts.from || me, attached: att.blobs.length };
 }
 
 function json(o, callback) {

@@ -23,7 +23,8 @@
       pricing: Object.assign({}, def.pricing, s.pricing || {}),
       costs: Object.assign({}, def.costs, s.costs || {}),
       email: Object.assign({}, def.email, s.email || {}),
-      templates: Array.isArray(s.templates) && s.templates.length ? s.templates : clone(def.templates)
+      templates: Array.isArray(s.templates) && s.templates.length ? s.templates : clone(def.templates),
+      fields: Array.isArray(s.fields) ? s.fields : clone(def.fields || [])
     };
   }
   function load() {
@@ -42,7 +43,7 @@
 
   /* Apelul către scriptul Google. Întâi fetch; dacă browserul blochează răspunsul (extensii, setări de securitate),
      trimitem același apel prin JSONP (un <script> cu ?payload=…&callback=…), pe care scriptul îl înțelege. */
-  const WRITES = ['update', 'email', 'settings', 'accountsPut', 'accountMeta', 'shareSheet', 'accountDel', 'deleteLead', 'logout'];
+  const WRITES = ['update', 'email', 'settings', 'uploadFile', 'fileDel', 'accountsPut', 'accountMeta', 'shareSheet', 'accountDel', 'deleteLead', 'logout'];
   /** Apelul către scriptul Google, prin canalul comun (WWNet), care alege calea ce merge pe dispozitiv (și pe iPhone). */
   async function api(method, params) {
     const body = Object.assign({}, params, C.key ? { key: C.key } : { token: C.token });
@@ -107,7 +108,8 @@
   /* ---------------- randare ---------------- */
   function renderArea() {
     const html = area === 'conturi' ? conturiView() : area === 'evenimente' ? eventsView() : area === 'lumini' ? lightsView() : hubView();
-    $('#admin').innerHTML = `<div class="wrap">${html}</div>`;
+    $('#admin').innerHTML = `<div class="wrap${area === 'evenimente' && view === 'sabloane' ? ' wide' : ''}">${html}</div>`;
+    if (area === 'evenimente' && view === 'sabloane') updateTplPreview();
   }
   function header(title, eyebrow, back) {
     return `<header class="top">
@@ -413,11 +415,15 @@
       termen_plata: new Date(Date.now() + num(S.pricing.payDays || 10) * 864e5).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }),
       album: c.album === 'inclus' ? 'inclus în pachet' : c.albumExtra ? n0(c.albumExtra) + ' lei' : 'nu'
     };
+    // câmpurile tale: cele „fixe” se completează mereu; cele „la trimitere” rămân {cheie} până le completezi în email
+    (S.fields || []).forEach(f => { if (f.key && f.kind !== 'ask' && !(f.key in map)) map[f.key] = f.value || ''; });
     return String(t || '').replace(/\{(\w+)\}/g, (m, k) => k in map ? map[k] : m);
   }
   function startCompose(tplId) {
     const S = C.settings, t = S.templates.find(x => x.id === tplId) || S.templates[0];
-    compose = { tpl: t ? t.id : '', to: L.email || '', subject: fill(t && t.subject, L), body: fill(t && t.body, L), newStatus: t ? t.status : '', sending: false, err: '' };
+    compose = { tpl: t ? t.id : '', to: L.email || '', subject: fill(t && t.subject, L), body: fill(t && t.body, L), newStatus: t ? t.status : '', sending: false, err: '',
+      att: ((t && t.attachments) || []).map(a => ({ id: a.id, name: a.name })), vals: {} };
+    if (!FILES) loadFiles();
     renderCompose();
   }
   /** Șablonul potrivit pentru etapa în care e cererea (îl marcăm „Recomandat”). */
@@ -450,7 +456,9 @@
             <div class="field"><label>De la</label><p class="from">${esc(S.email.fromName)} &lt;${esc(S.email.fromEmail)}&gt;</p></div>
           </div>
           <div class="field"><label for="cp-s">Subiect</label><input class="inp" id="cp-s" value="${esc(compose.subject)}"></div>
+          ${askFieldsHtml()}
           <div class="field cp-body"><label for="cp-b">Mesaj</label><textarea class="inp" id="cp-b">${esc(compose.body)}</textarea></div>
+          ${attachHtml()}
           <details class="hint"><summary>Marcaje pentru formatare</summary><code># Titlu mare</code> · <code>## Titlu</code> · <code>- listă</code> · <code>| text | sumă |</code> rând de tabel · <code>**îngroșat**</code></details>
         </div>
         <div class="cp-prev"><iframe id="cp-prev" title="Previzualizare email"></iframe></div>
@@ -464,24 +472,56 @@
     $('#modal').hidden = false;
     updatePreview();
   }
-  function updatePreview() { const f = $('#cp-prev'), b = $('#cp-b'); if (f && b) f.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:0">' + P.emailHtml(b.value) + '</body>'; }
+  function updatePreview() { const f = $('#cp-prev'), b = $('#cp-b'); if (f && b) f.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:0">' + P.emailHtml(applyVals(b.value, true)) + '</body>'; }
+  /** Câmpurile „la trimitere” folosite în emailul curent. */
+  function askFields(text) { return (C.settings.fields || []).filter(f => f.kind === 'ask' && f.key && String(text).includes('{' + f.key + '}')); }
+  function applyVals(text, preview) {
+    return String(text || '').replace(/\{(\w+)\}/g, (m, k) => { const f = (C.settings.fields || []).find(x => x.key === k && x.kind === 'ask'); if (!f) return m;
+      const v = (compose && compose.vals[k]) || ''; return v || (preview ? '[' + f.label + ']' : m); });
+  }
+  function askFieldsHtml() {
+    const fs = askFields(compose.subject + '\n' + compose.body); if (!fs.length) return '';
+    return `<div class="askbox"><p class="ms-l">Completează pentru acest email</p>${fs.map(f => `<div class="field"><label for="cv-${esc(f.key)}">${esc(f.label)}</label><input class="inp" id="cv-${esc(f.key)}" data-cpv="${esc(f.key)}" value="${esc(compose.vals[f.key] || '')}"></div>`).join('')}</div>`;
+  }
+  function attachHtml() {
+    const have = compose.att || [], avail = (FILES || []).filter(f => !have.some(a => a.id === f.id));
+    return `<div class="attbox"><p class="ms-l">Atașamente</p><div class="ms-row">${have.map(a => `<span class="attchip">📎 ${esc(a.name)} <button type="button" data-act="crm-attrm" data-k="${esc(a.id)}" aria-label="Scoate ${esc(a.name)}">×</button></span>`).join('') || '<span class="hint">Niciun fișier atașat.</span>'}</div>
+      ${avail.length ? `<select class="inp" id="cp-addatt" aria-label="Atașează un fișier"><option value="">+ Atașează un fișier încărcat…</option>${avail.map(f => `<option value="${esc(f.id)}">${esc(f.name)} · ${fmtSize(f.size)}</option>`).join('')}</select>` : FILES === null ? '<span class="hint">Se încarcă lista de fișiere…</span>' : '<span class="hint">Încarci fișiere (de ex. oferta în PDF) din Evenimente → Șabloane email.</span>'}</div>`;
+  }
+  const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+  let FILES = null, filesErr = '';
+  async function loadFiles() {
+    if (!configured()) return;
+    try { const d = await api('POST', { action: 'files' }); FILES = d.files || []; filesErr = ''; }
+    catch (e) { FILES = []; filesErr = /necunoscut/i.test(e.message) ? 'Scriptul Google e o versiune veche: actualizează-l (Code.gs) ca să poți încărca și atașa fișiere.' : e.message; }
+    if (compose) { keepCompose(); renderCompose(); } else if (area === 'evenimente' && view === 'sabloane') render();
+  }
+  function keepCompose() { const a = $('#cp-to'), b = $('#cp-s'), c = $('#cp-b'); if (a) compose.to = a.value; if (b) compose.subject = b.value; if (c) compose.body = c.value; }
   async function send() {
     compose.to = $('#cp-to').value.trim(); compose.subject = $('#cp-s').value; compose.body = $('#cp-b').value;
     if (/\[COMPLETEAZĂ/i.test(compose.subject + compose.body)) { compose.err = 'Emailul are încă un loc de completat ([COMPLETEAZĂ…]). Completează-l aici sau în Șabloane email, apoi trimite.'; return renderCompose(); }
+    const miss = askFields(compose.subject + '\n' + compose.body).filter(f => !String(compose.vals[f.key] || '').trim());
+    if (miss.length) { compose.err = 'Completează: ' + miss.map(f => f.label).join(', ') + '.'; return renderCompose(); }
+    const tRaw = C.settings.templates.find(x => x.id === compose.tpl) || {};
+    const emptyFix = (C.settings.fields || []).filter(f => f.kind !== 'ask' && f.key && !String(f.value || '').trim() && String((tRaw.subject || '') + (tRaw.body || '')).includes('{' + f.key + '}'));
+    if (emptyFix.length) { compose.err = 'Câmpul „' + emptyFix[0].label + '” e gol. Completează-l în Evenimente → Șabloane email → Câmpurile tale.'; return renderCompose(); }
+    compose.subject = applyVals(compose.subject); compose.body = applyVals(compose.body);
     compose.sending = true; compose.err = ''; renderCompose();
     const S = C.settings, t = S.templates.find(x => x.id === compose.tpl);
     try {
       // salvăm întâi prețul calculat, ca Sheet-ul să conțină exact ce i-am trimis clientului
       const f = leadFields(); await api('POST', { action: 'update', id: L.id, fields: f });
       const msg = { action: 'email', id: L.id, to: compose.to, subject: compose.subject, body: P.emailText(compose.body), html: P.emailHtml(compose.body),
-        fromEmail: S.email.fromEmail, fromName: S.email.fromName, template: t ? t.name : 'email', newStatus: compose.newStatus || '' };
+        fromEmail: S.email.fromEmail, fromName: S.email.fromName, template: t ? t.name : 'email', newStatus: compose.newStatus || '',
+        attachments: (compose.att || []).map(a => a.id) };
       let d;
       try { d = await api('POST', msg); }
       catch (e) { if (!/prea lung/i.test(e.message)) throw e; delete msg.html; d = await api('POST', msg); }   // conexiunea de rezervă are limită de lungime: trimitem varianta simplă
       const i = C.leads.findIndex(x => x.id === L.id);
       if (i >= 0) { Object.assign(C.leads[i], f, { lastEmail: d.lastEmail }); if (compose.newStatus) C.leads[i].status = compose.newStatus; }
       Object.assign(L, f, { lastEmail: d.lastEmail }); if (compose.newStatus) L.status = compose.newStatus;
-      save(); compose = null; L._msg = `Email trimis de la ${d.sentFrom || S.email.fromEmail}.`; renderLead(); rerender();
+      const natt = (msg.attachments || []).length;
+      save(); compose = null; L._msg = `Email trimis de la ${d.sentFrom || S.email.fromEmail}` + (natt ? (d.attached === natt ? `, cu ${natt} ${natt === 1 ? 'atașament' : 'atașamente'}.` : '. Atenție: atașamentele nu au plecat — actualizează scriptul Google (Code.gs).') : '.'); renderLead(); rerender();
     } catch (e) { compose.sending = false; compose.err = 'Nu am putut trimite: ' + e.message; renderCompose(); }
   }
 
@@ -538,30 +578,109 @@
   }
 
   /* ---------- Șabloane ---------- */
+  /* ---------- Șabloane email: listă · editor · previzualizare, câmpurile tale, fișiere de atașat ---------- */
+  let tplSel = 0, tplLead = '', tplFocus = 'body', tplMsg = '', fileMsg = '', tplDelAsk = -1, tplResetAsk = -1, fileDelAsk = '';
+  const FIELD_GROUPS = [
+    ['Client', [['prenume', 'Prenume'], ['nume_complet', 'Nume complet'], ['data_eveniment', 'Data evenimentului'], ['locatie_completa', 'Locația completă'], ['localitate', 'Localitatea'], ['invitati', 'Nr. invitați']]],
+    ['Ofertă', [['tabel_oferta', 'Tabelul ofertei'], ['pachet', 'Pachet'], ['ore', 'Durată'], ['pret_pachet', 'Preț pachet'], ['transport', 'Transport'], ['km', 'Km'], ['reducere', 'Reducere'], ['total', 'Total'], ['tva', 'TVA'], ['total_fara_tva', 'Total fără TVA'], ['album', 'Album']]],
+    ['Plată', [['avans', 'Avans (lei)'], ['procent_avans', 'Avans (%)'], ['termen_plata', 'Termen plată'], ['zile_plata', 'Zile plată']]],
+    ['Contact', [['telefoane', 'Telefoane'], ['expeditor', 'Expeditor']]]
+  ];
+  const BUILTIN = FIELD_GROUPS.flatMap(g => g[1].map(x => x[0])).concat(['locatie', 'cota_tva']);
+  const FORMATS = [['# ', 'Titlu mare'], ['## ', 'Subtitlu'], ['**', 'Îngroșat'], ['- ', 'Listă'], ['| text | sumă |', 'Rând de tabel']];
+  function sampleLead() {
+    const real = C.leads.find(l => l.id === tplLead);
+    if (real) return real;
+    const y = new Date().getFullYear() + 1;
+    return { id: '', name: 'Andreea Popescu', email: 'exemplu@email.ro', eventType: 'Nuntă', eventDate: y + '-06-12', county: 'București', city: 'București', venue: 'Restaurantul Exemplu', guests: '150',
+      package: (C.settings.packages.find(p => p.recommended) || C.settings.packages[0] || {}).id, outside: 'nu', km: '0', discountType: '%', discountValue: '10', status: 'Nou' };
+  }
+  function tplPreviewDoc(t) {
+    const l = sampleLead(), body = fill(t.body, l).replace(/\{(\w+)\}/g, (m, k) => { const f = (C.settings.fields || []).find(x => x.key === k); return f ? '[' + f.label + ']' : m; });
+    return '<!doctype html><meta charset="utf-8"><body style="margin:0">' + P.emailHtml(body) + '</body>';
+  }
+  function updateTplPreview() {
+    const S = C.settings, t = S.templates[tplSel]; if (!t) return;
+    const f = $('#tp-prev'); if (f) f.srcdoc = tplPreviewDoc(t);
+    const s = $('#tp-subj'); if (s) s.textContent = fill(t.subject, sampleLead());
+  }
   function templatesView() {
     const S = C.settings;
-    const ph = ['tabel_oferta', 'avans', 'procent_avans', 'termen_plata', 'zile_plata', 'telefoane', 'album', 'prenume', 'nume_complet', 'data_eveniment', 'locatie_completa', 'localitate', 'pachet', 'ore', 'pret_pachet', 'transport', 'km', 'reducere', 'total', 'tva', 'total_fara_tva', 'cota_tva', 'invitati', 'expeditor'];
-    return `<section class="panel"><h2>Expeditor</h2>
+    if (tplSel >= S.templates.length) tplSel = 0;
+    const t = S.templates[tplSel], i = tplSel, def = P.DEFAULT_SETTINGS.templates.find(x => x.id === t.id);
+    if (FILES === null && configured()) loadFiles();
+    const mine = (S.fields || []).filter(f => f.key);
+    const atts = t.attachments || [], avail = (FILES || []).filter(f => !atts.some(a => a.id === f.id));
+    return `<section class="panel tstudio">
+        <div class="ts-list"><p class="ms-l">Șabloane</p>
+          ${S.templates.map((x, k) => `<button type="button" class="ts-item${k === i ? ' on' : ''}" data-act="crm-tsel" data-i="${k}"><b>${esc(x.name || 'Fără nume')}</b><span>${x.status ? '→ ' + esc(x.status) : 'fără status'}${(x.attachments || []).length ? ' · 📎 ' + x.attachments.length : ''}</span></button>`).join('')}
+          <button type="button" class="ts-item add" data-act="crm-addtpl">+ Șablon nou</button></div>
+        <div class="ts-edit">
+          <div class="row2">
+            <div class="field"><label for="tp-name">Numele șablonului</label><input class="inp" id="tp-name" data-s="templates.${i}.name" value="${esc(t.name)}"></div>
+            <div class="field"><label for="tp-st">După trimitere, statusul devine</label><select class="inp" id="tp-st" data-s="templates.${i}.status"><option value="" ${!t.status ? 'selected' : ''}>(nu se schimbă)</option>${P.STATUSES.map(x => `<option ${x === t.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+          </div>
+          <div class="field"><label for="tp-s">Subiect</label><input class="inp" id="tp-s" data-s="templates.${i}.subject" data-tf="subject" value="${esc(t.subject)}"></div>
+          <div class="ins"><p class="ms-l" title="Clic pe un câmp: îl pune unde e cursorul și se completează singur la trimitere.">Inserează în ${tplFocus === 'subject' ? 'subiect' : 'mesaj'} </p>
+            ${FIELD_GROUPS.map(([g, xs]) => `<div class="ins-g"><span>${g}</span>${xs.map(([k, n]) => `<button type="button" class="ins-b" data-act="crm-ins" data-k="{${k}}" title="{${k}}">${n}</button>`).join('')}</div>`).join('')}
+            ${mine.length ? `<div class="ins-g"><span>Câmpurile tale</span>${mine.map(f => `<button type="button" class="ins-b mine" data-act="crm-ins" data-k="{${esc(f.key)}}" title="{${esc(f.key)}}">${esc(f.label)}</button>`).join('')}</div>` : ''}
+            <div class="ins-g"><span>Formatare</span>${FORMATS.map(([k, n]) => `<button type="button" class="ins-b fmt" data-act="crm-fmt" data-k="${esc(k)}">${n}</button>`).join('')}</div>
+          </div>
+          <div class="field"><label for="tp-b">Mesaj</label><textarea class="inp" id="tp-b" data-s="templates.${i}.body" data-tf="body" rows="16">${esc(t.body)}</textarea></div>
+          <div class="attbox"><p class="ms-l">Atașamente trimise automat cu acest șablon</p>
+            <div class="ms-row">${atts.map(a => `<span class="attchip">📎 ${esc(a.name)} <button type="button" data-act="crm-tattrm" data-k="${esc(a.id)}" aria-label="Scoate ${esc(a.name)}">×</button></span>`).join('') || '<span class="hint">Niciunul.</span>'}</div>
+            ${avail.length ? `<select class="inp" id="tp-addatt" aria-label="Atașează la șablon"><option value="">+ Atașează un fișier încărcat…</option>${avail.map(f => `<option value="${esc(f.id)}">${esc(f.name)} · ${fmtSize(f.size)}</option>`).join('')}</select>` : ''}
+            <span class="hint">Fișierele noi le încarci mai jos, la „Fișiere de atașat”.</span></div>
+          <div class="btns">
+            <button type="button" class="btn" data-act="crm-tdup">Duplică</button>
+            <button type="button" class="btn" data-act="crm-ttest">Trimite-mi un test</button>
+            ${def ? `<button type="button" class="btn" data-act="crm-treset">Textul inițial</button>` : ''}
+            ${S.templates.length > 1 ? `<button type="button" class="btn danger" data-act="crm-deltpl" data-i="${i}">Șterge</button>` : ''}
+            <span class="hint" id="tpMsg">${tplMsg}</span></div>
+        </div>
+        <div class="ts-prev">
+          <div class="field"><label for="tp-lead">Previzualizare cu</label><select class="inp" id="tp-lead"><option value="">o cerere de exemplu</option>${C.leads.filter(l => l.status !== 'Șters').slice(0, 40).map(l => `<option value="${esc(l.id)}" ${l.id === tplLead ? 'selected' : ''}>${esc(l.name)} · ${esc(fmtD(l.eventDate))}</option>`).join('')}</select></div>
+          <p class="ts-subj"><span>Subiect:</span> <b id="tp-subj">${esc(fill(t.subject, sampleLead()))}</b></p>
+          <iframe id="tp-prev" title="Previzualizare șablon"></iframe>
+        </div>
+      </section>
+      <section class="panel"><h2>Câmpurile tale</h2>
+        <p class="hint">Adaugă informații pe care le pui des în emailuri. <b>Același text mereu</b> (ex. IBAN-ul, linkul de Instagram) se completează singur. <b>Îl completez la trimitere</b> (ex. ora filmării) îți apare ca un câmp de completat când trimiți emailul. În șabloane le pui cu butoanele de la „Câmpurile tale”.</p>
+        ${(S.fields || []).map((f, k) => `<div class="fieldrow">
+          <div class="field"><label>Nume</label><input class="inp" data-s="fields.${k}.label" value="${esc(f.label)}" placeholder="ex. Link Instagram"></div>
+          <div class="field"><label>Cod în șablon</label><input class="inp" data-fkey="${k}" value="${esc(f.key)}" placeholder="ex. instagram" autocapitalize="none" spellcheck="false"></div>
+          <div class="field"><label>Cum se completează</label><select class="inp" data-s="fields.${k}.kind"><option value="fix" ${f.kind !== 'ask' ? 'selected' : ''}>Același text mereu</option><option value="ask" ${f.kind === 'ask' ? 'selected' : ''}>Îl completez la trimitere</option></select></div>
+          ${f.kind !== 'ask' ? `<div class="field fr-val"><label>Text</label><textarea class="inp" rows="2" data-s="fields.${k}.value" placeholder="ce apare în email">${esc(f.value || '')}</textarea></div>` : '<div class="field fr-val"><label>Text</label><p class="hint">Îl scrii la fiecare email.</p></div>'}
+          <button type="button" class="x" data-act="crm-delfield" data-i="${k}" aria-label="Șterge câmpul">×</button></div>`).join('')}
+        <div class="btns"><button type="button" class="btn" data-act="crm-addfield">+ Câmp nou</button><span class="hint" id="fkMsg"></span></div>
+      </section>
+      <section class="panel"><h2>Fișiere de atașat</h2>
+        <p class="hint">De exemplu oferta sau prezentarea în PDF. Se păstrează în Google Drive-ul tău, în dosarul „WE WELCOME · atașamente”. Le atașezi la un șablon (se trimit automat) sau la un singur email. PDF, JPG, PNG sau Word, cel mult 15 MB fiecare.</p>
+        ${filesErr ? `<p class="hint err-msg">${esc(filesErr)}</p>` : ''}
+        <div class="files">${FILES === null ? '<p class="hint">Se încarcă…</p>' : FILES.length ? FILES.map(f => `<div class="file"><span>📎 <b>${esc(f.name)}</b> <span class="hint">${fmtSize(f.size)}</span></span><button type="button" class="btn small danger" data-act="crm-fdel" data-k="${esc(f.id)}">Șterge</button></div>`).join('') : '<p class="hint">Niciun fișier încă.</p>'}</div>
+        <div class="btns"><label class="btn primary upl">Încarcă un fișier<input type="file" id="tp-file" accept="application/pdf,image/jpeg,image/png,.docx" hidden></label><span class="hint" id="flMsg">${fileMsg}</span></div>
+      </section>
+      <section class="panel"><h2>Expeditor și avans</h2>
         <div class="row2"><div class="field"><label>Emailul din care pleacă mesajele</label><input class="inp" type="email" data-s="email.fromEmail" value="${esc(S.email.fromEmail)}"></div>
           <div class="field"><label>Numele afișat</label><input class="inp" data-s="email.fromName" value="${esc(S.email.fromName)}"></div></div>
         <p class="hint">Emailurile pleacă din contul Google care a publicat scriptul${C.account ? ` (<b>${esc(C.account)}</b>)` : ''}. O altă adresă merge doar dacă e adăugată în acel Gmail la „Trimite mesaje ca”. Gmail permite cam 100 de emailuri pe zi din script.</p>
         ${C.account && S.email.fromEmail && C.account.toLowerCase() !== S.email.fromEmail.toLowerCase() ? `<p class="hint warn-msg">Atenție: scriptul rulează pe ${esc(C.account)}, dar expeditorul ales e ${esc(S.email.fromEmail)}.</p>` : ''}
-      </section>
-      <section class="panel"><h2>Șabloane</h2>
         <div class="row3">${[['pricing.advancePct', 'Avans la reconfirmare', S.pricing.advancePct, '% din total'], ['pricing.payDays', 'Termen de plată a avansului', S.pricing.payDays, 'zile de la email']].map(([pa, la, v, su]) => `<div class="field"><label>${la}</label><div class="suf"><input class="inp" data-s="${pa}" data-num="1" inputmode="decimal" value="${esc(v)}"><span>${su}</span></div></div>`).join('')}</div>
-        <p class="hint">Câmpuri pe care le completez automat: ${ph.map(p => `<code>{${p}}</code>`).join(' ')}. Rândul care conține <code>{reducere}</code> apare doar dacă oferta are o reducere; <code>{telefoane}</code> pune numerele din config.js.</p>
-        ${S.templates.map((t, i) => `<div class="cat">
-          <div class="cat-head"><input class="inp" data-s="templates.${i}.name" value="${esc(t.name)}" aria-label="Numele șablonului">
-            ${S.templates.length > 1 ? `<button type="button" class="x" data-act="crm-deltpl" data-i="${i}" aria-label="Șterge șablonul">×</button>` : ''}</div>
-          <div class="field"><label>Subiect</label><input class="inp" data-s="templates.${i}.subject" value="${esc(t.subject)}"></div>
-          <div class="field"><label>Mesaj</label><textarea class="inp" data-s="templates.${i}.body" rows="8" style="min-height:180px">${esc(t.body)}</textarea></div>
-          <div class="field" style="max-width:320px"><label>După trimitere, statusul devine</label><select class="inp" data-s="templates.${i}.status">
-            <option value="" ${!t.status ? 'selected' : ''}>(nu se schimbă)</option>${P.STATUSES.map(s => `<option ${s === t.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
-        </div>`).join('')}
-        <div class="btns"><button type="button" class="btn" data-act="crm-addtpl">+ Adaugă șablon</button></div>
       </section>
       ${saveBar()}`;
   }
+  function insertAtCursor(txt) {
+    const el = tplFocus === 'subject' ? $('#tp-s') : $('#tp-b'); if (!el) return;
+    const a = el.selectionStart ?? el.value.length, b = el.selectionEnd ?? a, sel = el.value.slice(a, b);
+    let ins = txt;
+    if (txt === '**') ins = '**' + (sel || 'text îngroșat') + '**';
+    else if (/^(#|##|-) $/.test(txt)) ins = (a && el.value[a - 1] !== '\n' ? '\n' : '') + txt + (sel || '');
+    else if (txt.startsWith('|')) ins = (a && el.value[a - 1] !== '\n' ? '\n' : '') + txt;
+    el.value = el.value.slice(0, a) + ins + el.value.slice(b);
+    el.focus(); const pos = a + ins.length; try { el.setSelectionRange(pos, pos); } catch (e) {}
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  async function readB64(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('Nu am putut citi fișierul.')); r.readAsDataURL(file); }); }
 
   /* ---------- Conectare ---------- */
   function connectView() {
@@ -611,6 +730,8 @@
     if (S.email && S.email.fromName === 'Wedding Welcome') { S.email.fromName = 'WE WELCOME'; changed = true; }
     if (t.subject === 'Oferta Wedding Welcome pentru {data_eveniment}') { t.subject = 'Oferta WE WELCOME pentru {data_eveniment}'; changed = true; }
     if ((t.body.includes('Pachet: {pret_pachet} lei') && t.body.includes('Vă mulțumim pentru interesul arătat')) || t.body === P.OFFER_BODY_V2 || t.body === P.OFFER_BODY_V3) { t.body = P.OFFER_BODY; changed = true; }
+    const rc = (S.templates || []).find(x => x.id === 'reconfirmare');
+    if (rc && rc.body === P.RECONFIRM_BODY_V1) { rc.body = P.RECONFIRM_BODY; changed = true; }
     const conf = (S.templates || []).find(x => x.id === 'confirmare');
     if (conf && conf.body.includes('vă vom cere lista invitaților cu mesele și videoclipurile')) { conf.body = P.CONFIRM_BODY; changed = true; }
     if (!(S.templates || []).some(x => x.id === 'reconfirmare')) {
@@ -713,7 +834,8 @@
     'crm-save'() { saveLead(); },
     'crm-compose'(el) { startCompose(el.dataset.k || recommendedTpl(L) || (C.settings.templates[0] || {}).id); },
     'crm-tpl'(el) { if (!compose) return; const tpl = C.settings.templates.find(x => x.id === el.dataset.k); if (!tpl) return;
-      compose.to = $('#cp-to').value; compose.tpl = tpl.id; compose.subject = fill(tpl.subject, L); compose.body = fill(tpl.body, L); compose.newStatus = tpl.status; compose.err = ''; renderCompose(); },
+      compose.to = $('#cp-to').value; compose.tpl = tpl.id; compose.subject = fill(tpl.subject, L); compose.body = fill(tpl.body, L); compose.newStatus = tpl.status; compose.err = '';
+      compose.att = (tpl.attachments || []).map(a => ({ id: a.id, name: a.name })); renderCompose(); },
     'crm-cpview'(el) { if (!compose) return; compose.to = $('#cp-to').value; compose.subject = $('#cp-s').value; compose.body = $('#cp-b').value; compose.view = el.dataset.k; renderCompose(); },
     'crm-compose-back'() { compose = null; renderLead(); },
     'crm-send'() { send(); },
@@ -734,8 +856,37 @@
     'crm-resetsettings'() { C.settings = merge(P.DEFAULT_SETTINGS, null); setDirty = true; save(); render(); autoSave(); },
     'crm-addpkg'() { C.settings.packages.push({ id: 'p' + Date.now().toString(36), name: 'Pachet nou', hours: 4, price: 2000, modules: ['welcome', 'seating'], staffMenu: false, desc: '' }); setDirty = true; save(); render(); autoSave(); },
     'crm-delpkg'(el) { C.settings.packages.splice(+el.dataset.i, 1); setDirty = true; save(); render(); autoSave(); },
-    'crm-addtpl'() { C.settings.templates.push({ id: 't' + Date.now().toString(36), name: 'Șablon nou', status: '', subject: '', body: 'Bună, {prenume}!\n\n\n\n{expeditor}' }); setDirty = true; save(); render(); autoSave(); },
-    'crm-deltpl'(el) { C.settings.templates.splice(+el.dataset.i, 1); setDirty = true; save(); render(); autoSave(); }
+    'crm-addtpl'() { C.settings.templates.push({ id: 't' + Date.now().toString(36), name: 'Șablon nou', status: '', subject: '', body: 'Bună, {prenume}!\n\n\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}' }); tplSel = C.settings.templates.length - 1; tplMsg = ''; setDirty = true; save(); render(); autoSave(); },
+    'crm-deltpl'(el) { const k = +el.dataset.i; if (tplDelAsk !== k) { tplDelAsk = k; tplMsg = '<span class="err-msg">Apasă încă o dată „Șterge” ca să confirmi.</span>'; return render(); }
+      tplDelAsk = -1; C.settings.templates.splice(k, 1); tplSel = 0; tplMsg = ''; setDirty = true; save(); render(); autoSave(); },
+    'crm-tsel'(el) { tplSel = +el.dataset.i; tplMsg = ''; tplDelAsk = -1; tplResetAsk = -1; render(); },
+    'crm-tdup'() { const S = C.settings, t = clone(S.templates[tplSel]); t.id = 't' + Date.now().toString(36); t.name = t.name + ' (copie)'; S.templates.splice(tplSel + 1, 0, t); tplSel++; tplMsg = '<span class="ok-msg">Copie creată.</span>'; setDirty = true; save(); render(); autoSave(); },
+    'crm-treset'() { const t = C.settings.templates[tplSel], def = P.DEFAULT_SETTINGS.templates.find(x => x.id === t.id); if (!def) return;
+      if (tplResetAsk !== tplSel) { tplResetAsk = tplSel; tplMsg = '<span class="err-msg">Textul tău se înlocuiește cu cel inițial. Apasă încă o dată ca să confirmi.</span>'; return render(); }
+      tplResetAsk = -1; t.subject = def.subject; t.body = def.body; tplMsg = '<span class="ok-msg">Textul inițial a fost pus înapoi.</span>'; setDirty = true; save(); render(); autoSave(); },
+    async 'crm-ttest'() {
+      const S = C.settings, t = S.templates[tplSel], l = sampleLead(), to = S.email.fromEmail || C.account; const m = $('#tpMsg');
+      const lab = x => x.replace(/\{(\w+)\}/g, (mm, k) => { const f = (S.fields || []).find(y => y.key === k); return f ? '[' + f.label + ']' : mm; });
+      const body = lab(fill(t.body, l)), atts = (t.attachments || []).map(a => a.id);
+      if (m) { m.className = 'hint'; m.textContent = 'Se trimite testul la ' + to + '…'; }
+      try { const d = await api('POST', { action: 'email', to, subject: '[TEST] ' + lab(fill(t.subject, l)), body: P.emailText(body), html: P.emailHtml(body), fromEmail: S.email.fromEmail, fromName: S.email.fromName, template: 'test', attachments: atts });
+        tplMsg = `<span class="ok-msg">Test trimis la ${esc(to)}${atts.length ? (d.attached === atts.length ? `, cu ${atts.length} atașament${atts.length > 1 ? 'e' : ''}` : ' (fără atașamente: actualizează scriptul Google)') : ''}.</span>`; }
+      catch (e) { tplMsg = `<span class="err-msg">${esc(e.message)}</span>`; }
+      render();
+    },
+    'crm-ins'(el) { insertAtCursor(el.dataset.k); },
+    'crm-fmt'(el) { insertAtCursor(el.dataset.k); },
+    'crm-tattrm'(el) { const t = C.settings.templates[tplSel]; t.attachments = (t.attachments || []).filter(a => a.id !== el.dataset.k); setDirty = true; save(); render(); autoSave(); },
+    'crm-attrm'(el) { if (!compose) return; keepCompose(); compose.att = compose.att.filter(a => a.id !== el.dataset.k); renderCompose(); },
+    'crm-addfield'() { const fs = C.settings.fields = C.settings.fields || []; let n = fs.length + 1; while (fs.some(f => f.key === 'camp' + n)) n++; fs.push({ key: 'camp' + n, label: 'Câmp nou', kind: 'fix', value: '' }); setDirty = true; save(); render(); autoSave(); },
+    'crm-delfield'(el) { C.settings.fields.splice(+el.dataset.i, 1); setDirty = true; save(); render(); autoSave(); },
+    async 'crm-fdel'(el) {
+      const id = el.dataset.k; if (fileDelAsk !== id) { fileDelAsk = id; fileMsg = '<span class="err-msg">Apasă încă o dată „Șterge” ca să confirmi. Fișierul ajunge în coșul din Google Drive.</span>'; return render(); }
+      fileDelAsk = '';
+      try { await api('POST', { action: 'fileDel', id }); FILES = (FILES || []).filter(f => f.id !== id); C.settings.templates.forEach(t => { if (t.attachments) t.attachments = t.attachments.filter(a => a.id !== id); }); setDirty = true; save(); autoSave(); fileMsg = '<span class="ok-msg">Fișier șters.</span>'; }
+      catch (e) { fileMsg = `<span class="err-msg">${esc(e.message)}</span>`; }
+      render();
+    }
   });
 
   /* câmpuri: setări (data-s), cererea deschisă (data-l), căutare, șablon */
@@ -747,6 +898,9 @@
       else if (t.type === 'checkbox') setPath(C.settings, path, t.checked);
       else setPath(C.settings, path, t.dataset.num ? P.num(t.value) : t.value);
       setDirty = true; save(); autoSave();
+      if (/^(templates|fields)\./.test(path)) { clearTimeout(onField._tp); onField._tp = setTimeout(updateTplPreview, 200); }
+      if (/^fields\.\d+\.kind$/.test(path) && e.type === 'change') render();
+      if (/^templates\.\d+\.(name|status)$/.test(path) && e.type === 'change') render();
       return;
     }
     if (t.dataset.rec !== undefined) {
@@ -764,7 +918,30 @@
     if ((t.id === 'crmYear' || t.id === 'crmMonth') && e.type === 'change') { if (t.id === 'crmYear') fYear = t.value; else fMonth = t.value; render(); return; }
     if (t.id === 'crmQ' && e.type === 'input') { q = t.value; const pos = t.selectionStart; render(); const n = $('#crmQ'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } }
     if (t.id === 'cp-b' && e.type === 'input') { clearTimeout(onField._pv); onField._pv = setTimeout(updatePreview, 250); }
+    if (t.dataset.cpv !== undefined && compose) { compose.vals[t.dataset.cpv] = t.value; clearTimeout(onField._pv); onField._pv = setTimeout(updatePreview, 250); }
+    if (t.id === 'cp-addatt' && e.type === 'change' && compose && t.value) { const f = (FILES || []).find(x => x.id === t.value); if (f) { keepCompose(); compose.att.push({ id: f.id, name: f.name }); renderCompose(); } }
+    if (t.id === 'tp-lead' && e.type === 'change') { tplLead = t.value; updateTplPreview(); }
+    if (t.id === 'tp-addatt' && e.type === 'change' && t.value) { const f = (FILES || []).find(x => x.id === t.value), tp = C.settings.templates[tplSel]; if (f && tp) { tp.attachments = (tp.attachments || []).concat({ id: f.id, name: f.name }); setDirty = true; save(); autoSave(); render(); } }
+    if (t.dataset.fkey !== undefined) {
+      const k = +t.dataset.fkey, fs = C.settings.fields, key = t.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+/, '').slice(0, 30);
+      const m = $('#fkMsg');
+      if (BUILTIN.includes(key) || fs.some((f, x) => x !== k && f.key === key)) { if (m) { m.className = 'hint err-msg'; m.textContent = `Codul „${key}” e deja folosit. Alege altul.`; } return; }
+      if (m) { m.className = 'hint'; m.textContent = key ? `În șablon se scrie {${key}}.` : ''; }
+      fs[k].key = key; setDirty = true; save(); autoSave();
+    }
   }
+  document.addEventListener('focusin', e => { const tf = e.target.dataset && e.target.dataset.tf; if (tf) { tplFocus = tf; const p = document.querySelector('.ins .ms-l'); if (p && p.firstChild) p.firstChild.nodeValue = 'Inserează în ' + (tf === 'subject' ? 'subiect' : 'mesaj') + ' '; } });
+  document.addEventListener('change', async e => {
+    if (e.target.id !== 'tp-file' || !e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0], m = $('#flMsg'); if (m) { m.className = 'hint'; m.textContent = 'Se încarcă ' + file.name + '…'; }
+    try {
+      if (file.size > 15 * 1024 * 1024) throw new Error('Fișierul e prea mare (cel mult 15 MB).');
+      const type = file.type || (/\.docx$/i.test(file.name) ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : '');
+      const d = await api('POST', { action: 'uploadFile', name: file.name, type, data: await readB64(file) });
+      FILES = (FILES || []).concat(d.file).sort((a, b) => a.name.localeCompare(b.name)); fileMsg = `<span class="ok-msg">Încărcat: ${esc(d.file.name)}. Îl poți atașa la un șablon.</span>`;
+    } catch (err) { fileMsg = `<span class="err-msg">${esc(/necunoscut/i.test(err.message) ? 'Scriptul Google e o versiune veche: actualizează-l (Code.gs) ca să poți încărca fișiere.' : /prea lung/i.test(err.message) ? 'Fișierul e prea mare pentru conexiunea de rezervă a acestui browser. Încearcă de pe laptop, din Chrome.' : err.message)}</span>`; }
+    render();
+  });
   document.addEventListener('input', onField);
   document.addEventListener('change', e => { if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') onField(e); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden && L) A['crm-close'](); });
