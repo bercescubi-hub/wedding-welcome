@@ -345,6 +345,44 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
 .stp{display:inline-block;font-size:.76rem;font-weight:600;padding:3px 10px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
 .st-new{color:var(--accent)} .st-c{color:var(--gold)} .st-o{color:var(--warn)} .st-ok{color:var(--ok)} .st-no{color:var(--muted)}
 .sheet.wide{max-width:680px}
+/* fișa cererii: rândul cu șabloane de email */
+.mailstrip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.mailstrip .ms-l{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.mailstrip .ms-row{display:flex;flex-wrap:wrap;gap:6px}
+.ms-b{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:8px 14px;font:inherit;font-size:.9rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.ms-b:hover{border-color:var(--accent)}
+.ms-b.rec{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ms-b i{font-style:normal;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+/* ecranul de email: șabloane sus, scrisul în stânga, emailul în dreapta, butonul mereu vizibil jos */
+.sheet.compose{max-width:1180px;height:min(92vh,980px);max-height:none;padding:0;gap:0;overflow:hidden}
+.sheet.compose .shead{padding:18px 22px 6px}
+.tpl-cards{display:flex;gap:10px;overflow-x:auto;padding:8px 22px 14px;scrollbar-width:thin}
+.tpl-card{flex:0 0 auto;min-width:170px;text-align:left;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:12px 14px;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:3px;position:relative}
+.tpl-card b{font-size:.98rem}
+.tpl-card span{font-size:.78rem;color:var(--muted)}
+.tpl-card i{font-style:normal;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.tpl-card.on{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.cp-tabs{display:none;gap:4px;margin:0 22px 10px;padding:4px;border:1px solid var(--line);border-radius:12px}
+.cp-tabs button{flex:1;border:0;background:none;color:var(--muted);font:inherit;font-weight:600;padding:9px;border-radius:9px;cursor:pointer}
+.cp-tabs button[aria-selected=true]{background:var(--accent);color:var(--accent-ink)}
+.cp-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;padding:0 22px;border-top:1px solid var(--line)}
+.cp-edit{display:flex;flex-direction:column;gap:12px;overflow-y:auto;padding:16px 4px 16px 0;min-height:0}
+.cp-body{flex:1;display:flex;flex-direction:column;min-height:220px}
+.cp-body textarea{flex:1;min-height:220px;resize:none;font-size:.92rem;line-height:1.5}
+.cp-prev{min-height:0;padding:16px 0}
+.cp-prev iframe{width:100%;height:100%;border:1px solid var(--line);border-radius:12px;background:#f6efe3}
+.cp-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 22px;border-top:1px solid var(--line);background:var(--surface)}
+.cp-foot .hint{margin:0}
+@media (max-width:899px){
+  .sheet.compose{height:calc(100dvh - 32px)}
+  .cp-tabs{display:flex}
+  .cp-grid{grid-template-columns:1fr;border-top:0}
+  .cp-grid.v-write .cp-prev,.cp-grid.v-prev .cp-edit{display:none}
+  .cp-edit{padding-top:4px}
+  .cp-prev{padding-top:0}
+  .tpl-card{min-width:150px}
+  .cp-foot .btns{width:100%}.cp-foot .btns .btn{flex:1}
+}
 .sheet.still{animation:none}
 .shead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .info{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;font-size:.93rem}
@@ -410,7 +448,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.20.0';
+const APP_VERSION = '3.21.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();

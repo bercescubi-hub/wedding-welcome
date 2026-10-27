@@ -335,6 +335,7 @@
       </div>
       ${P.outOfArea(L.km, S) ? `<p class="note" style="border-style:solid;color:var(--danger)"><b>Zonă neacoperită</b> · ~${esc(num(L.km))} km (limita e ${esc(S.pricing.maxKm)} km). Cerere de ofertă specială.</p>` : ''}
       ${L.clientMessage ? `<p class="note" style="border-style:solid">„${esc(L.clientMessage)}”</p>` : ''}
+      ${emailStrip()}
       <div class="row2">
         <div class="field"><label for="l-st">Status</label><select class="inp" id="l-st" data-l="status">${P.STATUSES.map(s => `<option ${s === L.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
         <div class="field"><label for="l-pk">Pachet</label><select class="inp" id="l-pk" data-l="package">${P.pkgOf(S, L.package) ? '' : '<option value="" selected>Alege pachetul</option>'}${S.packages.map(p => `<option value="${esc(p.id)}" ${P.pkgOf(S, L.package) === p ? 'selected' : ''}>${esc(p.name)} · ${lei(p.price)}</option>`).join('')}</select></div>
@@ -358,7 +359,6 @@
         <div class="btns"><button type="button" class="btn danger" data-act="crm-del-yes">Da, șterge</button><button type="button" class="btn" data-act="crm-del-no">Anulează</button></div></div>` : ''}
       <div class="btns" style="justify-content:flex-end">
         ${isAdmin() && !L._del ? `<button type="button" class="btn danger" data-act="crm-del" style="margin-right:auto">Șterge cererea</button>` : ''}
-        <button type="button" class="btn" data-act="crm-compose" ${L.email ? '' : 'disabled title="Cererea nu are email"'}>Trimite email</button>
         <button type="button" class="btn primary" data-act="crm-save">Salvează în Google Sheets</button></div>
     </div>`;
     $('#modal').hidden = false;
@@ -420,25 +420,46 @@
     compose = { tpl: t ? t.id : '', to: L.email || '', subject: fill(t && t.subject, L), body: fill(t && t.body, L), newStatus: t ? t.status : '', sending: false, err: '' };
     renderCompose();
   }
+  /** Șablonul potrivit pentru etapa în care e cererea (îl marcăm „Recomandat”). */
+  function recommendedTpl(l) {
+    const st = l.status || 'Nou', T = C.settings.templates, has = id => T.some(t => t.id === id);
+    const id = st === 'Confirmat' ? 'reconfirmare' : st === 'Ofertă trimisă' ? 'confirmare' : (st === 'Refuzat' ? '' : 'oferta');
+    return has(id) ? id : '';
+  }
+  /** Rândul cu șabloane din fișa cererii: un clic deschide emailul gata completat. */
+  function emailStrip() {
+    const T = C.settings.templates, rec = recommendedTpl(L);
+    if (!L.email) return `<div class="mailstrip"><span class="ms-l">Email</span><span class="hint">Cererea nu are adresă de email.</span></div>`;
+    return `<div class="mailstrip"><span class="ms-l">Trimite email</span><div class="ms-row">${T.map(t => `<button type="button" class="ms-b${t.id === rec ? ' rec' : ''}" data-act="crm-compose" data-k="${esc(t.id)}">${esc(t.name)}${t.id === rec ? '<i>recomandat</i>' : ''}</button>`).join('')}</div>
+      ${L.lastEmail ? `<span class="hint">Ultimul: ${esc(L.lastEmail)}</span>` : ''}</div>`;
+  }
   function renderCompose() {
-    const S = C.settings;
+    const S = C.settings, rec = recommendedTpl(L);
     const anim = $('#modal').hidden ? '' : ' still';
-    $('#modal').innerHTML = `<div class="sheet wide${anim}" role="dialog" aria-modal="true" aria-labelledby="cpT">
-      <div class="shead"><div><p class="eyebrow-a">Email către ${esc(L.name)}</p><h2 id="cpT">Trimite email</h2></div>
+    const view = compose.view || 'write';
+    $('#modal').innerHTML = `<div class="sheet compose${anim}" role="dialog" aria-modal="true" aria-labelledby="cpT">
+      <div class="shead"><div><p class="eyebrow-a">${esc(L.name)} · ${esc(L.status || 'Nou')}${L.lastEmail ? ' · ultimul email: ' + esc(L.lastEmail) : ''}</p><h2 id="cpT">Email către ${esc(L.name)}</h2></div>
         <button type="button" class="x" data-act="crm-close" aria-label="Închide">×</button></div>
-      <div class="row2">
-        <div class="field"><label for="cp-t">Șablon</label><select class="inp" id="cp-t">${S.templates.map(t => `<option value="${esc(t.id)}" ${t.id === compose.tpl ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>
-        <div class="field"><label>De la</label><p class="from">${esc(S.email.fromName)} &lt;${esc(S.email.fromEmail)}&gt;</p></div>
+      <div class="tpl-cards" role="radiogroup" aria-label="Șablon">${S.templates.map(t => `<button type="button" role="radio" aria-checked="${t.id === compose.tpl}" class="tpl-card${t.id === compose.tpl ? ' on' : ''}" data-act="crm-tpl" data-k="${esc(t.id)}">
+          <b>${esc(t.name)}</b><span>${t.status ? 'status → ' + esc(t.status) : 'fără schimbare de status'}</span>${t.id === rec ? '<i>recomandat acum</i>' : ''}</button>`).join('')}</div>
+      <div class="cp-tabs" role="tablist"><button type="button" role="tab" aria-selected="${view === 'write'}" data-act="crm-cpview" data-k="write">Scrie</button><button type="button" role="tab" aria-selected="${view === 'prev'}" data-act="crm-cpview" data-k="prev">Cum arată</button></div>
+      <div class="cp-grid v-${view}">
+        <div class="cp-edit">
+          <div class="row2">
+            <div class="field"><label for="cp-to">Către</label><input class="inp" id="cp-to" value="${esc(compose.to)}"></div>
+            <div class="field"><label>De la</label><p class="from">${esc(S.email.fromName)} &lt;${esc(S.email.fromEmail)}&gt;</p></div>
+          </div>
+          <div class="field"><label for="cp-s">Subiect</label><input class="inp" id="cp-s" value="${esc(compose.subject)}"></div>
+          <div class="field cp-body"><label for="cp-b">Mesaj</label><textarea class="inp" id="cp-b">${esc(compose.body)}</textarea></div>
+          <details class="hint"><summary>Marcaje pentru formatare</summary><code># Titlu mare</code> · <code>## Titlu</code> · <code>- listă</code> · <code>| text | sumă |</code> rând de tabel · <code>**îngroșat**</code></details>
+        </div>
+        <div class="cp-prev"><iframe id="cp-prev" title="Previzualizare email"></iframe></div>
       </div>
-      <div class="field"><label for="cp-to">Către</label><input class="inp" id="cp-to" value="${esc(compose.to)}"></div>
-      <div class="field"><label for="cp-s">Subiect</label><input class="inp" id="cp-s" value="${esc(compose.subject)}"></div>
-      <div class="field"><label for="cp-b">Mesaj</label><textarea class="inp" id="cp-b" rows="12" style="min-height:260px">${esc(compose.body)}</textarea>
-        <p class="hint">Marcaje: <code># Titlu mare</code> · <code>## Titlu</code> · <code>- listă</code> · <code>| text | sumă |</code> rând de tabel · <code>**îngroșat**</code>. Așa arată emailul:</p></div>
-      <iframe id="cp-prev" title="Previzualizare email" style="width:100%;height:520px;border:1px solid var(--line,#ddd);border-radius:12px;background:#f6efe3"></iframe>
-      ${compose.newStatus ? `<p class="hint">După trimitere, statusul devine <b>${esc(compose.newStatus)}</b>.</p>` : ''}
-      ${compose.err ? `<p class="hint err-msg">${esc(compose.err)}</p>` : ''}
-      <div class="btns" style="justify-content:flex-end"><button type="button" class="btn" data-act="crm-compose-back" ${compose.sending ? 'disabled' : ''}>Înapoi la cerere</button>
-        <button type="button" class="btn primary" data-act="crm-send" ${compose.sending ? 'disabled' : ''}>${compose.sending ? 'Se trimite…' : 'Trimite'}</button></div>
+      <div class="cp-foot">
+        <p class="hint">${compose.err ? `<span class="err-msg">${esc(compose.err)}</span>` : compose.newStatus ? `După trimitere, statusul devine <b>${esc(compose.newStatus)}</b>.` : 'Statusul cererii rămâne neschimbat.'}</p>
+        <div class="btns"><button type="button" class="btn" data-act="crm-compose-back" ${compose.sending ? 'disabled' : ''}>Înapoi la cerere</button>
+          <button type="button" class="btn primary" data-act="crm-send" ${compose.sending ? 'disabled' : ''}>${compose.sending ? 'Se trimite…' : 'Trimite emailul'}</button></div>
+      </div>
     </div>`;
     $('#modal').hidden = false;
     updatePreview();
@@ -690,7 +711,10 @@
     'crm-open'(el) { openLead(el.dataset.id); },
     'crm-close'() { $('#modal').hidden = true; L = null; compose = null; },
     'crm-save'() { saveLead(); },
-    'crm-compose'() { startCompose((C.settings.templates[0] || {}).id); },
+    'crm-compose'(el) { startCompose(el.dataset.k || recommendedTpl(L) || (C.settings.templates[0] || {}).id); },
+    'crm-tpl'(el) { if (!compose) return; const tpl = C.settings.templates.find(x => x.id === el.dataset.k); if (!tpl) return;
+      compose.to = $('#cp-to').value; compose.tpl = tpl.id; compose.subject = fill(tpl.subject, L); compose.body = fill(tpl.body, L); compose.newStatus = tpl.status; compose.err = ''; renderCompose(); },
+    'crm-cpview'(el) { if (!compose) return; compose.to = $('#cp-to').value; compose.subject = $('#cp-s').value; compose.body = $('#cp-b').value; compose.view = el.dataset.k; renderCompose(); },
     'crm-compose-back'() { compose = null; renderLead(); },
     'crm-send'() { send(); },
     async 'crm-copy'(el) { try { await navigator.clipboard.writeText(el.dataset.v); el.textContent = 'Copiat!'; } catch (e) { el.textContent = 'Selectează și copiază'; } setTimeout(() => { el.textContent = 'Copiază'; }, 1800); },
@@ -740,7 +764,6 @@
     if ((t.id === 'crmYear' || t.id === 'crmMonth') && e.type === 'change') { if (t.id === 'crmYear') fYear = t.value; else fMonth = t.value; render(); return; }
     if (t.id === 'crmQ' && e.type === 'input') { q = t.value; const pos = t.selectionStart; render(); const n = $('#crmQ'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } }
     if (t.id === 'cp-b' && e.type === 'input') { clearTimeout(onField._pv); onField._pv = setTimeout(updatePreview, 250); }
-    if (t.id === 'cp-t' && e.type === 'change' && compose) { const tpl = C.settings.templates.find(x => x.id === t.value); compose.tpl = t.value; compose.subject = fill(tpl.subject, L); compose.body = fill(tpl.body, L); compose.newStatus = tpl.status; compose.to = $('#cp-to').value; renderCompose(); }
   }
   document.addEventListener('input', onField);
   document.addEventListener('change', e => { if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') onField(e); });
