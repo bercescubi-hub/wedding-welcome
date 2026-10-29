@@ -204,6 +204,8 @@ function settingsSheet_() {
 function setup() { sheet_(); settingsSheet_(); accSheet_(); autorizeaza(); }
 /** Rulează-o o dată din editor după o actualizare: Google cere permisiunile noi (Drive pentru atașamente, servicii externe pentru beculețe). */
 function autorizeaza() { DriveApp.getRootFolder(); UrlFetchApp.fetch('https://www.google.com', { muteHttpExceptions: true }); }
+/* Rulează o dată din editor dacă apare eroarea „Nu ai permisiunea de a apela DriveApp…”: cere acordul complet pentru Drive. Creează și șterge imediat un dosar de test. */
+function testDrive() { const f = DriveApp.createFolder('WE WELCOME test'); f.setTrashed(true); Logger.log('Drive OK'); }
 
 /* ---------------- cereri ---------------- */
 function clean_(v, max) {
