@@ -29,12 +29,12 @@ const FIELDS = [
   ['transport','Transport (lei)'], ['packagePrice','Preț pachet (lei)'], ['discountType','Reducere tip'], ['discountValue','Reducere valoare'],
   ['total','Total (lei)'], ['cost','Cost estimat (lei)'], ['profit','Profit estimat (lei)'], ['staffMenuByClient','Meniu staff de la client'],
   ['clientMessage','Mesaj client'], ['notes','Note interne'], ['lastEmail','Ultimul email'], ['source','Sursa'],
-  ['album','Album foto']
+  ['album','Album foto'], ['extras','Servicii extra']
 ];
 const KEYS = FIELDS.map(f => f[0]);
 const TEXT_COLS = ['id','createdAt','phone','eventDate','startTime','lastEmail'];
-const CLIENT_KEYS = ['name','phone','email','eventType','eventDate','startTime','county','city','venue','guests','package','outside','km','transport','packagePrice','total','clientMessage','source'];
-const ADMIN_KEYS = ['status','package','outside','km','transport','packagePrice','discountType','discountValue','total','cost','profit','staffMenuByClient','notes','name','phone','email','eventDate','startTime','county','city','venue','guests','eventType','album'];
+const CLIENT_KEYS = ['extras','name','phone','email','eventType','eventDate','startTime','county','city','venue','guests','package','outside','km','transport','packagePrice','total','clientMessage','source'];
+const ADMIN_KEYS = ['extras','status','package','outside','km','transport','packagePrice','discountType','discountValue','total','cost','profit','staffMenuByClient','notes','name','phone','email','eventDate','startTime','county','city','venue','guests','eventType','album'];
 
 /* ---------------- intrări web ----------------
    Aplicația vorbește cu scriptul prin fetch (GET/POST). Dacă browserul blochează citirea răspunsului,
@@ -237,7 +237,25 @@ function submit(data) {
     sh.appendRow(KEYS.map(k => asText_(k, row[k] == null ? '' : row[k])));
   }
   finally { lock.releaseLock(); }
-  return { ok: true, id: row.id };
+  let ack = false;
+  try { ack = autoAck_(row); } catch (e) { console.error('Emailul automat nu a plecat: ' + e); }
+  return { ok: true, id: row.id, ack: ack };
+}
+/* Emailul automat „am primit cererea”: șablonul îl pregătește aplicația (setări → autoAck); aici completăm datele clientului. */
+const LUNI_ = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+function autoAck_(row) {
+  const s = getSettings() || {}, a = s.autoAck;
+  if (!a || !a.html || !row.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.email)) return false;
+  const first = String(row.name || '').trim().split(/\s+/)[0] || '';
+  const m = String(row.eventDate || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const pk = (s.packages || []).find(p => p.id === row.package || p.name === row.package);
+  const place = [row.venue, row.city, row.county && row.county !== 'București' ? 'jud. ' + row.county : ''].filter(String).join(', ');
+  const v = { nume: first, prenume: first, nume_complet: row.name || '', data_eveniment: m ? (+m[3]) + ' ' + LUNI_[+m[2] - 1] + ' ' + m[1] : (row.eventDate || ''),
+    localitate: row.city || '', locatie: row.venue || row.city || '', locatie_completa: place || row.city || '', pachet: pk ? pk.name : (row.package || ''), invitati: row.guests || '' };
+  const put = (t, html) => String(t || '').replace(/\{(\w+)\}/g, (x, k) => k in v ? (html ? esc_(v[k]) : v[k]) : x);
+  const r = sendEmail({ to: row.email, subject: put(a.subject), body: put(a.text), html: put(a.html, true), fromEmail: a.fromEmail, fromName: a.fromName,
+    template: (a.name || 'Confirmare primire') + ' (automat)', id: row.id, attachments: a.attachments || [] });
+  return !!(r && r.ok);
 }
 function listRows() {
   const sh = sheet_(); const n = sh.getLastRow() - 1;
@@ -286,7 +304,7 @@ function saveSettings(s) {
 }
 function publicConfig() {
   const s = getSettings(); if (!s) return null;
-  return { packages: s.packages, pricing: s.pricing };   // fără costuri și șabloane
+  return { packages: s.packages, pricing: s.pricing, extras: (s.extras || []).map(x => ({ id: x.id, name: x.name, desc: x.desc, price: x.price })) };   // fără costuri și șabloane
 }
 
 /* ---------------- conturi ----------------
@@ -451,6 +469,9 @@ function sendEmail(d) {
   const att = attachmentBlobs_(d.attachments);
   if (att.error) return { ok: false, error: att.error };
   if (att.blobs.length) opts.attachments = att.blobs;
+  // imaginile puse în corpul emailului (src="cid:ID") vin din dosarul cu atașamente
+  const cids = (String(opts.htmlBody).match(/cid:([\w-]+)/g) || []).map(x => x.slice(4)).filter((x, i, arr) => arr.indexOf(x) === i).slice(0, 6);
+  if (cids.length) { const inl = {}; for (const id of cids) { try { const f = DriveApp.getFileById(id); if (inFolder_(f) && !f.isTrashed()) inl[id] = f.getBlob(); } catch (e) {} } opts.inlineImages = inl; }
   GmailApp.sendEmail(d.to, d.subject || 'WE WELCOME', d.body || '', opts);
   const stamp = Utilities.formatDate(new Date(), 'Europe/Bucharest', 'yyyy-MM-dd HH:mm') + ' · ' + (d.template || 'email');
   const f = { lastEmail: stamp }; if (d.newStatus) f.status = d.newStatus;

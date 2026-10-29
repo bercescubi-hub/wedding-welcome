@@ -24,7 +24,8 @@
       costs: Object.assign({}, def.costs, s.costs || {}),
       email: Object.assign({}, def.email, s.email || {}),
       templates: Array.isArray(s.templates) && s.templates.length ? s.templates : clone(def.templates),
-      fields: Array.isArray(s.fields) ? s.fields : clone(def.fields || [])
+      fields: Array.isArray(s.fields) ? s.fields : clone(def.fields || []),
+      extras: Array.isArray(s.extras) ? s.extras : clone(def.extras || [])
     };
   }
   function load() {
@@ -63,8 +64,8 @@
     try {
       const d = await api('GET', { action: 'list' });
       C.leads = d.rows || []; C.scriptOld = !!(C.leads.length && !('album' in C.leads[0])); C.account = d.account || C.account; if (d.role) C.role = d.role;
-      if (d.settings) { C.settings = merge(P.DEFAULT_SETTINGS, d.settings); const m1 = migrateTemplates(C.settings), m2 = migratePackages(C.settings); if ((m1 || m2) && isAdmin()) saveSettingsRemote(); }
-      else await api('POST', { action: 'settings', settings: C.settings });   // prima conectare: urcă prețurile implicite
+      if (d.settings) { C.settings = merge(P.DEFAULT_SETTINGS, d.settings); const m1 = migrateTemplates(C.settings), m2 = migratePackages(C.settings); if ((m1 || m2 || (!d.settings.autoAck && C.settings.templates.some(t => t.autoSubmit))) && isAdmin()) saveSettingsRemote(); }
+      else { C.settings.autoAck = buildAutoAck(C.settings); await api('POST', { action: 'settings', settings: C.settings }); }   // prima conectare: urcă prețurile implicite
       C.lastSync = new Date().toISOString(); save(); note = ''; setDirty = false;
       await pushAccounts(true);
     } catch (e) { note = navigator.onLine ? 'Nu am putut citi din Google Sheets: ' + e.message : 'Ești offline. Vezi ultimele cereri salvate pe laptop.'; noteOk = false; }
@@ -279,7 +280,7 @@
   function applyEarlyPromo(l) {
     const pr = (window.WW_CONFIG || {}).promo; if (!pr || !pr.until || !num(pr.earlyPct)) return false;
     const got = Date.parse(l.createdAt || ''), end = Date.parse(pr.until + 'T23:59:59');
-    if (!got || got > end || (l.status || 'Nou') !== 'Nou' || l.lastEmail || num(l.discountValue) || String(l.cost || '') !== '') return false;   // cost completat = cererea a fost deja salvată din aplicație
+    if (!got || got > end || (l.status || 'Nou') !== 'Nou' || (l.lastEmail && !/automat/.test(l.lastEmail)) || num(l.discountValue) || String(l.cost || '') !== '') return false;   // cost completat = cererea a fost deja salvată din aplicație
     l.discountType = '%'; l.discountValue = String(num(pr.earlyPct)); return true;
   }
   function breakdown() {
@@ -289,6 +290,7 @@
       <div class="sum">
         ${row('Pachet ' + esc(c.pkg ? c.pkg.name : '—') + (c.pkg ? ` · ${c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore'}` : ''), lei(c.price))}
         ${c.album === 'inclus' ? row('Album foto · inclus în pachet', '—') : c.albumExtra ? row('Album foto', lei(c.albumExtra)) : ''}
+        ${(c.extras || []).map(x => row('Extra · ' + esc(x.name), num(x.price) ? lei(x.price) : 'preț la cerere')).join('')}
         ${row(c.outside ? `Transport · ${c.billedKm} km × ${P.leiRate(S.pricing.kmRate)}` : 'Transport (București-Ilfov)', lei(c.transport))}
         ${c.discount ? row('Reducere' + (L.discountType === '%' ? ` ${num(L.discountValue)}%` : ''), '− ' + lei(c.discount)) : ''}
         ${c.vat && !c.vatIncluded ? row(`TVA ${c.vatRate}%`, '+ ' + lei(c.vat)) : ''}
@@ -302,6 +304,7 @@
         ${c.outside ? row(`Combustibil · ${c.km * 2} km dus-întors`, lei(c.fuel)) : ''}
         ${c.consumables ? row('Consumabile Photo Booth', lei(c.consumables)) : ''}
         ${c.albumCost ? row('Album foto (cost)', lei(c.albumCost)) : ''}
+        ${c.extrasCost ? row('Servicii extra (cost)', lei(c.extrasCost)) : ''}
         ${row('Echipament (uzură)', lei(c.equipment))}
         ${c.vat ? row(`TVA de plată ${c.vatRate}%`, lei(c.vat)) : ''}
         ${c.incomeTax ? row(`Impozit pe venit ${num(S.costs.incomeTax)}%`, lei(c.incomeTax)) : ''}
@@ -354,6 +357,7 @@
       </div>
       ${L._promo ? `<p class="hint ok-msg">Reducerea de ${esc(L.discountValue)}% din promoția de final de an e completată automat (cerere primită până la 31 decembrie). Se salvează când apeși „Salvează” sau trimiți oferta.</p>` : ''}
       <div id="albumBox">${albumField()}</div>
+      ${(C.settings.extras || []).length ? `<div class="extrasBox"><span class="ms-l">Servicii extra</span>${C.settings.extras.map(x => `<label class="tog"><input type="checkbox" data-x="${esc(x.id)}" ${String(L.extras || '').split(',').includes(x.id) ? 'checked' : ''}> ${esc(x.name)} <span class="hint">${num(x.price) ? lei(x.price) : 'preț la cerere'}</span></label>`).join('')}</div>` : ''}
       <div id="calcBox">${breakdown()}</div>
       <div class="field"><label for="l-notes">Note interne (nu le vede clientul)</label><textarea class="inp" id="l-notes" data-l="notes" rows="3" style="min-height:70px">${esc(L.notes || '')}</textarea></div>
       <p class="hint" id="ldMsg">${esc(L._msg || '')}</p>
@@ -369,7 +373,7 @@
     const c = P.calc(L, C.settings);
     return { status: L.status, package: c.pkg ? c.pkg.id : L.package, outside: L.outside, km: String(num(L.km)), transport: String(c.transport), packagePrice: String(c.price),
       discountType: L.discountType, discountValue: String(num(L.discountValue)), total: String(c.total), cost: String(c.cost), profit: String(c.profit),
-      staffMenuByClient: L.staffMenuByClient, notes: L.notes || '', album: c.album === 'extra' ? 'da' : c.album === 'inclus' ? 'inclus' : 'nu' };
+      staffMenuByClient: L.staffMenuByClient, notes: L.notes || '', extras: String(L.extras || ''), album: c.album === 'extra' ? 'da' : c.album === 'inclus' ? 'inclus' : 'nu' };
   }
   async function saveLead() {
     const m = $('#ldMsg'); if (m) { m.textContent = 'Se salvează…'; m.className = 'hint'; }
@@ -385,6 +389,24 @@
   /** Numerele de contact din config.js, ca „0737 376 128 / 0752 425 550”. */
   const phones = () => ((window.WW_CONFIG || {}).contactPhones || []).map(t => String(t).replace(/\D/g, '').replace(/^(\d{4})(\d{3})(\d{3})$/, '$1 $2 $3')).join(' / ');
   /** Oferta „scrisă frumos”: ce include pachetul + tabelul cu prețurile (marcaje pe care emailul le transformă în listă și tabel). */
+  /** Toate pachetele, cu pachetul ales pentru client evidențiat și cu reducerea lui (dacă are), ca să le poată compara. */
+  /** Serviciile extra bifate de client: disponibilitatea și prețul estimativ (apar doar dacă a ales ceva). */
+  function extrasBlock(c) {
+    if (!(c.extras || []).length) return '';
+    const n0 = v => Math.round(num(v)).toLocaleString('ro-RO');
+    return '## Servicii extra\nAm verificat disponibilitatea pentru data evenimentului tău:\n' + c.extras.map(x => `- **${x.name}**: disponibil, preț estimativ ${num(x.price) ? n0(x.price) + ' lei' : '[COMPLETEAZĂ prețul]'}`).join('\n');
+  }
+  function packagesTable(l, S, c) {
+    const n0 = v => Math.round(num(v)).toLocaleString('ro-RO');
+    const pct = l.discountType === '%' ? num(l.discountValue) : 0;
+    const rows = (S.packages || []).filter(p => num(p.price)).map(p => {
+      const mine = c.pkg && c.pkg.id === p.id, after = Math.round(num(p.price) * (1 - pct / 100));
+      const name = (mine ? '**' + p.name + '** (ales pentru tine)' : p.name) + ' · ' + (num(p.hours) >= 8 ? 'toată noaptea' : num(p.hours) + ' ore') + (p.desc ? ' — ' + p.desc : '');
+      const price = pct ? `~~${n0(p.price)} lei~~ ${mine ? '**' : ''}${n0(after)} lei${mine ? '**' : ''}` : `${mine ? '**' : ''}${n0(p.price)} lei${mine ? '**' : ''}`;
+      return `| ${name} | ${price} |`;
+    });
+    return rows.join('\n') + (pct ? `\n\nPrețurile includ reducerea de ${pct}%. Transportul, dacă e cazul, se adaugă separat.` : '');
+  }
   function offerTable(l, S, c) {
     if (!c.pkg) return '';
     const n0 = v => Math.round(num(v)).toLocaleString('ro-RO');
@@ -393,6 +415,7 @@
     if (c.hasBooth) { inc.push('Stick cu pozele de la eveniment'); if (c.album !== 'nu') inc.push('Albumul foto al serii'); }
     const rows = [`| Pachet **${c.pkg.name}** · ${c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore'} | ${n0(c.price)} lei |`];
     if (c.albumExtra) rows.push(`| Album foto | ${n0(c.albumExtra)} lei |`);
+    (c.extras || []).forEach(x => rows.push(`| ${x.name} | ${num(x.price) ? n0(x.price) + ' lei' : 'la cerere'} |`));
     if (c.transport) rows.push(`| Transport · ${c.billedKm} km | ${n0(c.transport)} lei |`);
     if (c.discount) rows.push(`| Reducere${l.discountType === '%' ? ' ' + num(l.discountValue) + '%' : ''} | − ${n0(c.discount)} lei |`);
     if (c.vat && !c.vatIncluded) rows.push(`| TVA ${c.vatRate}% | ${n0(c.vat)} lei |`);
@@ -410,7 +433,8 @@
       pachet: c.pkg ? c.pkg.name : '', ore: c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore',
       pret_pachet: n0(c.price), transport: n0(c.transport), km: String(c.billedKm), reducere: n0(c.discount), total: n0(c.total),
       tva: n0(c.vat), total_fara_tva: n0(c.net), cota_tva: String(c.vatRate),
-      expeditor: S.email.fromName || '', invitati: l.guests || '', telefoane: phones(), tabel_oferta: offerTable(l, S, c),
+      expeditor: S.email.fromName || '', invitati: l.guests || '', telefoane: phones(), tabel_oferta: offerTable(l, S, c), tabel_pachete: packagesTable(l, S, c), servicii_extra: extrasBlock(c),
+      nume: String(l.name || '').trim().split(/\s+/)[0] || '',
       procent_avans: String(num(S.pricing.advancePct)), zile_plata: String(num(S.pricing.payDays || 10)), avans: n0(c.total * num(S.pricing.advancePct) / 100),
       termen_plata: new Date(Date.now() + num(S.pricing.payDays || 10) * 864e5).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }),
       album: c.album === 'inclus' ? 'inclus în pachet' : c.albumExtra ? n0(c.albumExtra) + ' lei' : 'nu'
@@ -472,7 +496,7 @@
     $('#modal').hidden = false;
     updatePreview();
   }
-  function updatePreview() { const f = $('#cp-prev'), b = $('#cp-b'); if (f && b) f.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:0">' + P.emailHtml(applyVals(b.value, true)) + '</body>'; }
+  function updatePreview() { const f = $('#cp-prev'), b = $('#cp-b'); if (f && b) f.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:0">' + P.emailHtml(applyVals(b.value, true), { preview: true }) + '</body>'; }
   /** Câmpurile „la trimitere” folosite în emailul curent. */
   function askFields(text) { return (C.settings.fields || []).filter(f => f.kind === 'ask' && f.key && String(text).includes('{' + f.key + '}')); }
   function applyVals(text, preview) {
@@ -543,6 +567,13 @@
         </div>`).join('')}
         <div class="btns"><button type="button" class="btn" data-act="crm-addpkg">+ Adaugă pachet</button></div>
       </section>
+      <section class="panel"><h2>Servicii extra</h2>
+        <p class="hint">Apar pe pagina de ofertă, sub pachete, ca opțiuni pe care clientul le poate bifa, <b>fără preț</b>, cu mențiunea că verificați disponibilitatea și reveniți în emailul cu oferta. Prețul de aici e cel estimativ pus în ofertă (câmpul {servicii_extra}) și adunat la total; dacă e 0, emailul îți cere să-l completezi. Costul tău intră la calculul profitului.</p>
+        ${(S.extras || []).map((x, k) => `<div class="cat"><div class="cat-head"><input class="inp" data-s="extras.${k}.name" value="${esc(x.name)}" aria-label="Numele serviciului"><button type="button" class="x" data-act="crm-delextra" data-i="${k}" aria-label="Șterge serviciul">×</button></div>
+          <div class="field"><label>Descriere scurtă (apare pe pagina de ofertă)</label><input class="inp" data-s="extras.${k}.desc" value="${esc(x.desc || '')}"></div>
+          <div class="row3">${f(`extras.${k}.price`, 'Preț pentru client (0 = la cerere)', x.price, 'lei')}${f(`extras.${k}.cost`, 'Costul tău', x.cost, 'lei')}</div></div>`).join('')}
+        <div class="btns"><button type="button" class="btn" data-act="crm-addextra">+ Adaugă serviciu extra</button></div>
+      </section>
       <section class="panel"><h2>Album foto</h2>
         <div class="row3">${f('pricing.albumPrice', 'Preț album (când se adaugă la cerere)', S.pricing.albumPrice, 'lei')}${f('costs.albumCost', 'Costul tău pe album', S.costs.albumCost, 'lei')}</div>
         <p class="hint">Stick-ul cu pozele e inclus la pachetele cu Photo Booth. Albumul e inclus la pachetele bifate mai sus; la celelalte îl adaugi din cerere cu butonul „+ Adaugă album foto”. Pune costul albumului ca profitul să fie corect. În emailuri poți folosi {album}.</p>
@@ -582,11 +613,11 @@
   let tplSel = 0, tplLead = '', tplFocus = 'body', tplMsg = '', fileMsg = '', tplDelAsk = -1, tplResetAsk = -1, fileDelAsk = '';
   const FIELD_GROUPS = [
     ['Client', [['prenume', 'Prenume'], ['nume_complet', 'Nume complet'], ['data_eveniment', 'Data evenimentului'], ['locatie_completa', 'Locația completă'], ['localitate', 'Localitatea'], ['invitati', 'Nr. invitați']]],
-    ['Ofertă', [['tabel_oferta', 'Tabelul ofertei'], ['pachet', 'Pachet'], ['ore', 'Durată'], ['pret_pachet', 'Preț pachet'], ['transport', 'Transport'], ['km', 'Km'], ['reducere', 'Reducere'], ['total', 'Total'], ['tva', 'TVA'], ['total_fara_tva', 'Total fără TVA'], ['album', 'Album']]],
+    ['Ofertă', [['tabel_oferta', 'Tabelul ofertei'], ['tabel_pachete', 'Toate pachetele'], ['servicii_extra', 'Servicii extra alese'], ['pachet', 'Pachet'], ['ore', 'Durată'], ['pret_pachet', 'Preț pachet'], ['transport', 'Transport'], ['km', 'Km'], ['reducere', 'Reducere'], ['total', 'Total'], ['tva', 'TVA'], ['total_fara_tva', 'Total fără TVA'], ['album', 'Album']]],
     ['Plată', [['avans', 'Avans (lei)'], ['procent_avans', 'Avans (%)'], ['termen_plata', 'Termen plată'], ['zile_plata', 'Zile plată']]],
     ['Contact', [['telefoane', 'Telefoane'], ['expeditor', 'Expeditor']]]
   ];
-  const BUILTIN = FIELD_GROUPS.flatMap(g => g[1].map(x => x[0])).concat(['locatie', 'cota_tva']);
+  const BUILTIN = FIELD_GROUPS.flatMap(g => g[1].map(x => x[0])).concat(['locatie', 'cota_tva', 'nume']);
   const FORMATS = [['# ', 'Titlu mare'], ['## ', 'Subtitlu'], ['**', 'Îngroșat'], ['- ', 'Listă'], ['| text | sumă |', 'Rând de tabel']];
   function sampleLead() {
     const real = C.leads.find(l => l.id === tplLead);
@@ -597,7 +628,7 @@
   }
   function tplPreviewDoc(t) {
     const l = sampleLead(), body = fill(t.body, l).replace(/\{(\w+)\}/g, (m, k) => { const f = (C.settings.fields || []).find(x => x.key === k); return f ? '[' + f.label + ']' : m; });
-    return '<!doctype html><meta charset="utf-8"><body style="margin:0">' + P.emailHtml(body) + '</body>';
+    return '<!doctype html><meta charset="utf-8"><body style="margin:0">' + P.emailHtml(body, { preview: true }) + '</body>';
   }
   function updateTplPreview() {
     const S = C.settings, t = S.templates[tplSel]; if (!t) return;
@@ -613,17 +644,19 @@
     const atts = t.attachments || [], avail = (FILES || []).filter(f => !atts.some(a => a.id === f.id));
     return `<section class="panel tstudio">
         <div class="ts-list"><p class="ms-l">Șabloane</p>
-          ${S.templates.map((x, k) => `<button type="button" class="ts-item${k === i ? ' on' : ''}" data-act="crm-tsel" data-i="${k}"><b>${esc(x.name || 'Fără nume')}</b><span>${x.status ? '→ ' + esc(x.status) : 'fără status'}${(x.attachments || []).length ? ' · 📎 ' + x.attachments.length : ''}</span></button>`).join('')}
+          ${S.templates.map((x, k) => `<button type="button" class="ts-item${k === i ? ' on' : ''}" data-act="crm-tsel" data-i="${k}"><b>${esc(x.name || 'Fără nume')}</b><span>${x.autoSubmit ? '⚡ automat · ' : ''}${x.status ? '→ ' + esc(x.status) : 'fără status'}${(x.attachments || []).length ? ' · 📎 ' + x.attachments.length : ''}</span></button>`).join('')}
           <button type="button" class="ts-item add" data-act="crm-addtpl">+ Șablon nou</button></div>
         <div class="ts-edit">
           <div class="row2">
             <div class="field"><label for="tp-name">Numele șablonului</label><input class="inp" id="tp-name" data-s="templates.${i}.name" value="${esc(t.name)}"></div>
             <div class="field"><label for="tp-st">După trimitere, statusul devine</label><select class="inp" id="tp-st" data-s="templates.${i}.status"><option value="" ${!t.status ? 'selected' : ''}>(nu se schimbă)</option>${P.STATUSES.map(x => `<option ${x === t.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
           </div>
+          <label class="tog autosub"><input type="checkbox" data-s="templates.${i}.autoSubmit" ${t.autoSubmit ? 'checked' : ''}> <span><b>Trimite automat</b> imediat ce clientul trimite cererea din formular (de ex. confirmarea că am primit cererea)</span></label>
           <div class="field"><label for="tp-s">Subiect</label><input class="inp" id="tp-s" data-s="templates.${i}.subject" data-tf="subject" value="${esc(t.subject)}"></div>
           <div class="ins"><p class="ms-l" title="Clic pe un câmp: îl pune unde e cursorul și se completează singur la trimitere.">Inserează în ${tplFocus === 'subject' ? 'subiect' : 'mesaj'} </p>
             ${FIELD_GROUPS.map(([g, xs]) => `<div class="ins-g"><span>${g}</span>${xs.map(([k, n]) => `<button type="button" class="ins-b" data-act="crm-ins" data-k="{${k}}" title="{${k}}">${n}</button>`).join('')}</div>`).join('')}
             ${mine.length ? `<div class="ins-g"><span>Câmpurile tale</span>${mine.map(f => `<button type="button" class="ins-b mine" data-act="crm-ins" data-k="{${esc(f.key)}}" title="{${esc(f.key)}}">${esc(f.label)}</button>`).join('')}</div>` : ''}
+            ${(FILES || []).some(f => /^image\//.test(f.type)) ? `<div class="ins-g"><span>Imagini (apar în corpul emailului)</span>${FILES.filter(f => /^image\//.test(f.type)).map(f => `<button type="button" class="ins-b img" data-act="crm-ins" data-k="[[imagine:${esc(f.id)}|${esc(f.name)}]]">🖼 ${esc(f.name)}</button>`).join('')}</div>` : ''}
             <div class="ins-g"><span>Formatare</span>${FORMATS.map(([k, n]) => `<button type="button" class="ins-b fmt" data-act="crm-fmt" data-k="${esc(k)}">${n}</button>`).join('')}</div>
           </div>
           <div class="field"><label for="tp-b">Mesaj</label><textarea class="inp" id="tp-b" data-s="templates.${i}.body" data-tf="body" rows="16">${esc(t.body)}</textarea></div>
@@ -676,6 +709,7 @@
     if (txt === '**') ins = '**' + (sel || 'text îngroșat') + '**';
     else if (/^(#|##|-) $/.test(txt)) ins = (a && el.value[a - 1] !== '\n' ? '\n' : '') + txt + (sel || '');
     else if (txt.startsWith('|')) ins = (a && el.value[a - 1] !== '\n' ? '\n' : '') + txt;
+    else if (txt.startsWith('[[imagine:')) ins = (a && el.value[a - 1] !== '\n' ? '\n' : '') + txt + '\n';
     el.value = el.value.slice(0, a) + ins + el.value.slice(b);
     el.focus(); const pos = a + ins.length; try { el.setSelectionRange(pos, pos); } catch (e) {}
     el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -716,7 +750,12 @@
   function migratePackages(S) {
     const NEW = { esential: ['Esențial', 1500, 'Welcome', 1300], complet: ['Complet', 2500, 'Celebrate', 2600], allnight: ['All Night', 3300, 'All Night', 4200] };
     let changed = false;
-    (S.packages || []).forEach(p => { if (/^\s*Mesajul de bun venit al mirilor și găsirea mesei/i.test(p.desc || '')) { p.desc = 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale'; changed = true; } });
+    const DESC = { 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale': 'esential', 'Toată experiența pentru primele ore ale petrecerii.': 'complet', 'Toată experiența, pe toată durata petrecerii.': 'allnight' };
+    (S.packages || []).forEach(p => {
+      const d = String(p.desc || '').trim(), id = /^Mesajul de bun venit al mirilor și găsirea mesei/i.test(d) ? 'esential' : DESC[d];
+      const nd = id && (P.DEFAULT_SETTINGS.packages.find(x => x.id === id) || {}).desc;
+      if (nd && nd !== d) { p.desc = nd; changed = true; }
+    });
     (S.packages || []).forEach(p => { const n = NEW[p.id]; if (n && p.name === n[0] && num(p.price) === n[1]) { p.name = n[2]; p.price = n[3]; changed = true; } });
     return changed;
   }
@@ -728,8 +767,9 @@
     if (t.body.includes(old)) { t.body = t.body.replace(old, 'Pentru rezervare, vă rugăm să ne confirmați pe email (răspunzând la acest mesaj) sau pe WhatsApp.'); changed = true; }
     if (changed && !t.body.includes('{telefoane}')) t.body = t.body.replace(/\{expeditor\}\s*$/, '{expeditor}\nTelefon / WhatsApp: {telefoane}');
     if (S.email && S.email.fromName === 'Wedding Welcome') { S.email.fromName = 'WE WELCOME'; changed = true; }
-    if (t.subject === 'Oferta Wedding Welcome pentru {data_eveniment}') { t.subject = 'Oferta WE WELCOME pentru {data_eveniment}'; changed = true; }
-    if ((t.body.includes('Pachet: {pret_pachet} lei') && t.body.includes('Vă mulțumim pentru interesul arătat')) || t.body === P.OFFER_BODY_V2 || t.body === P.OFFER_BODY_V3) { t.body = P.OFFER_BODY; changed = true; }
+    if (/^Oferta (Wedding Welcome|WE WELCOME) pentru \{data_eveniment\}$/.test(t.subject)) { t.subject = 'Propunerea noastră pentru evenimentul tău 🎉'; changed = true; }
+    if ((t.body.includes('Pachet: {pret_pachet} lei') && t.body.includes('Vă mulțumim pentru interesul arătat')) || t.body === P.OFFER_BODY_V2 || t.body === P.OFFER_BODY_V3 || t.body === P.OFFER_BODY_V4 || t.body === P.OFFER_BODY_V5) { t.body = P.OFFER_BODY; changed = true; }
+    if (!(S.templates || []).some(x => x.id === 'primire')) { S.templates.unshift(clone(P.DEFAULT_SETTINGS.templates.find(x => x.id === 'primire'))); changed = true; }
     const rc = (S.templates || []).find(x => x.id === 'reconfirmare');
     if (rc && rc.body === P.RECONFIRM_BODY_V1) { rc.body = P.RECONFIRM_BODY; changed = true; }
     const conf = (S.templates || []).find(x => x.id === 'confirmare');
@@ -741,9 +781,21 @@
     }
     return changed;
   }
+  /** Emailul trimis automat de scriptul Google când un client trimite cererea: îl pregătim aici, cu logo și formatare,
+      lăsând doar datele clientului ({nume}, {data_eveniment}…) pe care le completează scriptul. */
+  const LEAD_KEYS = ['nume', 'prenume', 'nume_complet', 'data_eveniment', 'localitate', 'locatie', 'locatie_completa', 'pachet', 'invitati'];
+  function buildAutoAck(S) {
+    const t = (S.templates || []).find(x => x.autoSubmit); if (!t) return null;
+    const stat = { expeditor: S.email.fromName || '', telefoane: phones() };
+    (S.fields || []).forEach(f => { if (f.key && f.kind !== 'ask') stat[f.key] = f.value || ''; });
+    const fillS = x => String(x || '').replace(/\{(\w+)\}/g, (m, k) => LEAD_KEYS.includes(k) ? m : (k in stat ? stat[k] : ''));
+    const body = fillS(t.body);
+    return { id: t.id, name: t.name, subject: fillS(t.subject), html: P.emailHtml(body), text: P.emailText(body), attachments: (t.attachments || []).map(a => a.id),
+      fromEmail: S.email.fromEmail, fromName: S.email.fromName };
+  }
   async function saveSettingsRemote() {
     const m = $('#setMsg'); if (m) m.textContent = 'Se salvează…';
-    try { await api('POST', { action: 'settings', settings: C.settings }); setDirty = false; save(); const n = $('#setMsg'); if (n) { n.textContent = 'Salvat automat în Google Sheets. Formularul public folosește aceste valori.'; n.className = 'hint ok-msg'; } }
+    try { C.settings.autoAck = buildAutoAck(C.settings); await api('POST', { action: 'settings', settings: C.settings }); setDirty = false; save(); const n = $('#setMsg'); if (n) { n.textContent = 'Salvat automat în Google Sheets. Formularul public folosește aceste valori.'; n.className = 'hint ok-msg'; } }
     catch (e) { if (m) { m.textContent = 'Nu am putut salva: ' + e.message; m.className = 'hint err-msg'; } }
   }
   /** Administratorul setează direct în Google Sheet parola unui cont (de ex. când pe telefon nu merge, deși pe laptop merge). */
@@ -878,6 +930,8 @@
     'crm-fmt'(el) { insertAtCursor(el.dataset.k); },
     'crm-tattrm'(el) { const t = C.settings.templates[tplSel]; t.attachments = (t.attachments || []).filter(a => a.id !== el.dataset.k); setDirty = true; save(); render(); autoSave(); },
     'crm-attrm'(el) { if (!compose) return; keepCompose(); compose.att = compose.att.filter(a => a.id !== el.dataset.k); renderCompose(); },
+    'crm-addextra'() { const xs = C.settings.extras = C.settings.extras || []; xs.push({ id: 'x' + Date.now().toString(36), name: 'Serviciu nou', desc: '', price: 0, cost: 0 }); setDirty = true; save(); render(); autoSave(); },
+    'crm-delextra'(el) { C.settings.extras.splice(+el.dataset.i, 1); setDirty = true; save(); render(); autoSave(); },
     'crm-addfield'() { const fs = C.settings.fields = C.settings.fields || []; let n = fs.length + 1; while (fs.some(f => f.key === 'camp' + n)) n++; fs.push({ key: 'camp' + n, label: 'Câmp nou', kind: 'fix', value: '' }); setDirty = true; save(); render(); autoSave(); },
     'crm-delfield'(el) { C.settings.fields.splice(+el.dataset.i, 1); setDirty = true; save(); render(); autoSave(); },
     async 'crm-fdel'(el) {
@@ -901,11 +955,16 @@
       if (/^(templates|fields)\./.test(path)) { clearTimeout(onField._tp); onField._tp = setTimeout(updateTplPreview, 200); }
       if (/^fields\.\d+\.kind$/.test(path) && e.type === 'change') render();
       if (/^templates\.\d+\.(name|status)$/.test(path) && e.type === 'change') render();
+      if (/^templates\.(\d+)\.autoSubmit$/.test(path) && e.type === 'change') { const k = +path.split('.')[1]; if (t.checked) C.settings.templates.forEach((x, j) => { if (j !== k) x.autoSubmit = false; }); render(); }
       return;
     }
     if (t.dataset.rec !== undefined) {
       C.settings.packages.forEach((p, i) => { p.recommended = i === +t.dataset.rec; });
       setDirty = true; save(); autoSave(); return;
+    }
+    if (t.dataset.x !== undefined && L && e.type === 'change') {
+      const set = String(L.extras || '').split(',').filter(Boolean).filter(x => x !== t.dataset.x); if (t.checked) set.push(t.dataset.x);
+      L.extras = set.join(','); const b = $('#calcBox'); if (b) b.innerHTML = breakdown(); return;
     }
     if (t.dataset.l !== undefined && L) {
       const k = t.dataset.l;

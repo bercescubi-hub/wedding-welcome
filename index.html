@@ -403,6 +403,9 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
 .files{display:flex;flex-direction:column;gap:6px}
 .file{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px}
 .upl{cursor:pointer}
+.extrasBox{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;padding:10px 14px;border:1px solid var(--line);border-radius:12px}.extrasBox .ms-l{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;width:100%}
+.autosub{align-items:flex-start;font-size:.88rem;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.ins-b.img{border-style:dashed}
 @media (max-width:1100px){.tstudio{grid-template-columns:180px minmax(0,1fr)}.ts-prev{grid-column:1 / -1;position:static}.ts-prev iframe{height:620px}}
 @media (max-width:720px){.tstudio{grid-template-columns:1fr}.ts-list{position:static;flex-direction:row;overflow-x:auto}.ts-item{flex:0 0 auto;min-width:150px}
   .fieldrow{grid-template-columns:1fr 1fr}.fieldrow .fr-val{grid-column:1 / -1}.ins-g > span{min-width:100%}}
@@ -481,7 +484,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.22.0';
+const APP_VERSION = '3.23.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();

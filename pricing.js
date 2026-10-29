@@ -4,28 +4,37 @@
 (function (g) {
   const OFFER_BODY_V2 = 'Bună, {prenume}!\n\nVă mulțumim că v-ați gândit la WE WELCOME pentru evenimentul din {data_eveniment}.\n\n## Cum funcționează\nLa intrare, invitații sunt întâmpinați pe un ecran elegant de chiar voi, printr-un mesaj video. Își găsesc singuri masa în câteva secunde, iar la Photo Booth își fac o amintire de luat acasă. Voi vă bucurați de petrecere, noi ne ocupăm de primire.\n\n## Oferta pentru {data_eveniment}\n{tabel_oferta}\n\nOferta este valabilă 14 zile. Pentru rezervare, vă rugăm să ne confirmați pe email (răspunzând la acest mesaj) sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
   const OFFER_BODY_V3 = 'Bună, {prenume}!\n\n# NOT YOUR USUAL WELCOME.\n**Your event just got an upgrade.**\n\nImaginează-ți că invitații tăi ajung la eveniment și sunt întâmpinați chiar de VOI… printr-un video personalizat, creat special pentru ei. Nu un simplu mesaj pe un ecran, ci o experiență digitală care îi surprinde încă de la intrare.\n\n**Welcome to the new way of saying welcome.**\n\n## How it works\n**01. You bring the party. We bring the WOW.**\nNe povestești despre evenimentul tău, iar noi revenim cu o ofertă personalizată în maximum 24 de ore. Alegi pachetul potrivit și începem pregătirile.\n\n**02. Lights, camera… WE WELCOME!**\nAici începe partea cu adevărat specială. În ziua evenimentului, filmăm și edităm videoclipurile personalizate cu voi, chiar la fața locului. Le pregătim pentru experiența digitală de la intrare, astfel încât invitații să fie întâmpinați într-un mod la care nu se așteptau.\n\n**03. Find your name. Find your table. Let’s party!**\nInvitații își caută numele pe display și descoperă instant unde sunt așezați. Fără aglomerație în jurul listelor clasice, fără întrebări repetate. Doar o experiență interactivă, simplă și cool.\n\n**04. More memories? Say CHEESE!**\nAi ales pachetul CELEBRATE sau ALL NIGHT? Photo booth-ul este inclus în preț, pentru fotografii spontane, râsete și amintiri pe care invitații tăi le vor păstra mult după ce se termină petrecerea.\n\n## Oferta pentru {data_eveniment}\n{tabel_oferta}\n\nOferta este valabilă 14 zile. Pentru rezervare, confirmă-ne pe email (răspunzând la acest mesaj) sau pe WhatsApp.\n\n## Less organizing. More celebrating.\nTu bucură-te de fiecare moment. Noi transformăm întâmpinarea invitaților într-o experiență care merită povestită.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}\n\n**Your people. Your moment. Your kind of welcome.**';
-  const OFFER_BODY = 'Bună, {prenume}!\n\n# NOT YOUR USUAL WELCOME.\n**Your event just got an upgrade.**\nUn concept nou în România.\n\nImaginează-ți că invitații tăi ajung la eveniment și sunt întâmpinați chiar de VOI… printr-un video personalizat, creat special pentru ei. Nu un simplu mesaj pe un ecran, ci o experiență digitală care îi surprinde încă de la intrare.\n\n**Welcome to the new way of saying welcome.**\n\n## How it works\n**01. You bring the party. We bring the WOW.**\nNe povestești despre evenimentul tău, iar noi revenim cu o ofertă personalizată în maximum 24 de ore. Alegi pachetul potrivit și începem pregătirile.\n\n**02. Lights, camera… WE WELCOME!**\nAici începe partea cu adevărat specială. În ziua evenimentului, filmăm și edităm videoclipurile personalizate cu voi, chiar la fața locului. Le pregătim pentru experiența digitală de la intrare, astfel încât invitații să fie întâmpinați într-un mod la care nu se așteptau.\n\n**03. Find your name. Find your table. Let’s party!**\nInvitații își caută numele pe display și descoperă instant unde sunt așezați. Fără aglomerație în jurul listelor clasice, fără întrebări repetate. Doar o experiență interactivă, simplă și cool.\n\n**04. More memories? Say CHEESE!**\nAi ales pachetul CELEBRATE sau ALL NIGHT? Photo booth-ul este inclus în preț, pentru fotografii spontane, râsete și amintiri pe care invitații tăi le vor păstra mult după ce se termină petrecerea.\n\n## Oferta pentru {data_eveniment}\n{tabel_oferta}\n\nOferta este valabilă 14 zile. Pentru rezervare, confirmă-ne pe email (răspunzând la acest mesaj) sau pe WhatsApp.\n\n## Less organizing. More celebrating.\nTu bucură-te de fiecare moment. Noi transformăm întâmpinarea invitaților într-o experiență care merită povestită.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}\n\n**Your people. Your moment. Your kind of welcome.**';
+  const OFFER_BODY_V4 = 'Bună, {prenume}!\n\n# NOT YOUR USUAL WELCOME.\n**Your event just got an upgrade.**\nUn concept nou în România.\n\nImaginează-ți că invitații tăi ajung la eveniment și sunt întâmpinați chiar de VOI… printr-un video personalizat, creat special pentru ei. Nu un simplu mesaj pe un ecran, ci o experiență digitală care îi surprinde încă de la intrare.\n\n**Welcome to the new way of saying welcome.**\n\n## How it works\n**01. You bring the party. We bring the WOW.**\nNe povestești despre evenimentul tău, iar noi revenim cu o ofertă personalizată în maximum 24 de ore. Alegi pachetul potrivit și începem pregătirile.\n\n**02. Lights, camera… WE WELCOME!**\nAici începe partea cu adevărat specială. În ziua evenimentului, filmăm și edităm videoclipurile personalizate cu voi, chiar la fața locului. Le pregătim pentru experiența digitală de la intrare, astfel încât invitații să fie întâmpinați într-un mod la care nu se așteptau.\n\n**03. Find your name. Find your table. Let’s party!**\nInvitații își caută numele pe display și descoperă instant unde sunt așezați. Fără aglomerație în jurul listelor clasice, fără întrebări repetate. Doar o experiență interactivă, simplă și cool.\n\n**04. More memories? Say CHEESE!**\nAi ales pachetul CELEBRATE sau ALL NIGHT? Photo booth-ul este inclus în preț, pentru fotografii spontane, râsete și amintiri pe care invitații tăi le vor păstra mult după ce se termină petrecerea.\n\n## Oferta pentru {data_eveniment}\n{tabel_oferta}\n\nOferta este valabilă 14 zile. Pentru rezervare, confirmă-ne pe email (răspunzând la acest mesaj) sau pe WhatsApp.\n\n## Less organizing. More celebrating.\nTu bucură-te de fiecare moment. Noi transformăm întâmpinarea invitaților într-o experiență care merită povestită.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}\n\n**Your people. Your moment. Your kind of welcome.**';
+  const OFFER_BODY_V5 = 'Bună, {nume},\n\nFiecare eveniment are povestea lui, iar noi ne-am gândit la o propunere care să se potrivească viziunii tale și să transforme primirea invitaților într-un moment de care să te bucuri cu adevărat. Un concept nou în România.\n\nÎn imaginea de mai jos vei găsi pachetul {pachet}, ales special pentru evenimentul tău, alături de celelalte opțiuni disponibile, astfel încât să le poți compara și să alegi varianta care ți se potrivește cel mai bine.\n\n{tabel_pachete}\n\nAi întrebări sau îți dorești câteva ajustări? Ne găsești direct pe WhatsApp. Dacă propunerea este exact ce îți dorești, răspunde la acest email cu o confirmare, iar noi ne ocupăm de rezervarea datei tale pentru anul viitor. Oferta este valabilă 14 zile de la data primirii acestui email.\n\nNoi avem grijă de primirea invitaților. Tu bucură-te de moment, de oamenii dragi și de toate complimentele care vor urma. 🥂\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}\n\n**Your people. Your moment. Your kind of welcome.**';
+  const OFFER_BODY = 'Bună, {nume},\n\nFiecare eveniment are povestea lui, iar noi ne-am gândit la o propunere care să se potrivească viziunii tale și să transforme primirea invitaților într-un moment de care să te bucuri cu adevărat. Un concept nou în România.\n\nÎn imaginea de mai jos vei găsi pachetul {pachet}, ales special pentru evenimentul tău, alături de celelalte opțiuni disponibile, astfel încât să le poți compara și să alegi varianta care ți se potrivește cel mai bine.\n\n{tabel_pachete}\n\n{servicii_extra}\n\nAi întrebări sau îți dorești câteva ajustări? Ne găsești direct pe WhatsApp. Dacă propunerea este exact ce îți dorești, răspunde la acest email cu o confirmare, iar noi ne ocupăm de rezervarea datei tale pentru anul viitor. Oferta este valabilă 14 zile de la data primirii acestui email.\n\nNoi avem grijă de primirea invitaților. Tu bucură-te de moment, de oamenii dragi și de toate complimentele care vor urma. 🥂\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}\n\n**Your people. Your moment. Your kind of welcome.**';
+  const ACK_BODY = 'Bună, {nume},\n\nÎți mulțumim că ne-ai ales! Dacă și tu vrei ca invitații tăi să se simtă cu adevărat bineveniți, înseamnă că avem deja ceva în comun.\n\nÎn maximum 24 de ore facem cunoștință cu povestea ta și revenim cu cea mai bună ofertă pentru evenimentul tău. Ne uităm la fiecare detaliu, pentru că știm că acolo se ascunde magia.\n\nIar în ziua cea mare, noi ne ocupăm de invitați, ca tu să te poți încălzi liniștit(ă) pentru petrecere.\n\nPână atunci, dacă îți mai vine vreo idee sau ai vreo întrebare, scrie-ne oricând.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}\n\n**Your people. Your moment. Your kind of welcome.**';
   const CONFIRM_BODY = 'Bună, {prenume}!\n\nVă confirmăm rezervarea pachetului {pachet} pentru {data_eveniment}, la {locatie_completa}. Total: {total} lei.\n\nCu câteva săptămâni înainte vă vom contacta pentru lista finală a invitaților. Videoclipurile le vom realiza în ziua evenimentului.\n\nÎn ianuarie 2027 vă vom contacta pentru reconfirmare și achitarea unui avans de {procent_avans}%.\n\nVă mulțumim!\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
   const RECONFIRM_BODY_V1 = 'Bună, {prenume}!\n\nRevenim, așa cum am stabilit, pentru reconfirmarea rezervării pentru {data_eveniment}, la {locatie_completa} (pachetul {pachet}, total {total} lei).\n\nPentru a păstra rezervarea, vă rugăm să achitați avansul de {procent_avans}%, adică {avans} lei, în cel mult {zile_plata} zile de la primirea acestui email (până la {termen_plata}).\n\nDetalii pentru plată: [COMPLETEAZĂ: IBAN, titular, bancă]\n\nDupă primirea avansului vă trimitem confirmarea. Pentru orice întrebare ne găsiți pe email sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
   const RECONFIRM_BODY = 'Bună, {prenume}!\n\nRevenim, așa cum am stabilit, pentru reconfirmarea rezervării pentru {data_eveniment}, la {locatie_completa} (pachetul {pachet}, total {total} lei).\n\nPentru a păstra rezervarea, vă rugăm să achitați avansul de {procent_avans}%, adică {avans} lei, în cel mult {zile_plata} zile de la primirea acestui email (până la {termen_plata}).\n\nDetalii pentru plată:\n{date_plata}\n\nDupă primirea avansului vă trimitem confirmarea. Pentru orice întrebare ne găsiți pe email sau pe WhatsApp.\n\nCu drag,\n{expeditor}\nTelefon / WhatsApp: {telefoane}';
   const DEFAULT_SETTINGS = {
     packages: [
       { id: 'esential', name: 'Welcome', hours: 3, price: 1300, modules: ['welcome', 'seating'], staffMenu: false,
-        desc: 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale' },
+        desc: 'Invitații tăi, primiți de un avatar digital, le arată locul la masă și nu-i lasă să rateze niciun moment special.' },
       { id: 'complet', name: 'Celebrate', hours: 5, price: 2600, modules: ['welcome', 'seating', 'booth'], staffMenu: false, recommended: true,
-        desc: 'Toată experiența pentru primele ore ale petrecerii.' },
+        desc: 'Îți suntem alături de la primul invitat până la felul doi' },
       { id: 'allnight', name: 'All Night', hours: 10, price: 4200, modules: ['welcome', 'seating', 'booth'], staffMenu: true, album: true,
-        desc: 'Toată experiența, pe toată durata petrecerii.' }
+        desc: 'Experiența completă, de la primul invitat până la ultimul dans' }
     ],
     /* TVA stă la „pricing” ca să ajungă și în formularul public (prețul afișat clientului); restul taxelor sunt interne, la „costs”. */
     pricing: { kmRate: 2.5, roundTrip: true, maxKm: 300, vatPayer: true, vatRate: 21, pricesIncludeVat: true, albumPrice: 300, advancePct: 30, payDays: 10 },
     costs: { staffCount: 2, staffRate: 60, setupHours: 1, menuCost: 250, fuelPerKm: 1, boothConsumables: 250, equipment: 100, albumCost: 0,
       incomeTax: 1, payFee: 0, invoiceFixed: 0 },
     email: { fromEmail: 'bercescubi@gmail.com', fromName: 'WE WELCOME' },
+    /* Servicii extra: apar pe pagina de ofertă ca opțiuni; prețul 0 = „preț la cerere” (nu se adună la total) */
+    extras: [
+      { id: 'litere', name: 'Litere mari luminoase', desc: 'Litere mari, luminoase, pentru un decor spectaculos și fotografii de neuitat.', price: 0, cost: 0 },
+      { id: 'invitatii', name: 'Creare invitații', desc: 'Invitații personalizate, create în stilul evenimentului vostru.', price: 0, cost: 0 }
+    ],
     /* Câmpuri proprii: „fix” = același text mereu (ex. IBAN); „ask” = îl completezi la fiecare email */
     fields: [{ key: 'date_plata', label: 'Date pentru plată (IBAN, titular, bancă)', kind: 'fix', value: '' }],
     templates: [
-      { id: 'oferta', name: 'Ofertă', status: 'Ofertă trimisă', subject: 'Oferta WE WELCOME pentru {data_eveniment}',
+      { id: 'primire', name: 'Confirmare primire solicitare', status: '', autoSubmit: true, subject: 'Am primit povestea ta. Urmează partea frumoasă ✨', body: ACK_BODY },
+      { id: 'oferta', name: 'Ofertă', status: 'Ofertă trimisă', subject: 'Propunerea noastră pentru evenimentul tău 🎉',
         body: OFFER_BODY },
       { id: 'confirmare', name: 'Confirmare rezervare', status: 'Confirmat', subject: 'Rezervarea pentru {data_eveniment} este confirmată',
         body: CONFIRM_BODY },
@@ -75,7 +84,10 @@
     const hasBooth = !!(p && p.modules.includes('booth')), albumIncl = albumIncluded(p);
     const albumExtra = hasBooth && !albumIncl && yes(lead.album) ? Math.round(num(S.pricing.albumPrice)) : 0;
     const album = albumIncl ? 'inclus' : albumExtra ? 'extra' : 'nu';
-    const subtotal = price + transport + albumExtra;
+    const exIds = String(lead.extras || '').split(',').map(x => x.trim()).filter(Boolean);
+    const extras = (S.extras || []).filter(x => exIds.includes(x.id));
+    const extrasPrice = extras.reduce((a, x) => a + Math.round(num(x.price)), 0);
+    const subtotal = price + transport + albumExtra + extrasPrice;
     const dv = num(lead.discountValue);
     const discount = Math.min(subtotal, Math.round(lead.discountType === 'lei' ? dv : subtotal * dv / 100));
     const base = subtotal - discount;
@@ -91,7 +103,8 @@
     const consumables = p && p.modules.includes('booth') ? num(C.boothConsumables) : 0;
     const equipment = p ? num(C.equipment) : 0;
     const albumCost = album !== 'nu' ? num(C.albumCost) : 0;
-    const cost = staff + menu + fuel + consumables + equipment + albumCost;
+    const extrasCost = extras.reduce((a, x) => a + Math.round(num(x.cost)), 0);
+    const cost = staff + menu + fuel + consumables + equipment + albumCost + extrasCost;
     /* taxe și costuri de facturare: impozit pe venit (fără TVA), comision la încasare, cost fix pe factură */
     const incomeTax = Math.round(net * num(C.incomeTax) / 100);
     const payFee = Math.round(total * num(C.payFee) / 100);
@@ -99,19 +112,23 @@
     const taxes = vat + incomeTax + payFee + invoiceFee;
     const profit = total - cost - taxes;
     return { outOfArea: outOfArea(km, S), pkg: p, price, hours, outside, km, billedKm, transport, subtotal, discount, base, total, vat, vatRate: vr, vatIncluded: !!(Pr.vatPayer && Pr.pricesIncludeVat), net,
-      album, albumExtra, albumCost, hasBooth, staff, menu, fuel, consumables, equipment, cost, incomeTax, payFee, invoiceFee, taxes, profit, margin: net ? profit / net : 0 };
+      extras, extrasPrice, extrasCost, album, albumExtra, albumCost, hasBooth, staff, menu, fuel, consumables, equipment, cost, incomeTax, payFee, invoiceFee, taxes, profit, margin: net ? profit / net : 0 };
   }
   /* ---------- emailuri frumoase: textul șablonului, cu marcaje simple, devine un email cu logo ----------
      „## Titlu” = subtitlu · „- text” = listă · „| stânga | dreapta” = rând de tabel · „**text**” = îngroșat */
   const LOGO_URL = 'https://bercescubi-hub.github.io/wedding-welcome/img/logo-light.png';
   const escH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const inl = s => escH(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-  function emailHtml(text) {
+  const inl = s => escH(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/~~(.+?)~~/g, '<s style="color:#8a7a6c">$1</s>');
+  function emailHtml(text, opt) {
+    opt = opt || {};
     const lines = String(text || '').replace(/\r/g, '').split('\n'); let out = '', i = 0;
     const P = 'margin:0 0 14px;font-size:15px;line-height:1.65;color:#2f2118';
     while (i < lines.length) {
       const l = lines[i];
       if (!l.trim()) { i++; continue; }
+      const im = l.trim().match(/^\[\[imagine:([\w-]+)\|([^\]]*)\]\]$/);
+      if (im) { out += opt.preview ? `<div style="margin:6px 0 18px;padding:34px 14px;border:1.5px dashed #c9b79c;border-radius:12px;text-align:center;color:#8a7a6c;font-size:14px">🖼 Imaginea „${escH(im[2])}” apare aici în email</div>`
+          : `<p style="margin:6px 0 18px"><img src="cid:${im[1]}" alt="${escH(im[2])}" style="display:block;width:100%;max-width:544px;height:auto;border:0;border-radius:10px"></p>`; i++; continue; }
       if (/^#\s+/.test(l)) { out += `<h1 style="margin:8px 0 6px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:26px;letter-spacing:2px;color:#531c43">${inl(l.replace(/^#\s+/, ''))}</h1>`; i++; continue; }
       if (/^##\s+/.test(l)) { out += `<h2 style="margin:26px 0 10px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:21px;color:#531c43">${inl(l.replace(/^##\s+/, ''))}</h2>`; i++; continue; }
       if (/^\s*\|/.test(l)) {
@@ -126,7 +143,7 @@
         let li = ''; while (i < lines.length && /^\s*-\s+/.test(lines[i])) { li += `<li style="margin:0 0 6px">${inl(lines[i].replace(/^\s*-\s+/, ''))}</li>`; i++; }
         out += `<ul style="margin:0 0 16px;padding-left:20px;font-size:15px;line-height:1.6;color:#2f2118">${li}</ul>`; continue;
       }
-      let para = []; while (i < lines.length && lines[i].trim() && !/^(#{1,2}\s|\s*\||\s*-\s)/.test(lines[i])) { para.push(inl(lines[i])); i++; }
+      let para = []; while (i < lines.length && lines[i].trim() && !/^(#{1,2}\s|\s*\||\s*-\s|\s*\[\[imagine:)/.test(lines[i])) { para.push(inl(lines[i])); i++; }
       out += `<p style="${P}">${para.join('<br>')}</p>`;
     }
     return `<div style="background:#f6efe3;padding:24px 12px;font-family:Helvetica,Arial,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fffdf9;border-radius:16px;overflow:hidden;border-collapse:separate">
@@ -135,7 +152,7 @@
 <tr><td style="padding:16px 28px 22px;border-top:1px solid #eadfcd;text-align:center;font-size:12px;color:#8a7a6c;font-family:Georgia,serif;font-style:italic">WE WELCOME · … You celebrate.</td></tr></table></div>`;
   }
   /** Varianta text simplu (pentru programele de email fără HTML). */
-  const emailText = t => String(t || '').split('\n').map(l => /^\s*\|/.test(l) ? l.trim().replace(/^\||\|$/g, '').split('|').map(x => x.trim()).join(': ') : l.replace(/^#{1,2}\s+/, '')).join('\n').replace(/\*\*(.+?)\*\*/g, '$1');
+  const emailText = t => String(t || '').split('\n').map(l => /^\s*\|/.test(l) ? l.trim().replace(/^\||\|$/g, '').split('|').map(x => x.trim()).join(': ') : l.replace(/^#{1,2}\s+/, '')).join('\n').replace(/\*\*(.+?)\*\*/g, '$1').replace(/~~(.+?)~~/g, '$1').replace(/\[\[imagine:[\w-]+\|([^\]]*)\]\]/g, '[imagine: $1]');
   const lei = n => Math.round(num(n)).toLocaleString('ro-RO') + ' lei';
   /** Tarif cu zecimale (ex. 2,5 lei), pentru lei/km. */
   const leiRate = n => num(n).toLocaleString('ro-RO', { maximumFractionDigits: 2 }) + ' lei';
@@ -216,5 +233,5 @@
       }
     }
   };
-  g.WWPricing = { RECONFIRM_BODY, RECONFIRM_BODY_V1, emailHtml, emailText, OFFER_BODY, OFFER_BODY_V2, OFFER_BODY_V3, CONFIRM_BODY, RECONFIRM_BODY, outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, albumIncluded, num, yes, lei, leiRate };
+  g.WWPricing = { ACK_BODY, OFFER_BODY_V4, OFFER_BODY_V5, RECONFIRM_BODY, RECONFIRM_BODY_V1, emailHtml, emailText, OFFER_BODY, OFFER_BODY_V2, OFFER_BODY_V3, CONFIRM_BODY, RECONFIRM_BODY, outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, albumIncluded, num, yes, lei, leiRate };
 })(typeof window !== 'undefined' ? window : globalThis);

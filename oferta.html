@@ -114,6 +114,14 @@ section{scroll-margin-top:16px}
 .steps span{color:var(--muted);font-size:.96rem;grid-column:2}
 
 /* ---- pachete (fără preț) ---- */
+.xs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.xs label{position:relative;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start;border:1.5px solid var(--line);border-radius:16px;padding:16px 18px;background:var(--surface);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.xs input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--plum);grid-row:span 2}
+.xs-note{font-size:.9rem;color:var(--muted);margin-top:12px}
+.xs b{font-family:var(--f-display);font-weight:500;font-size:1.2rem;line-height:1.2}
+.xs span{color:var(--muted);font-size:.92rem}
+.xs em{font-style:normal;font-size:.85rem;font-weight:600;color:var(--gold)}
+.xs label:has(input:checked){border-color:var(--plum);box-shadow:0 0 0 3px rgba(92,35,80,.12)}
 .pk{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:14px;align-items:stretch}
 @media (max-width:860px){.pk{grid-template-columns:1fr}}
 .pk label{position:relative;border:1.5px solid var(--line);border-radius:20px;padding:24px 22px 22px;display:flex;flex-direction:column;gap:10px;cursor:pointer;background:var(--surface);transition:border-color .15s,box-shadow .15s}
@@ -224,9 +232,10 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
       <div class="sec-head">
         <h2 id="bTitle">Experiența WE WELCOME</h2>
         <p class="who">Cine suntem noi?</p>
-        <p>Ideea WE WELCOME a pornit din experiențele noastre la evenimente și din discuțiile cu prietenii. Am observat că, de multe ori, gazdele sunt atât de ocupate să se asigure că totul merge perfect, încât uită să se bucure de propriul eveniment.</p>
-        <p>Așa că ne-am întrebat: dacă nu ar mai trebui să alegi între a avea grijă de invitați și a trăi momentele importante?</p>
-        <p>Așa a luat naștere WE WELCOME, din dorința ca tu să fii prezent în amintirile tale, nu prins în organizarea lor.</p>
+        <p>Pentru mulți dintre noi, evenimentele au ajuns să fie o formalitate: mergem, zâmbim, bifăm. Și totuși, ar trebui să fie exact momentele pe care să le trăim din plin și pe care să ni le amintim și peste ani.</p>
+        <p>Noi am simțit-o din ambele perspective. Ca invitați, ne-am dorit mai multă emoție și mai multă conexiune. Ca gazde, am văzut cum grija ca totul să iasă perfect ne fură tocmai momentele pentru care ne pregătisem atât.</p>
+        <p>Așa că ne-am întrebat: cum ar fi ca aceste „task-uri” să fie tăiate de pe listă?</p>
+        <p>Așa s-a născut WE WELCOME, din dorința ca tu să fii prezent în amintirile tale, nu prins în organizarea lor.</p>
       </div>
       <div class="benefits">
         <article class="benefit">
@@ -257,7 +266,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
         <h2 id="sTitle">Trei pași simpli. Un eveniment fără griji.</h2>
       </div>
       <ol class="steps">
-        <li><b>Ne povestiți despre evenimentul vostru</b><span>Completați formularul de mai jos, iar noi revenim cu oferta personalizată în maxim 24h.</span></li>
+        <li><b>Ne povestiți despre evenimentul vostru</b><span>Completați formularul de mai jos, iar noi revenim cu oferta personalizată în maximum 24h.</span></li>
         <li><b>Pregătim totul împreună</b><span>Personalizăm mesajele video prin care vă întâmpinați invitații – voi, în variantă DIGITALĂ! Ne trimiteți lista oaspeților și mesele repartizate, iar noi ne ocupăm de restul.</span></li>
         <li><b>Vă bucurați de seară. Este A VOASTRĂ!</b><span>În timp ce avatarul vostru digital îi întâmpină pe invitați, voi vă bucurați de fiecare moment.</span></li>
       </ol>
@@ -275,17 +284,23 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
           <h2 id="fTitle">Hai să pregătim un bun venit perfect pentru evenimentul vostru.</h2>
           <p>Spuneți-ne câteva detalii despre eveniment, iar noi vom reveni cu o ofertă personalizată.</p>
           <!-- PROMOȚIE: se ascunde singură după data din data-until -->
-          <p class="promo" data-until="2026-12-31"><b>Rezervați o dată până la finalul anului</b> și intrați în tragerea la sorți pentru <b>40% reducere</b> la evenimentul vostru: în ianuarie 2027 extragem 3 evenimente din toate rezervările confirmate până la 31 decembrie 2026, iar câștigătorii vor fi anunțați pe email. <a href="regulament.html" target="_blank" rel="noopener">Regulamentul campaniei</a></p>
+          <p class="promo" data-until="2026-12-31"><b>Ai deja o dată în minte?</b> Rezerv-o până pe 31 decembrie 2026 și intri în tragerea la sorți pentru <b>40% reducere</b> la evenimentul tău.<br>În ianuarie alegem 3 evenimente norocoase dintre toate rezervările confirmate și îți dăm vestea cea bună pe email.<br><i>Poate anul viitor sărbătorești la tine și câștigi la noi.</i> <a href="regulament.html" target="_blank" rel="noopener">Regulamentul campaniei</a></p>
         </div>
 
         <div>
           <h3 class="eyebrow" style="margin:18px 0 14px">Alegeți experiența</h3>
           <div class="pk" id="pk"></div>
+          <p class="pk-note">* Serviciul include set up pentru realizarea video, script, editare și prelucrare video.</p>
           <p class="pk-note" id="pkNote">Prețul îl primiți în oferta personalizată, în funcție de dată, durată și locație. Puteți schimba pachetul oricând până la confirmare.</p>
+          <div class="xs-wrap" id="xsWrap" hidden>
+            <h3 class="eyebrow" style="margin:26px 0 12px">Servicii extra <span style="text-transform:none;letter-spacing:0;font-weight:400">(opțional)</span></h3>
+            <div class="xs" id="xs"></div>
+            <p class="xs-note">Disponibilitatea serviciilor extra trebuie verificată pentru data evenimentului. Revenim în emailul cu oferta cu confirmarea disponibilității și prețul lor estimativ.</p>
+          </div>
         </div>
 
         <section class="card" aria-labelledby="g1">
-          <h3 id="g1"><span>01</span>Despre eveniment</h3>
+          <h3 id="g1"><span>01</span>Detalii eveniment</h3>
           <div class="grid g3">
             <div class="field full"><label for="eventType">Tipul evenimentului<i>*</i></label><select class="inp" id="eventType" required><option>Nuntă</option><option>Botez</option><option>Aniversare</option><option>Eveniment corporate</option><option>Alt eveniment</option></select></div>
             <div class="field"><label for="eventDate">Data evenimentului<i>*</i></label><input class="inp" type="date" id="eventDate" required></div>
@@ -313,14 +328,14 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
             <div class="field full"><label for="clientMessage">Observații <em>(opțional)</em></label><textarea class="inp" id="clientMessage" maxlength="2000" placeholder="Orice detaliu care ne ajută la ofertă"></textarea></div>
           </div>
           <div class="hp" aria-hidden="true"><label>Website<input id="website" tabindex="-1" autocomplete="off"></label></div>
-          <label class="check"><input type="checkbox" id="gdpr" required> <span>Sunt de acord ca datele mele să fie folosite pentru a primi oferta și pentru a fi contactat(ă) în legătură cu evenimentul. Nu le transmitem altor firme.</span></label>
+          <label class="check"><input type="checkbox" id="gdpr" required> <span>Sunt de acord cu prelucrarea datelor mele personale de către WE WELCOME, în scopul transmiterii ofertei și al comunicărilor legate de eveniment, conform <a href="confidentialitate.html" target="_blank" rel="noopener">Politicii de confidențialitate</a>.</span></label>
           <p class="req-note">Câmpurile marcate cu <i>*</i> sunt obligatorii.</p>
         </section>
 
         <div class="submit">
           <p class="err" id="err" role="alert" hidden></p>
-          <button class="btn" id="send" type="submit">CERE OFERTA PERSONALIZATĂ</button>
-          <p class="wa-or" id="waBox" hidden>Preferați să ne scrieți direct? <a id="waLink" href="#" target="_blank" rel="noopener">Trimiteți cererea pe WhatsApp</a></p>
+          <button class="btn" id="send" type="submit">SOLICITĂ OFERTA PERSONALIZATĂ</button>
+          <p class="wa-or" id="waBox" hidden>Preferi să ne scrii direct? <a id="waLink" href="#" target="_blank" rel="noopener">Trimite-ne un mesaj pe WhatsApp.</a></p>
         </div>
       </form>
     </div>
@@ -336,7 +351,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
 <!-- ================= CONFIRMARE ================= -->
 <section class="done" id="done" hidden>
   <div class="brand"><span class="wm">WE WELCOME</span><span class="sl">We welcome. You celebrate.</span></div>
-  <h1>Mulțumim! Abia așteptăm să aflăm mai multe despre evenimentul vostru.</h1>
+  <h1>Mulțumim! Abia așteptăm să aflăm mai multe despre evenimentul tău.</h1>
   <p>Am primit cererea pentru <b id="dWhen"></b> și revenim cu oferta personalizată pe email<span id="dTime"></span>.</p>
   <p class="wa-or"><a id="waDone" class="wa-ic" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#25D366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Z"/><path fill="#fff" d="M16.5 14.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>Ne puteți scrie și pe WhatsApp</a></p>
 </section>
@@ -352,7 +367,7 @@ const BRAND = 'WE WELCOME';
 let S = JSON.parse(JSON.stringify(P.DEFAULT_SETTINGS));
 
 /* ---------- pachete (fără preț) ---------- */
-const BENEFIT = { welcome: 'Videouri de bun venit cu voi, filmate de noi', seating: 'Fiecare invitat își găsește masa', booth: 'Photo Booth pentru amintiri memorabile' };
+const BENEFIT = { welcome: 'Video de bun venit cu voi, filmat de noi*', seating: 'Fiecare invitat este ghidat către locul de la masă', booth: 'Photo Booth pentru amintiri memorabile' };
 const ALL_MODULES = ['welcome', 'seating', 'booth'];
 /** Pachetul recomandat: cel marcat în aplicație; altfel primul care include toate cele trei momente. */
 function recommendedId() {
@@ -368,10 +383,16 @@ const after = (price, pct) => Math.round(P.num(price) * (1 - P.num(pct) / 100));
 function priceHtml(p){
   if (!P.num(p.price)) return '';
   if (!promoOn()) return `<span class="price"><b>${esc(P.lei(p.price))}${plusVat()}</b></span>`;
-  return `<span class="price"><s>${esc(P.lei(p.price))}</s><b>${esc(P.lei(after(p.price, PROMO.earlyPct)))}${plusVat()}</b><small>−${esc(PROMO.earlyPct)}% pentru rezervările până la ${esc(untilText())}</small></span>`;
+  return `<span class="price"><s>${esc(P.lei(p.price))}</s><b>${esc(P.lei(after(p.price, PROMO.earlyPct)))}${plusVat()}</b><small>−${esc(PROMO.earlyPct)}% la rezervările făcute până pe ${esc(untilText().replace(/ \d{4}$/, ''))}</small></span>`;
 }
 function renderPromoNote(){
   $('#pkNote').textContent = `Prețurile sunt pentru pachet${plusVat() ? ', fără TVA' : ', cu TVA inclus'}. Pentru locațiile din afara Bucureștiului și Ilfovului, transportul se adaugă în oferta personalizată. Puteți schimba pachetul oricând până la confirmare.`;
+}
+/* ---------- servicii extra (bifabile; prețul 0 = „preț la cerere”) ---------- */
+function renderExtras(){
+  const xs = (S.extras || []).filter(x => x && x.name), was = [...document.querySelectorAll('input[name=extra]:checked')].map(x => x.value);
+  $('#xsWrap').hidden = !xs.length;
+  $('#xs').innerHTML = xs.map(x => `<label><input type="checkbox" name="extra" value="${esc(x.id)}" ${was.includes(x.id) ? 'checked' : ''}><b>${esc(x.name)}</b>${x.desc ? `<span>${esc(x.desc)}</span>` : ''}</label>`).join('');
 }
 function renderPackages(){
   const rec = recommendedId();
@@ -386,7 +407,7 @@ function renderPackages(){
       <b>${esc(p.name)}</b>
       ${p.desc ? `<span class="desc">${esc(p.desc)}</span>` : ''}
       ${priceHtml(p)}
-      <ul>${(p.modules || []).map(m => `<li>${esc(BENEFIT[m] || P.MODULE_NAMES[m] || m)}</li>`).join('')}${(p.modules || []).includes('booth') ? `<li>Stick cu pozele de la eveniment</li><li>${P.albumIncluded(p) ? 'Albumul foto al serii, inclus' : 'Album foto, la cerere'}</li>` : ''}</ul>
+      <ul>${(p.modules || []).map(m => `<li>${esc(BENEFIT[m] || P.MODULE_NAMES[m] || m)}</li>`).join('')}${(p.modules || []).includes('booth') ? `<li>Stick cu fotografiile de la eveniment</li><li>${P.albumIncluded(p) ? 'Albumul foto al serii, inclus' : 'Album foto, la cerere'}</li>` : ''}</ul>
       ${isRec && full ? '<span class="why">Experiența completă: primirea, orientarea la mese și o amintire de luat acasă, într-o singură soluție.</span>' : ''}
       <span class="pick">${p.id === cur ? 'Ales' : 'Alege'}</span></label>`;
   }).join('');
@@ -435,6 +456,7 @@ function formData(){
   return { name: $('#name').value.trim(), phone: $('#phone').value.trim(), email: $('#email').value.trim(),
     eventType: $('#eventType').value, eventDate: $('#eventDate').value, startTime: $('#startTime').value, guests: $('#guests').value,
     county: l.county, city: $('#city').value.trim(), venue: $('#venue').value.trim(), package: l.package, outside: l.outside, km: String(l.km),
+    extras: [...document.querySelectorAll('input[name=extra]:checked')].map(x => x.value).join(','),
     // sumele de mai jos nu se afișează vizitatorului; ajung doar în Sheet, pentru administrator
     transport: far ? '' : String(c.transport), packagePrice: String(c.price), total: far ? '' : String(c.total),
     clientMessage: (far ? '[Ofertă specială: zonă neacoperită, ~' + l.km + ' km] ' : '') + $('#clientMessage').value.trim(),
@@ -452,6 +474,7 @@ function requestText(d){
   lines.push('');
   add('Tip eveniment', d.eventType); add('Data', [fmtDay(d.eventDate), d.startTime ? 'ora ' + d.startTime : ''].filter(Boolean).join(', '));
   add('Invitați', d.guests); add('Locație', place); add('Pachet', pk);
+  const xn = (S.extras || []).filter(x => String(d.extras || '').split(',').includes(x.id)).map(x => x.name); if (xn.length) add('Servicii extra', xn.join(', '));
   if (far) lines.push('Locația e în afara zonei acoperite; aș dori o ofertă specială.');
   const msg = $('#clientMessage').value.trim(); if (msg) { lines.push(''); lines.push('Observații: ' + msg); }
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
@@ -476,13 +499,13 @@ document.addEventListener('input', updateWa);
 document.querySelectorAll('[data-until]').forEach(el => { el.dataset.until = PROMO.until || el.dataset.until; if (!promoOn()) el.hidden = true; });
 renderCounties();
 $('#eventDate').min = new Date().toISOString().slice(0, 10);
-renderPackages(); update();
+renderPackages(); renderExtras(); update();
 document.addEventListener('change', update);
 document.addEventListener('input', e => { if (e.target.getAttribute('aria-invalid')) e.target.removeAttribute('aria-invalid'); });
 
 /* pachetele și zona acoperită vin din aplicație (Google Sheets); tot acum aflăm ce cale de comunicare merge pe acest telefon */
 if (CFG.scriptUrl) window.WWNet.call(CFG.scriptUrl, { action:'config' }, false).then(d => {
-  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages; S.pricing = Object.assign({}, S.pricing, d.config.pricing || {}); renderPackages(); renderCounties(); update(); }
+  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages; S.pricing = Object.assign({}, S.pricing, d.config.pricing || {}); if (Array.isArray(d.config.extras)) S.extras = d.config.extras; renderPackages(); renderExtras(); renderCounties(); update(); }
 }).catch(() => {});
 
 /* bara de jos pe telefon: apare cât timp nici butonul de sus, nici formularul nu sunt pe ecran */
