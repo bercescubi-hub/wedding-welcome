@@ -752,10 +752,10 @@
     const NEW = { esential: ['Esențial', 1500, 'Welcome', 1300], complet: ['Complet', 2500, 'Celebrate', 2600], allnight: ['All Night', 3300, 'All Night', 4200] };
     let changed = false;
     // o singură dată (29 oct.): descrierile cerute pentru Celebrate și All Night, oricare ar fi textul de acum
-    if (!(S.migr && S.migr.desc1029)) {
-      const want = { complet: 'Îți suntem alături de la primul invitat până la felul doi.', allnight: 'Experiența completă, de la primul invitat până la ultimul dans' };
-      (S.packages || []).forEach(p => { if (want[p.id] && p.desc !== want[p.id]) p.desc = want[p.id]; });
-      S.migr = Object.assign({}, S.migr, { desc1029: true }); changed = true;
+    if (!(S.migr && S.migr.desc1029b)) {
+      const want = { complet: 'Îți suntem alături de la primul invitat până la felul doi.', allnight: 'Experiența completă, de la primul invitat până la ultimul dans', celebrate: 'Îți suntem alături de la primul invitat până la felul doi.', 'all night': 'Experiența completă, de la primul invitat până la ultimul dans' };
+      (S.packages || []).forEach(p => { const w = want[p.id] || want[String(p.name || '').trim().toLowerCase()]; if (w && p.desc !== w) p.desc = w; });
+      S.migr = Object.assign({}, S.migr, { desc1029: true, desc1029b: true }); changed = true;
     }
     const DESC = { 'Îți suntem alături de la primul invitat până la felul doi': 'complet', 'Bun venit, găsirea mesei și Photo Booth, 5 ore': 'complet', 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale': 'esential', 'Toată experiența pentru primele ore ale petrecerii.': 'complet', 'Toată experiența, pe toată durata petrecerii.': 'allnight' };
     (S.packages || []).forEach(p => {

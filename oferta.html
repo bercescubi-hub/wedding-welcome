@@ -8,7 +8,7 @@
 <meta property="og:title" content="WE WELCOME · We welcome. You celebrate.">
 <meta property="og:description" content="Dacă v-am spune că puteți fi în două locuri deodată? 2x voi. Cere oferta personalizată.">
 <meta property="og:image" content="img/hero.jpg">
-<meta name="theme-color" content="#f6efe3">
+<meta name="theme-color" content="#531c43">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,12 +19,13 @@
    Apoi trei beneficii, trei pași, pachetele (fără preț) și formularul în trei grupuri. Pe telefon, o bară jos duce la formular
    cât timp acesta nu e pe ecran. */
 :root{
-  --bg:#f6efe3; --bg2:#fbf7ef; --surface:#fffdf9; --ink:#2f2118; --muted:#594a3e; --line:#e3d6c3; --gold:#8a6630; --gold-soft:rgba(138,102,48,.10);
-  --plum:#5c2350; --plum-2:#4a1c41; --plum-ink:#fff; --ok:#2f7a4f; --err:#a3283a;
+  /* Paleta aplicației: mov închis, scris alb, accente aurii */
+  --bg:#4a1a3d; --bg2:#5c2350; --surface:#5a2350; --ink:#ffffff; --muted:#e9dbe5; --line:rgba(255,255,255,.18); --gold:#d9b97c; --gold-soft:rgba(217,185,124,.14);
+  --plum:#d9b97c; --plum-2:#e8cc96; --plum-ink:#3a1230; --field:#3d1433; --ok:#8fd6aa; --err:#ffa3b1;
   --f-display:"Playfair Display",Georgia,serif; --f-body:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
   /* Imaginea principală: încadrarea (ce parte a pozei rămâne vizibilă când se decupează) */
   --hero-pos:62% 40%;
-  color-scheme:light;
+  color-scheme:dark;
 }
 *{box-sizing:border-box} [hidden]{display:none!important}
 html{scroll-behavior:smooth}
@@ -37,9 +38,9 @@ h1,h2,h3{margin:0;text-wrap:balance;font-weight:400} p{margin:0}
 section{scroll-margin-top:16px}
 
 /* ---- bannerul de sus ---- */
-.early{display:block;text-align:center;background:var(--gold);color:#fff;text-decoration:none;padding:10px 16px;font-size:.95rem;letter-spacing:.01em}
+.early{display:block;text-align:center;background:var(--gold);color:var(--plum-ink);text-decoration:none;padding:10px 16px;font-size:.95rem;letter-spacing:.01em}
 .early b{font-weight:700}
-.banner{background:#531c43;color:#fff;text-align:center;padding:22px 18px 18px}
+.banner{background:#531c43;border-bottom:1px solid var(--line);color:#fff;text-align:center;padding:22px 18px 18px}
 .banner img{display:block;margin:0 auto;width:auto;height:clamp(118px,22vw,170px)}
 .banner .wm{display:block;font-family:var(--f-display);font-weight:600;font-size:clamp(1.9rem,6vw,3rem);letter-spacing:.2em;line-height:1.1;padding-left:.2em}
 .banner .sl{display:block;margin-top:10px;font-family:var(--f-display);font-style:italic;font-size:clamp(1.05rem,3.4vw,1.35rem);color:#f1dcb4}
@@ -72,7 +73,7 @@ section{scroll-margin-top:16px}
 .for{font-size:.9rem;color:var(--muted);display:flex;align-items:center;gap:8px}
 .for::before{content:"";width:6px;height:6px;transform:rotate(45deg);border:1px solid var(--gold);flex:0 0 auto}
 /* Imaginea principală — o singură imagine, compactă. Fișierul: img/hero.jpg */
-.hero-img{margin:0;justify-self:end;width:100%;max-width:400px;aspect-ratio:4/5;border-radius:24px;overflow:hidden;box-shadow:0 28px 60px rgba(60,35,20,.16);background:var(--line)}
+.hero-img{margin:0;justify-self:end;width:100%;max-width:400px;aspect-ratio:4/5;border-radius:24px;overflow:hidden;box-shadow:0 28px 60px rgba(0,0,0,.35);background:var(--line)}
 .hero-img img{width:100%;height:100%;object-fit:cover;object-position:var(--hero-pos);display:block}
 @media (max-width:820px){
   .hero{grid-template-columns:1fr;gap:28px;padding:34px 0 40px}
@@ -121,31 +122,31 @@ section{scroll-margin-top:16px}
 .xs b{font-family:var(--f-display);font-weight:500;font-size:1.2rem;line-height:1.2}
 .xs span{color:var(--muted);font-size:.92rem}
 .xs em{font-style:normal;font-size:.85rem;font-weight:600;color:var(--gold)}
-.xs label:has(input:checked){border-color:var(--plum);box-shadow:0 0 0 3px rgba(92,35,80,.12)}
+.xs label:has(input:checked){border-color:var(--plum);box-shadow:0 0 0 3px rgba(217,185,124,.22)}
 .pk{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:14px;align-items:stretch}
 @media (max-width:860px){.pk{grid-template-columns:1fr}}
 .pk label{position:relative;border:1.5px solid var(--line);border-radius:20px;padding:24px 22px 22px;display:flex;flex-direction:column;gap:10px;cursor:pointer;background:var(--surface);transition:border-color .15s,box-shadow .15s}
 .pk input{position:absolute;opacity:0;pointer-events:none}
 .pk label:has(input:checked){border-color:var(--plum);box-shadow:0 0 0 2px var(--plum)}
 .pk label:has(input:focus-visible){outline:2px solid var(--plum);outline-offset:3px}
-.pk .rec{background:linear-gradient(180deg,#fff 0%,var(--bg2) 100%)}
-.pk .tag{align-self:flex-start;background:var(--gold);color:#fff;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:99px;font-weight:500}
+.pk .rec{background:linear-gradient(180deg,#6a2b5e 0%,var(--surface) 100%);border-color:rgba(217,185,124,.5)}
+.pk .tag{align-self:flex-start;background:var(--gold);color:var(--plum-ink);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:99px;font-weight:500}
 .pk .dur{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
 .pk b{font-family:var(--f-display);font-weight:500;font-size:1.6rem;line-height:1.1}
 .pk .desc{color:var(--muted);font-size:.95rem}
 .pk ul{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:.95rem}
 .pk li{display:flex;gap:10px;align-items:flex-start}
-.pk li::before{content:"";width:16px;height:16px;flex:0 0 auto;margin-top:3px;border-radius:50%;background:var(--gold-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.2 2.2 4.8-4.8' fill='none' stroke='%238a6630' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
+.pk li::before{content:"";width:16px;height:16px;flex:0 0 auto;margin-top:3px;border-radius:50%;background:var(--gold-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.2 2.2 4.8-4.8' fill='none' stroke='%23d9b97c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
 .pk .why{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);font-size:.9rem;color:var(--ink)}
 .pk .pick{margin-top:auto;font-size:.82rem;color:var(--muted);display:flex;align-items:center;gap:8px;padding-top:6px}
-.pk .pick::before{content:"";width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line);flex:0 0 auto;background:#fff}
+.pk .pick::before{content:"";width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line);flex:0 0 auto;background:var(--field)}
 .pk label:has(input:checked) .pick{color:var(--plum);font-weight:600}
-.pk label:has(input:checked) .pick::before{border-color:var(--plum);background:radial-gradient(circle,var(--plum) 0 5px,#fff 6px)}
+.pk label:has(input:checked) .pick::before{border-color:var(--plum);background:radial-gradient(circle,var(--plum) 0 5px,var(--field) 6px)}
 .pk-note{font-size:.9rem;color:var(--muted);margin-top:16px}
-.pk .price{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}
+.pk .price{display:flex;align-items:baseline;justify-content:flex-start;flex-wrap:wrap;gap:4px 12px;margin-top:4px}
 .pk .pr-now{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .pk .price b{font-family:var(--f-body);font-size:1.4rem;font-weight:700;color:var(--plum)}
-.pk .pr-tag{font-style:normal;background:var(--gold);color:#fff;font-size:.74rem;font-weight:700;letter-spacing:.04em;padding:3px 9px;border-radius:99px}
+.pk .pr-tag{font-style:normal;font-family:var(--f-body);color:var(--gold);font-size:.72rem;font-weight:700;vertical-align:super;line-height:0;margin-left:3px;letter-spacing:.02em}
 .pk .price s{color:var(--muted);font-size:1rem;white-space:nowrap}
 .pk .pr-disc{display:block;font-size:.74rem;color:var(--muted);line-height:1.4;margin-top:-4px}
 .promo a{color:var(--plum);white-space:nowrap}
@@ -165,20 +166,20 @@ form{display:flex;flex-direction:column;gap:18px}
 .field label{font-size:.88rem;font-weight:500;color:var(--ink)}
 .field label i{font-style:normal;color:var(--err);margin-left:2px}
 .field label em{font-style:normal;color:var(--muted);font-weight:400}
-.inp{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:13px 14px;font-size:16px;min-width:0;min-height:50px;appearance:none;-webkit-appearance:none}
-select.inp{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236f5f52' stroke-width='1.5'/%3E%3C/svg%3E") right 14px center/12px no-repeat;padding-right:38px}
+.inp{width:100%;border:1px solid var(--line);background:var(--field);color:#fff;border-radius:12px;padding:13px 14px;font-size:16px;min-width:0;min-height:50px;appearance:none;-webkit-appearance:none}
+select.inp{background:var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23d9b97c' stroke-width='1.5'/%3E%3C/svg%3E") right 14px center/12px no-repeat;padding-right:38px}
 textarea.inp{min-height:104px;resize:vertical}
-.inp:focus{border-color:var(--plum);outline:none;box-shadow:0 0 0 3px rgba(92,35,80,.12)}
+.inp:focus{border-color:var(--plum);outline:none;box-shadow:0 0 0 3px rgba(217,185,124,.22)}
 .inp[aria-invalid="true"]{border-color:var(--err);box-shadow:0 0 0 3px rgba(163,40,58,.10)}
 .req-note{font-size:.84rem;color:var(--muted)}
 .req-note i{font-style:normal;color:var(--err)}
 .km{border-radius:12px;background:var(--gold-soft);padding:13px 15px;font-size:.93rem}
-.km.far{background:#fbeef0;border:1px solid #e8c3ca}
+.km.far{background:rgba(255,130,150,.12);border:1px solid rgba(255,163,177,.45)}
 .clinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .clink{display:inline-block;border:1px solid var(--plum);color:var(--plum);border-radius:99px;padding:9px 15px;font-weight:600;font-size:.88rem;text-decoration:none;overflow-wrap:anywhere}
 .check{display:flex;gap:12px;align-items:flex-start;font-size:.9rem;color:var(--muted);cursor:pointer}
 .check input{margin-top:3px;width:20px;height:20px;accent-color:var(--plum);flex:0 0 auto}
-.err{color:var(--err);font-size:.92rem;background:#fbeef0;border:1px solid #e8c3ca;border-radius:12px;padding:12px 14px}
+.err{color:var(--err);font-size:.92rem;background:rgba(255,130,150,.12);border:1px solid rgba(255,163,177,.45);border-radius:12px;padding:12px 14px}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .submit{display:flex;flex-direction:column;gap:12px;align-items:stretch}
 .submit .btn{width:100%;letter-spacing:.08em}
@@ -190,7 +191,7 @@ textarea.inp{min-height:104px;resize:vertical}
 .privacy{font-size:.82rem;color:var(--muted);text-align:center}
 
 /* ---- bara de jos (doar pe telefon, cât timp formularul nu e pe ecran) ---- */
-.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(255,253,249,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(74,26,61,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);
   padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));transition:transform .25s,opacity .25s}
 .bar .btn{width:100%;min-height:50px;padding:14px 20px}
 .bar.off{transform:translateY(110%);opacity:0;pointer-events:none}
@@ -205,6 +206,9 @@ textarea.inp{min-height:104px;resize:vertical}
 footer{text-align:center;padding:40px 18px 120px;color:var(--muted);font-size:.86rem;display:flex;flex-direction:column;gap:6px;align-items:center}
 footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);font-size:.92rem}
 @media (min-width:821px){footer{padding-bottom:48px}}
+.inp::placeholder{color:rgba(255,255,255,.5)}
+.check a,.privacy a,.done a{color:var(--gold)}
+.benefit .ic{border-color:rgba(217,185,124,.5)}
 </style>
 </head>
 <body>
@@ -287,7 +291,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
           <h2 id="fTitle">Hai să pregătim un bun venit perfect pentru evenimentul vostru.</h2>
           <p>Spuneți-ne câteva detalii despre eveniment, iar noi vom reveni cu o ofertă personalizată.</p>
           <!-- PROMOȚIE: se ascunde singură după data din data-until -->
-          <div class="promo" data-until="2026-12-31"><p><b>Ai deja o dată în minte?</b> Rezerv-o până pe 31 decembrie 2026 și intri în tragerea la sorți pentru <b>40% reducere</b> la evenimentul tău.</p><p>În ianuarie alegem 3 evenimente norocoase dintre toate rezervările confirmate și îți dăm vestea cea bună pe email.</p><p>Poate anul viitor sărbătorești la tine și câștigi la noi.</p></div>
+          <div class="promo" data-until="2026-12-31"><p><b>Ai deja o dată în minte?</b> Rezerv-o până pe 31 decembrie 2026 și intri în tragerea la sorți pentru <b>40% reducere</b> la evenimentul tău.</p><p>În ianuarie alegem 3 evenimente norocoase dintre toate rezervările confirmate și îți dăm vestea cea bună pe email.</p></div>
         </div>
 
         <div>
@@ -337,7 +341,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
 
         <div class="submit">
           <p class="err" id="err" role="alert" hidden></p>
-          <button class="btn" id="send" type="submit">SOLICITĂ OFERTA PERSONALIZATĂ</button>
+          <button class="btn" id="send" type="submit">Solicită oferta personalizată</button>
           <p class="wa-or" id="waBox" hidden>Preferi să ne scrii direct? <a id="waLink" href="#" target="_blank" rel="noopener">Trimite-ne un mesaj pe WhatsApp.</a></p>
         </div>
       </form>
@@ -383,10 +387,13 @@ const promoOn = () => !!PROMO.until && new Date() <= new Date(PROMO.until + 'T23
 const untilText = () => new Date(PROMO.until + 'T12:00:00').toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' });
 const plusVat = () => S.pricing.vatPayer && !S.pricing.pricesIncludeVat ? ' + TVA' : '';
 const after = (price, pct) => Math.round(P.num(price) * (1 - P.num(pct) / 100));
+/* Descrierile vechi, încă salvate în Sheet, se afișează cu textul nou */
+const OLD_DESC = { 'bun venit, găsirea mesei și photo booth': 'Îți suntem alături de la primul invitat până la felul doi.', 'bun venit, găsirea mesei și photo booth, 5 ore': 'Îți suntem alături de la primul invitat până la felul doi.', 'toate cele trei, toată noaptea': 'Experiența completă, de la primul invitat până la ultimul dans' };
+function fixDesc(p){ const n = OLD_DESC[String(p && p.desc || '').trim().replace(/\.$/, '').toLowerCase()]; return n ? Object.assign({}, p, { desc: n }) : p; }
 function priceHtml(p){
   if (!P.num(p.price)) return '';
   if (!promoOn()) return `<span class="price"><b>${esc(P.lei(p.price))}${plusVat()}</b></span>`;
-  return `<span class="price"><span class="pr-now"><b>${esc(P.lei(after(p.price, PROMO.earlyPct)))}${plusVat()}</b><i class="pr-tag">−${esc(PROMO.earlyPct)}%</i></span><s>${esc(P.lei(p.price))}</s></span>
+  return `<span class="price"><b>${esc(P.lei(after(p.price, PROMO.earlyPct)))}${plusVat()}<sup class="pr-tag">−${esc(PROMO.earlyPct)}%</sup></b><s>${esc(P.lei(p.price))}</s></span>
       <small class="pr-disc">Reducere valabilă pentru rezervările făcute până pe ${esc(untilText())}.</small>`;
 }
 function renderPromoNote(){
@@ -508,7 +515,7 @@ document.addEventListener('input', e => { if (e.target.getAttribute('aria-invali
 
 /* pachetele și zona acoperită vin din aplicație (Google Sheets); tot acum aflăm ce cale de comunicare merge pe acest telefon */
 if (CFG.scriptUrl) window.WWNet.call(CFG.scriptUrl, { action:'config' }, false).then(d => {
-  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages; S.pricing = Object.assign({}, S.pricing, d.config.pricing || {}); if (Array.isArray(d.config.extras)) S.extras = d.config.extras; renderPackages(); renderExtras(); renderCounties(); update(); }
+  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages.map(fixDesc); S.pricing = Object.assign({}, S.pricing, d.config.pricing || {}); if (Array.isArray(d.config.extras)) S.extras = d.config.extras; renderPackages(); renderExtras(); renderCounties(); update(); }
 }).catch(() => {});
 
 /* bara de jos pe telefon: apare cât timp nici butonul de sus, nici formularul nu sunt pe ecran */
@@ -533,14 +540,14 @@ $('#f').addEventListener('submit', async e => {
   if (!$('#gdpr').checked) { err.textContent = 'Bifați acordul pentru folosirea datelor, ca să vă putem trimite oferta.'; err.hidden = false; $('#gdpr').focus(); return; }
   if (!CFG.scriptUrl) { err.textContent = 'Formularul nu este încă activ. Încercați din nou puțin mai târziu.'; err.hidden = false; return; }
   const data = formData();
-  const btn = $('#send'); sending = true; btn.disabled = true; btn.textContent = 'SE TRIMITE…';
+  const btn = $('#send'); sending = true; btn.disabled = true; btn.textContent = 'Se trimite…';
   const ok = await sendLead(data);
   sending = false;
   if (ok) { showDone(data); return; }   // confirmarea apare doar după răspunsul real al serverului
   // nu a mers: păstrăm cererea pe acest telefon (pleacă singură la următoarea deschidere) și oferim emailul ca alternativă
   try { localStorage.setItem('ww-pending', JSON.stringify(data)); } catch (_) {}
   showFallback(data);
-  btn.disabled = false; btn.textContent = 'ÎNCEARCĂ DIN NOU';
+  btn.disabled = false; btn.textContent = 'Încearcă din nou';
 });
 
 /** Trimite cererea prin canalul comun (WWNet), care alege calea ce merge pe dispozitiv, inclusiv pe iPhone. */
