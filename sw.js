@@ -3,7 +3,7 @@
    - fișierele aplicației (html, js, json): întâi rețeaua, ca să vină mereu împreună în aceeași versiune; fără internet, copia salvată.
    - imagini, iconițe și fonturi: din copia salvată, actualizate în fundal.
    La fiecare modificare a aplicației, crește CACHE ca laptopul să ia versiunea nouă. */
-const CACHE = 'ww-v69';
+const CACHE = 'ww-v70';
 const CORE = ['./', 'index.html', 'data.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png', 'sablon-invitati.xlsx',
   'config.js', 'pricing.js', 'crm.js', 'oferta.html', 'img/totem.jpg', 'img/hero.jpg', 'img/logo-light.png', 'img/mono-light.png', 'img/logo-dark.png', 'regulament.html', 'confidentialitate.html', 'img/video-oaspeti.jpg', 'img/gaseste-masa.jpg', 'img/photobooth.jpg', 'img/intrare.jpg'];
