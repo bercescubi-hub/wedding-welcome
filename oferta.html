@@ -228,6 +228,15 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
 footer.dark{margin-top:20px;padding-top:44px}
 footer.dark .wm{color:#e2c48c}
 footer .flogo{display:block;width:auto;height:clamp(110px,30vw,150px);margin:0 auto}
+footer .fcols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 40px;width:100%;max-width:640px;margin:22px auto 0;padding-top:26px;border-top:1px solid rgba(226,196,140,.3);text-align:left}
+@media (max-width:560px){footer .fcols{grid-template-columns:1fr;text-align:center}}
+footer .fcol{display:flex;flex-direction:column;gap:9px;font-size:.95rem}
+footer .fh{font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:#e2c48c;font-weight:600;margin-bottom:2px}
+footer .fcol a{color:#fbf3e4;text-decoration:none;border-bottom:1px solid transparent;align-self:flex-start;transition:border-color .15s,color .15s}
+@media (max-width:560px){footer .fcol a{align-self:center}}
+footer .fcol a:hover{color:#e2c48c;border-color:rgba(226,196,140,.6)}
+footer #fPhones{display:flex;flex-direction:column;gap:9px}
+footer .fcopy{margin-top:26px;font-size:.78rem;color:rgba(251,243,228,.6);letter-spacing:.04em}
 .check a,.privacy a,.done a{color:var(--plum)}
 .benefit .ic{border-color:rgba(217,185,124,.5)}
 </style>
@@ -371,6 +380,19 @@ footer .flogo{display:block;width:auto;height:clamp(110px,30vw,150px);margin:0 a
 
   <footer class="dark">
     <img class="flogo" src="img/logo-light.png" alt="WE WELCOME … You celebrate." width="900" height="517" loading="lazy">
+    <div class="fcols">
+      <div class="fcol">
+        <span class="fh">Contact</span>
+        <a id="fMail" href="#"></a>
+        <span id="fPhones"></span>
+      </div>
+      <div class="fcol">
+        <span class="fh">Informații</span>
+        <a href="confidentialitate.html">Politica de confidențialitate</a>
+        <a href="regulament.html" id="fReg">Regulamentul campaniei „40% reducere”</a>
+      </div>
+    </div>
+    <span class="fcopy">© <span id="fYear">2026</span> WE WELCOME · Toate drepturile rezervate</span>
   </footer>
   <div class="bar" id="bar"><a class="btn" href="#cerere">Cere oferta personalizată</a></div>
 </main>
@@ -599,6 +621,19 @@ function showFallback(data) {
 /* o cerere rămasă netrimisă data trecută pe acest telefon pleacă acum, în liniște */
 (async () => { let p = null; try { p = JSON.parse(localStorage.getItem('ww-pending')); } catch (_) {}
   if (p && p.name) { await new Promise(r => setTimeout(r, 1500)); if (await sendLead(p)) { try { localStorage.removeItem('ww-pending'); } catch (_) {} } } })();
+
+/* ---------- subsol: contact din config.js ---------- */
+(function footer(){
+  const mail = CFG.contactEmail || '';
+  const fm = document.getElementById('fMail');
+  if (mail) { fm.href = 'mailto:' + mail; fm.textContent = mail; } else fm.hidden = true;
+  const ph = (CFG.contactPhones || (CFG.contactPhone ? [CFG.contactPhone] : [])).map(String).filter(Boolean);
+  const nice = t => { const d = t.replace(/[^\d]/g, ''); return d.length === 10 ? d.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3') : t; };
+  document.getElementById('fPhones').innerHTML = ph.map(t => `<a href="tel:${esc(t.replace(/[^\d+]/g, ''))}">${esc(nice(t))}</a>`).join('');
+  document.getElementById('fYear').textContent = new Date().getFullYear();
+  /* regulamentul rămâne în subsol până după tragerea la sorți (sfârșitul lui februarie 2027) */
+  if (new Date() > new Date('2027-02-28T23:59:59')) document.getElementById('fReg').hidden = true;
+})();
 </script>
 </body>
 </html>
