@@ -390,7 +390,7 @@ function priceHtml(p){
       <small class="pr-disc">Reducere valabilă pentru rezervările făcute până pe ${esc(untilText())}.</small>`;
 }
 function renderPromoNote(){
-  $('#pkNote').textContent = `Prețurile sunt pentru pachet${plusVat() ? ', fără TVA' : ', cu TVA inclus'}. Pentru locațiile din afara Bucureștiului și Ilfovului, transportul se adaugă în oferta personalizată. Puteți schimba pachetul oricând până la confirmare.`;
+  $('#pkNote').textContent = `${plusVat() ? 'Prețuri fără TVA.' : 'Prețuri cu TVA inclus.'} Transportul în afara București - Ilfov nu este inclus în prețul pachetului și se calculează separat.`;
 }
 /* ---------- servicii extra (bifabile; prețul 0 = „preț la cerere”) ---------- */
 function renderExtras(){
