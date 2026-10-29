@@ -142,10 +142,12 @@ section{scroll-margin-top:16px}
 .pk label:has(input:checked) .pick{color:var(--plum);font-weight:600}
 .pk label:has(input:checked) .pick::before{border-color:var(--plum);background:radial-gradient(circle,var(--plum) 0 5px,#fff 6px)}
 .pk-note{font-size:.9rem;color:var(--muted);margin-top:16px}
-.pk .price{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:2px}
-.pk .price s{color:var(--muted);font-size:.95rem}
-.pk .price b{font-family:var(--f-body);font-size:1.3rem;font-weight:700;color:var(--plum)}
-.pk .price small{flex-basis:100%;font-size:.78rem;color:var(--gold);font-weight:600;letter-spacing:.02em}
+.pk .price{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}
+.pk .pr-now{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pk .price b{font-family:var(--f-body);font-size:1.4rem;font-weight:700;color:var(--plum)}
+.pk .pr-tag{font-style:normal;background:var(--gold);color:#fff;font-size:.74rem;font-weight:700;letter-spacing:.04em;padding:3px 9px;border-radius:99px}
+.pk .price s{color:var(--muted);font-size:1rem;white-space:nowrap}
+.pk .pr-disc{display:block;font-size:.74rem;color:var(--muted);line-height:1.4;margin-top:-4px}
 .promo a{color:var(--plum);white-space:nowrap}
 .promo p{margin:0;color:var(--ink)}.promo p+p{margin-top:12px}
 .promo{margin-top:16px!important;padding:14px 16px;border:1px solid var(--gold);border-radius:14px;background:var(--gold-soft);color:var(--ink)!important;font-size:.98rem}
@@ -384,7 +386,8 @@ const after = (price, pct) => Math.round(P.num(price) * (1 - P.num(pct) / 100));
 function priceHtml(p){
   if (!P.num(p.price)) return '';
   if (!promoOn()) return `<span class="price"><b>${esc(P.lei(p.price))}${plusVat()}</b></span>`;
-  return `<span class="price"><s>${esc(P.lei(p.price))}</s><b>${esc(P.lei(after(p.price, PROMO.earlyPct)))}${plusVat()}</b><small>−${esc(PROMO.earlyPct)}% la rezervările făcute până pe ${esc(untilText().replace(/ \d{4}$/, ''))}</small></span>`;
+  return `<span class="price"><span class="pr-now"><b>${esc(P.lei(after(p.price, PROMO.earlyPct)))}${plusVat()}</b><i class="pr-tag">−${esc(PROMO.earlyPct)}%</i></span><s>${esc(P.lei(p.price))}</s></span>
+      <small class="pr-disc">Reducere valabilă pentru rezervările făcute până pe ${esc(untilText())}.</small>`;
 }
 function renderPromoNote(){
   $('#pkNote').textContent = `Prețurile sunt pentru pachet${plusVat() ? ', fără TVA' : ', cu TVA inclus'}. Pentru locațiile din afara Bucureștiului și Ilfovului, transportul se adaugă în oferta personalizată. Puteți schimba pachetul oricând până la confirmare.`;

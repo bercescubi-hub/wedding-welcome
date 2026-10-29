@@ -750,7 +750,7 @@
   function migratePackages(S) {
     const NEW = { esential: ['Esențial', 1500, 'Welcome', 1300], complet: ['Complet', 2500, 'Celebrate', 2600], allnight: ['All Night', 3300, 'All Night', 4200] };
     let changed = false;
-    const DESC = { 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale': 'esential', 'Toată experiența pentru primele ore ale petrecerii.': 'complet', 'Toată experiența, pe toată durata petrecerii.': 'allnight' };
+    const DESC = { 'Bun venit, găsirea mesei și Photo Booth, 5 ore': 'complet', 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale': 'esential', 'Toată experiența pentru primele ore ale petrecerii.': 'complet', 'Toată experiența, pe toată durata petrecerii.': 'allnight' };
     (S.packages || []).forEach(p => {
       const d = String(p.desc || '').trim(), id = /^Mesajul de bun venit al mirilor și găsirea mesei/i.test(d) ? 'esential' : DESC[d];
       const nd = id && (P.DEFAULT_SETTINGS.packages.find(x => x.id === id) || {}).desc;
