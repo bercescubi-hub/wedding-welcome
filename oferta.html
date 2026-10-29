@@ -20,12 +20,15 @@
    cât timp acesta nu e pe ecran. */
 :root{
   /* Paleta aplicației: mov închis, scris alb, accente aurii */
-  --bg:#4a1a3d; --bg2:#5c2350; --surface:#5a2350; --ink:#ffffff; --muted:#e9dbe5; --line:rgba(255,255,255,.18); --gold:#d9b97c; --gold-soft:rgba(217,185,124,.14);
-  --plum:#d9b97c; --plum-2:#e8cc96; --plum-ink:#3a1230; --field:#3d1433; --ok:#8fd6aa; --err:#ffa3b1;
+  /* Paleta: bej-auriu (șampanie) predominant, cu prună închisă pentru accente și benzi */
+  --bg:#efe4cf; --bg2:#f8f0e1; --surface:#fcf8f0; --ink:#3a1530; --muted:#6a4e5e; --line:rgba(150,112,58,.28); --gold:#9c7638; --gold-soft:rgba(176,138,72,.14);
+  --plum:#5c2350; --plum-2:#45183c; --plum-ink:#f5e6c8; --field:#fffbf4; --ok:#2f7a4f; --err:#a3283a;
+  --gold-grad:linear-gradient(100deg,#b89155 0%,#e8d2a2 45%,#c9a467 100%);
+  --plum-grad:radial-gradient(130% 90% at 15% 0%,#6f2d62 0%,#4d1b40 55%,#36102c 100%);
   --f-display:"Playfair Display",Georgia,serif; --f-body:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
   /* Imaginea principală: încadrarea (ce parte a pozei rămâne vizibilă când se decupează) */
   --hero-pos:62% 40%;
-  color-scheme:dark;
+  color-scheme:light;
 }
 *{box-sizing:border-box} [hidden]{display:none!important}
 html{scroll-behavior:smooth}
@@ -38,7 +41,7 @@ h1,h2,h3{margin:0;text-wrap:balance;font-weight:400} p{margin:0}
 section{scroll-margin-top:16px}
 
 /* ---- bannerul de sus ---- */
-.early{display:block;text-align:center;background:var(--gold);color:var(--plum-ink);text-decoration:none;padding:10px 16px;font-size:.95rem;letter-spacing:.01em}
+.early{display:block;text-align:center;background:var(--gold-grad);color:#3a1230;text-decoration:none;padding:10px 16px;font-size:.95rem;letter-spacing:.01em}
 .early b{font-weight:700}
 .banner{background:#531c43;border-bottom:1px solid var(--line);color:#fff;text-align:center;padding:22px 18px 18px}
 .banner img{display:block;margin:0 auto;width:auto;height:clamp(118px,22vw,170px)}
@@ -67,7 +70,7 @@ section{scroll-margin-top:16px}
 .cta-row{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-top:30px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;background:var(--plum);color:var(--plum-ink);border-radius:99px;
   padding:17px 30px;font-weight:600;font-size:1rem;letter-spacing:.04em;text-decoration:none;cursor:pointer;transition:background .15s,transform .15s;min-height:54px}
-.btn:hover{background:var(--plum-2)} .btn:active{transform:scale(.985)}
+.btn:active{transform:scale(.985)}
 .btn:disabled{opacity:.6;cursor:default}
 .btn svg{width:18px;height:18px}
 .for{font-size:.9rem;color:var(--muted);display:flex;align-items:center;gap:8px}
@@ -129,14 +132,14 @@ section{scroll-margin-top:16px}
 .pk input{position:absolute;opacity:0;pointer-events:none}
 .pk label:has(input:checked){border-color:var(--plum);box-shadow:0 0 0 2px var(--plum)}
 .pk label:has(input:focus-visible){outline:2px solid var(--plum);outline-offset:3px}
-.pk .rec{background:linear-gradient(180deg,#6a2b5e 0%,var(--surface) 100%);border-color:rgba(217,185,124,.5)}
+.pk .rec{background:var(--plum-grad)}
 .pk .tag{align-self:flex-start;background:var(--gold);color:var(--plum-ink);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:99px;font-weight:500}
 .pk .dur{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
 .pk b{font-family:var(--f-display);font-weight:500;font-size:1.6rem;line-height:1.1}
 .pk .desc{color:var(--muted);font-size:.95rem}
 .pk ul{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:.95rem}
 .pk li{display:flex;gap:10px;align-items:flex-start}
-.pk li::before{content:"";width:16px;height:16px;flex:0 0 auto;margin-top:3px;border-radius:50%;background:var(--gold-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.2 2.2 4.8-4.8' fill='none' stroke='%23d9b97c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
+.pk li::before{content:"";width:16px;height:16px;flex:0 0 auto;margin-top:3px;border-radius:50%;background:var(--gold-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.2 2.2 4.8-4.8' fill='none' stroke='%23b08a48' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
 .pk .why{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);font-size:.9rem;color:var(--ink)}
 .pk .pick{margin-top:auto;font-size:.82rem;color:var(--muted);display:flex;align-items:center;gap:8px;padding-top:6px}
 .pk .pick::before{content:"";width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line);flex:0 0 auto;background:var(--field)}
@@ -166,7 +169,7 @@ form{display:flex;flex-direction:column;gap:18px}
 .field label{font-size:.88rem;font-weight:500;color:var(--ink)}
 .field label i{font-style:normal;color:var(--err);margin-left:2px}
 .field label em{font-style:normal;color:var(--muted);font-weight:400}
-.inp{width:100%;border:1px solid var(--line);background:var(--field);color:#fff;border-radius:12px;padding:13px 14px;font-size:16px;min-width:0;min-height:50px;appearance:none;-webkit-appearance:none}
+.inp{width:100%;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:12px;padding:13px 14px;font-size:16px;min-width:0;min-height:50px;appearance:none;-webkit-appearance:none}
 select.inp{background:var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23d9b97c' stroke-width='1.5'/%3E%3C/svg%3E") right 14px center/12px no-repeat;padding-right:38px}
 textarea.inp{min-height:104px;resize:vertical}
 .inp:focus{border-color:var(--plum);outline:none;box-shadow:0 0 0 3px rgba(217,185,124,.22)}
@@ -179,7 +182,7 @@ textarea.inp{min-height:104px;resize:vertical}
 .clink{display:inline-block;border:1px solid var(--plum);color:var(--plum);border-radius:99px;padding:9px 15px;font-weight:600;font-size:.88rem;text-decoration:none;overflow-wrap:anywhere}
 .check{display:flex;gap:12px;align-items:flex-start;font-size:.9rem;color:var(--muted);cursor:pointer}
 .check input{margin-top:3px;width:20px;height:20px;accent-color:var(--plum);flex:0 0 auto}
-.err{color:var(--err);font-size:.92rem;background:rgba(255,130,150,.12);border:1px solid rgba(255,163,177,.45);border-radius:12px;padding:12px 14px}
+.err{color:var(--err);font-size:.92rem;background:#fbeef0;border:1px solid #e8c3ca;border-radius:12px;padding:12px 14px}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .submit{display:flex;flex-direction:column;gap:12px;align-items:stretch}
 .submit .btn{width:100%;letter-spacing:.08em}
@@ -191,7 +194,7 @@ textarea.inp{min-height:104px;resize:vertical}
 .privacy{font-size:.82rem;color:var(--muted);text-align:center}
 
 /* ---- bara de jos (doar pe telefon, cât timp formularul nu e pe ecran) ---- */
-.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(74,26,61,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(248,240,225,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);
   padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));transition:transform .25s,opacity .25s}
 .bar .btn{width:100%;min-height:50px;padding:14px 20px}
 .bar.off{transform:translateY(110%);opacity:0;pointer-events:none}
@@ -206,8 +209,24 @@ textarea.inp{min-height:104px;resize:vertical}
 footer{text-align:center;padding:40px 18px 120px;color:var(--muted);font-size:.86rem;display:flex;flex-direction:column;gap:6px;align-items:center}
 footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);font-size:.92rem}
 @media (min-width:821px){footer{padding-bottom:48px}}
-.inp::placeholder{color:rgba(255,255,255,.5)}
-.check a,.privacy a,.done a{color:var(--gold)}
+.inp::placeholder{color:rgba(58,21,48,.42)}
+/* Benzi prună: aceleași componente, culori inversate */
+.dark{--ink:#fbf3e4;--muted:#e8d6cc;--surface:rgba(255,255,255,.06);--line:rgba(232,204,150,.28);--gold:#e2c48c;--gold-soft:rgba(226,196,140,.16);--plum:#e2c48c;--plum-2:#efd6a6;--plum-ink:#3a1230;--field:#3d1433;background:var(--plum-grad);color:var(--ink)}
+.sec.dark{border-top:1px solid rgba(201,164,103,.5);border-bottom:1px solid rgba(201,164,103,.5)}
+.sec.dark h2{color:#fbf3e4}
+.sec.dark .steps li::before{color:#e2c48c}
+.pk label.rec.dark{border-color:#c9a467;box-shadow:0 22px 44px rgba(58,21,48,.28)}
+.pk label.rec.dark:has(input:checked){box-shadow:0 0 0 2px #e2c48c,0 22px 44px rgba(58,21,48,.28)}
+.promo.dark{border:1px solid #c9a467!important;color:var(--ink)!important}
+.promo.dark b{color:#e2c48c}
+.pk label,.benefit,.card{box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 30px rgba(92,35,80,.06)}
+.btn{background:var(--plum-grad);color:var(--plum-ink);box-shadow:0 10px 24px rgba(58,21,48,.22),inset 0 0 0 1px rgba(226,196,140,.35)}
+.btn:hover{background:var(--plum-2)}
+.dark .btn{background:var(--gold-grad);color:#3a1230}
+.hero h1 .h1b{background:linear-gradient(100deg,#5c2350 0%,#8a3d78 40%,#b8914f 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+footer.dark{margin-top:20px;padding-top:44px}
+footer.dark .wm{color:#e2c48c}
+.check a,.privacy a,.done a{color:var(--plum)}
 .benefit .ic{border-color:rgba(217,185,124,.5)}
 </style>
 </head>
@@ -266,7 +285,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
   <hr class="rule">
 
   <!-- ================= CUM FUNCȚIONEAZĂ ================= -->
-  <section class="sec" aria-labelledby="sTitle">
+  <section class="sec dark" aria-labelledby="sTitle">
     <div class="wrap">
       <div class="sec-head">
         <p class="eyebrow">Cum funcționează</p>
@@ -291,7 +310,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
           <h2 id="fTitle">Hai să pregătim un bun venit perfect pentru evenimentul vostru.</h2>
           <p>Spuneți-ne câteva detalii despre eveniment, iar noi vom reveni cu o ofertă personalizată.</p>
           <!-- PROMOȚIE: se ascunde singură după data din data-until -->
-          <div class="promo" data-until="2026-12-31"><p><b>Ai deja o dată în minte?</b> Rezerv-o până pe 31 decembrie 2026 și intri în tragerea la sorți pentru <b>40% reducere</b> la evenimentul tău.</p><p>În ianuarie alegem 3 evenimente norocoase dintre toate rezervările confirmate și îți dăm vestea cea bună pe email.</p></div>
+          <div class="promo dark" data-until="2026-12-31"><p><b>Ai deja o dată în minte?</b> Rezerv-o până pe 31 decembrie 2026 și intri în tragerea la sorți pentru <b>40% reducere</b> la evenimentul tău.</p><p>În ianuarie alegem 3 evenimente norocoase dintre toate rezervările confirmate și îți dăm vestea cea bună pe email.</p></div>
         </div>
 
         <div>
@@ -348,7 +367,7 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
     </div>
   </section>
 
-  <footer>
+  <footer class="dark">
     <span class="wm">WE WELCOME</span>
     <span>We welcome. You celebrate.</span>
   </footer>
@@ -411,7 +430,7 @@ function renderPackages(){
   $('#pk').style.setProperty('--n', Math.min(3, S.packages.length));
   $('#pk').innerHTML = S.packages.map(p => {
     const isRec = p.id === rec, full = ALL_MODULES.every(m => (p.modules || []).includes(m));
-    return `<label class="${isRec ? 'rec' : ''}">
+    return `<label class="${isRec ? 'rec dark' : ''}">
       ${isRec ? '<span class="tag">Pachet recomandat</span>' : ''}
       <input type="radio" name="pkg" value="${esc(p.id)}" ${p.id === cur ? 'checked' : ''}>
       <span class="dur">${+p.hours >= 8 ? 'Toată noaptea' : esc(p.hours) + ' ore'}</span>
