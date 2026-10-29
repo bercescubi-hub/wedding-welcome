@@ -231,7 +231,22 @@ footer .wm{font-family:var(--f-display);letter-spacing:.34em;color:var(--ink);fo
 .promo.dark b{color:#e2c48c}
 .pk label,.benefit,.card{box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 30px rgba(92,35,80,.06)}
 .btn{background:var(--plum-grad);color:var(--plum-ink);box-shadow:0 10px 24px rgba(58,21,48,.22),inset 0 0 0 1px rgba(226,196,140,.35)}
-.btn:hover{background:var(--plum-2)}
+/* Butoane: mișcare discretă — un luciu auriu care trece rar, ridicare fină la atingere */
+.btn{position:relative;overflow:hidden;transition:transform .45s cubic-bezier(.2,.7,.2,1),box-shadow .45s cubic-bezier(.2,.7,.2,1),filter .3s}
+.btn::after{content:"";position:absolute;top:0;bottom:0;left:0;width:60%;background:linear-gradient(105deg,transparent 0%,rgba(240,218,170,.08) 30%,rgba(245,226,184,.38) 50%,rgba(240,218,170,.08) 70%,transparent 100%);transform:translateX(-180%) skewX(-12deg);animation:sheen 7s cubic-bezier(.45,0,.25,1) 2s infinite;pointer-events:none}
+@keyframes sheen{0%{transform:translateX(-180%) skewX(-12deg)}24%,100%{transform:translateX(260%) skewX(-12deg)}}
+.btn svg{transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+@media (hover:hover){
+  .btn:hover{transform:translateY(-2px);filter:brightness(1.07);box-shadow:0 16px 34px rgba(58,21,48,.30),inset 0 0 0 1px rgba(226,196,140,.65)}
+  .btn:hover svg{transform:translateY(3px)}
+  .pk label{transition:border-color .2s,box-shadow .35s,transform .45s cubic-bezier(.2,.7,.2,1)}
+  .pk label:hover{transform:translateY(-3px)}
+}
+.btn:active{transform:translateY(0) scale(.985);transition-duration:.12s}
+.btn:disabled::after{animation:none;opacity:0}
+.cta-row .btn{animation:glow 5s ease-in-out 1s infinite}
+@keyframes glow{0%,100%{box-shadow:0 10px 24px rgba(58,21,48,.22),inset 0 0 0 1px rgba(226,196,140,.35)}50%{box-shadow:0 12px 30px rgba(58,21,48,.26),0 0 0 5px rgba(201,164,103,.14),inset 0 0 0 1px rgba(226,196,140,.6)}}
+@media (prefers-reduced-motion:reduce){.btn::after,.cta-row .btn{animation:none}.btn,.btn svg,.pk label{transition:none}}
 .dark .btn{background:var(--gold-grad);color:#3a1230}
 .hero h1 .h1b{background:linear-gradient(100deg,#5c2350 0%,#8a3d78 40%,#b8914f 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 footer.dark{margin-top:20px;padding-top:44px}
