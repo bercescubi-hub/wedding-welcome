@@ -150,7 +150,7 @@ section{scroll-margin-top:16px}
 .pk .price{display:flex;align-items:baseline;justify-content:flex-start;flex-wrap:wrap;gap:4px 12px;margin-top:4px}
 .pk .pr-now{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .pk .price b{font-family:var(--f-body);font-size:1.4rem;font-weight:700;color:var(--plum)}
-.pk .pr-tag{font-style:normal;font-family:var(--f-body);color:var(--gold);font-size:.72rem;font-weight:700;vertical-align:super;line-height:0;margin-left:3px;letter-spacing:.02em}
+.pk .pr-tag{display:inline-block;vertical-align:top;position:relative;top:-.55em;margin-left:6px;font-style:normal;font-family:var(--f-body);font-size:.66rem;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 7px 4px 9px;color:#3a1230;background:linear-gradient(100deg,#b89155 0%,#ecd7a8 50%,#c9a467 100%);border-radius:3px 99px 99px 3px;box-shadow:0 2px 6px rgba(58,21,48,.18),inset 0 0 0 1px rgba(255,255,255,.35)}
 .pk .price s{color:var(--muted);font-size:1rem;white-space:nowrap}
 .pk .pr-disc{display:block;font-size:.74rem;color:var(--muted);line-height:1.4;margin-top:-4px}
 .promo a{color:var(--plum);white-space:nowrap}
@@ -436,7 +436,7 @@ function renderPackages(){
       <input type="radio" name="pkg" value="${esc(p.id)}" ${p.id === cur ? 'checked' : ''}>
       <span class="dur">${+p.hours >= 8 ? 'Toată noaptea' : esc(p.hours) + ' ore'}</span>
       <b>${esc(p.name)}</b>
-      ${p.desc ? `<span class="desc">${esc(p.desc)}</span>` : ''}
+      ${p.desc ? `<span class="desc">${esc(String(p.desc).trim().replace(/\.+$/, ''))}</span>` : ''}
       ${priceHtml(p)}
       <ul>${(p.modules || []).map(m => `<li>${esc(BENEFIT[m] || P.MODULE_NAMES[m] || m)}</li>`).join('')}${(p.modules || []).includes('booth') ? `<li>Stick cu fotografiile de la eveniment</li><li>${P.albumIncluded(p) ? 'Albumul foto al serii, inclus' : 'Album foto, la cerere'}</li>` : ''}</ul>
       <span class="pick">${p.id === cur ? 'Selectat' : 'Selectează'}</span></label>`;
