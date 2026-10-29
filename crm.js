@@ -25,7 +25,8 @@
       email: Object.assign({}, def.email, s.email || {}),
       templates: Array.isArray(s.templates) && s.templates.length ? s.templates : clone(def.templates),
       fields: Array.isArray(s.fields) ? s.fields : clone(def.fields || []),
-      extras: Array.isArray(s.extras) ? s.extras : clone(def.extras || [])
+      extras: Array.isArray(s.extras) ? s.extras : clone(def.extras || []),
+      migr: s.migr || {}
     };
   }
   function load() {
@@ -750,7 +751,13 @@
   function migratePackages(S) {
     const NEW = { esential: ['Esențial', 1500, 'Welcome', 1300], complet: ['Complet', 2500, 'Celebrate', 2600], allnight: ['All Night', 3300, 'All Night', 4200] };
     let changed = false;
-    const DESC = { 'Bun venit, găsirea mesei și Photo Booth, 5 ore': 'complet', 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale': 'esential', 'Toată experiența pentru primele ore ale petrecerii.': 'complet', 'Toată experiența, pe toată durata petrecerii.': 'allnight' };
+    // o singură dată (29 oct.): descrierile cerute pentru Celebrate și All Night, oricare ar fi textul de acum
+    if (!(S.migr && S.migr.desc1029)) {
+      const want = { complet: 'Îți suntem alături de la primul invitat până la felul doi.', allnight: 'Experiența completă, de la primul invitat până la ultimul dans' };
+      (S.packages || []).forEach(p => { if (want[p.id] && p.desc !== want[p.id]) p.desc = want[p.id]; });
+      S.migr = Object.assign({}, S.migr, { desc1029: true }); changed = true;
+    }
+    const DESC = { 'Îți suntem alături de la primul invitat până la felul doi': 'complet', 'Bun venit, găsirea mesei și Photo Booth, 5 ore': 'complet', 'Avatar digital pentru primirea invitaților, așezarea acestora la masă și alertă pentru momentele speciale': 'esential', 'Toată experiența pentru primele ore ale petrecerii.': 'complet', 'Toată experiența, pe toată durata petrecerii.': 'allnight' };
     (S.packages || []).forEach(p => {
       const d = String(p.desc || '').trim(), id = /^Mesajul de bun venit al mirilor și găsirea mesei/i.test(d) ? 'esential' : DESC[d];
       const nd = id && (P.DEFAULT_SETTINGS.packages.find(x => x.id === id) || {}).desc;

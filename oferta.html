@@ -412,7 +412,6 @@ function renderPackages(){
       ${p.desc ? `<span class="desc">${esc(p.desc)}</span>` : ''}
       ${priceHtml(p)}
       <ul>${(p.modules || []).map(m => `<li>${esc(BENEFIT[m] || P.MODULE_NAMES[m] || m)}</li>`).join('')}${(p.modules || []).includes('booth') ? `<li>Stick cu fotografiile de la eveniment</li><li>${P.albumIncluded(p) ? 'Albumul foto al serii, inclus' : 'Album foto, la cerere'}</li>` : ''}</ul>
-      ${isRec && full ? '<span class="why">Experiența completă: primirea, orientarea la mese și o amintire de luat acasă, într-o singură soluție.</span>' : ''}
       <span class="pick">${p.id === cur ? 'Selectat' : 'Selectează'}</span></label>`;
   }).join('');
   renderPromoNote();

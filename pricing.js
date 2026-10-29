@@ -16,7 +16,7 @@
       { id: 'esential', name: 'Welcome', hours: 3, price: 1300, modules: ['welcome', 'seating'], staffMenu: false,
         desc: 'Invitații tăi, primiți de un avatar digital, le arată locul la masă și nu-i lasă să rateze niciun moment special.' },
       { id: 'complet', name: 'Celebrate', hours: 5, price: 2600, modules: ['welcome', 'seating', 'booth'], staffMenu: false, recommended: true,
-        desc: 'Îți suntem alături de la primul invitat până la felul doi' },
+        desc: 'Îți suntem alături de la primul invitat până la felul doi.' },
       { id: 'allnight', name: 'All Night', hours: 10, price: 4200, modules: ['welcome', 'seating', 'booth'], staffMenu: true, album: true,
         desc: 'Experiența completă, de la primul invitat până la ultimul dans' }
     ],
