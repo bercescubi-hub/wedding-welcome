@@ -42,6 +42,7 @@
   /** Administrator: proprietarul (cu ADMIN_KEY), un cont cu rol de administrator sau orice cont încă neconectat (pe dispozitivul lui). */
   const isAdmin = () => !configured() || !!C.key || C.role === 'admin';
   const formUrl = () => new URL('./', location.href).href;
+  const lettersOf = l => { const m = String(l.clientMessage || '').match(/✦ Text pentru litere: (.+)/); return m ? m[1].trim() : ''; };
   /* numele serviciilor extra alese de client (cele șterse din setări apar cu id-ul lor) */
   const xNames = l => String(l.extras || '').split(',').map(x => x.trim()).filter(Boolean).map(id => { const x = ((C.settings || {}).extras || []).find(e => e.id === id); return x ? x.name : id; });
 
@@ -343,7 +344,7 @@
       </div>
       ${P.outOfArea(L.km, S) ? `<p class="note" style="border-style:solid;color:var(--danger)"><b>Zonă neacoperită</b> · ~${esc(num(L.km))} km (limita e ${esc(S.pricing.maxKm)} km). Cerere de ofertă specială.</p>` : ''}
       ${L.clientMessage ? `<p class="note" style="border-style:solid">„${esc(L.clientMessage)}”</p>` : ''}
-      ${xNames(L).length ? `<p class="note xnote"><b>Servicii extra cerute:</b> ${esc(xNames(L).join(', '))}. Verifică disponibilitatea și pune prețul în ofertă.</p>` : ''}
+      ${xNames(L).length ? `<p class="note xnote"><b>Servicii extra cerute:</b> ${esc(xNames(L).join(', '))}. Verifică disponibilitatea și pune prețul în ofertă.${lettersOf(L) ? `<br><b>Text pentru litere:</b> <span class="xlet">${esc(lettersOf(L))}</span>` : ''}</p>` : ''}
       ${emailStrip()}
       <div class="row2">
         <div class="field"><label for="l-st">Status</label><select class="inp" id="l-st" data-l="status">${P.STATUSES.map(s => `<option ${s === L.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
@@ -754,6 +755,8 @@
   function migratePackages(S) {
     const NEW = { esential: ['Esențial', 1500, 'Welcome', 1300], complet: ['Complet', 2500, 'Celebrate', 2600], allnight: ['All Night', 3300, 'All Night', 4200] };
     let changed = false;
+    // denumirea nouă pentru literele luminoase (7 nov.)
+    (S.extras || []).forEach(x => { if (x && /^litere mari luminoase$/i.test(String(x.name || '').trim())) { x.name = 'Litere volumetrice luminoase pentru decoruri spectaculoase și personalizate'; changed = true; } });
     // o singură dată (29 oct.): descrierile cerute pentru Celebrate și All Night, oricare ar fi textul de acum
     if (!(S.migr && S.migr.desc1029b)) {
       const want = { complet: 'Îți suntem alături de la primul invitat până la felul doi.', allnight: 'Experiența completă, de la primul invitat până la ultimul dans', celebrate: 'Îți suntem alături de la primul invitat până la felul doi.', 'all night': 'Experiența completă, de la primul invitat până la ultimul dans' };

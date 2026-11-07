@@ -266,6 +266,10 @@ footer #fMail{white-space:nowrap}
 footer .fcopy{margin-top:26px;font-size:.78rem;color:rgba(251,243,228,.6);letter-spacing:.04em}
 .check a,.privacy a,.done a{color:var(--plum)}
 .benefit .ic{border-color:rgba(217,185,124,.5)}
+.xs .xs-txt{grid-column:1/-1;margin-top:-2px;padding:14px 16px;border:1px dashed var(--gold);border-radius:14px;background:var(--gold-soft)}
+.xs .xs-txt label{display:block;border:0;padding:0;background:none;box-shadow:none!important;cursor:default;font-weight:600;font-size:.92rem}
+.xs .xs-txt .inp{width:100%;height:auto;margin:6px 0 0;grid-row:auto}
+.xs .xs-txt small{display:block;color:var(--muted);font-size:.84rem;margin-top:2px}
 </style>
 </head>
 <body>
@@ -472,8 +476,14 @@ function renderPromoNote(){
 function renderExtras(){
   const xs = (S.extras || []).filter(x => x && x.name), was = [...document.querySelectorAll('input[name=extra]:checked')].map(x => x.value);
   $('#xsWrap').hidden = !xs.length;
-  $('#xs').innerHTML = xs.map(x => `<label><input type="checkbox" name="extra" value="${esc(x.id)}" ${was.includes(x.id) ? 'checked' : ''}><b>${esc(x.name)}</b>${x.desc ? `<span>${esc(x.desc)}</span>` : ''}</label>`).join('');
+  const txt = ($('#lettersText') || {}).value || '';
+  $('#xs').innerHTML = xs.map(x => `<label><input type="checkbox" name="extra" value="${esc(x.id)}" ${was.includes(x.id) ? 'checked' : ''}><b>${esc(x.name)}</b>${x.desc ? `<span>${esc(x.desc)}</span>` : ''}</label>`
+    + (isLetters(x) ? `<div class="xs-txt field" id="lettersBox" ${was.includes(x.id) ? '' : 'hidden'}><label for="lettersText">Ce vreți să scrie cu litere luminoase?<i>*</i></label><input class="inp" id="lettersText" maxlength="60" autocomplete="off" placeholder="ex. MR & MRS · ANA ❤️ ANDREI · LOVE · 2027" value="${esc(txt)}"><small>Scrieți exact literele, cifrele sau simbolurile dorite. Merg și emoji, de exemplu ❤️ ✨ 🥂.</small></div>` : '')).join('');
 }
+/* serviciul cu litere luminoase: deschide câmpul pentru textul dorit */
+const isLetters = x => x && (x.id === 'litere' || /^litere/i.test(String(x.name || '')));
+const lettersOn = () => [...document.querySelectorAll('input[name=extra]:checked')].some(i => isLetters((S.extras || []).find(x => x.id === i.value)));
+document.addEventListener('change', e => { if (e.target.name !== 'extra') return; const b = $('#lettersBox'); if (!b) return; const on = lettersOn(); b.hidden = !on; if (on && e.target.checked && isLetters((S.extras || []).find(x => x.id === e.target.value))) setTimeout(() => $('#lettersText').focus(), 50); });
 function renderPackages(){
   const rec = recommendedId();
   const cur = (document.querySelector('input[name=pkg]:checked') || {}).value || new URLSearchParams(location.search).get('pachet') || rec || S.packages[0].id;
@@ -538,9 +548,10 @@ function formData(){
     extras: [...document.querySelectorAll('input[name=extra]:checked')].map(x => x.value).join(','),
     // sumele de mai jos nu se afișează vizitatorului; ajung doar în Sheet, pentru administrator
     transport: far ? '' : String(c.transport), packagePrice: String(c.price), total: far ? '' : String(c.total),
-    clientMessage: (far ? '[Ofertă specială: zonă neacoperită, ~' + l.km + ' km] ' : '') + $('#clientMessage').value.trim(),
+    clientMessage: [(far ? '[Ofertă specială: zonă neacoperită, ~' + l.km + ' km] ' : '') + $('#clientMessage').value.trim(), lettersLine()].filter(x => x.trim()).join('\n'),
     website: $('#website').value, source: new URLSearchParams(location.search).get('sursa') || 'formular' };
 }
+function lettersLine(){ const t = lettersOn() && $('#lettersText') ? $('#lettersText').value.trim() : ''; return t ? '✦ Text pentru litere: ' + t : ''; }
 function fmtDay(s) { if (!s) return ''; try { return new Date(s + 'T12:00:00').toLocaleDateString('ro-RO', {day:'numeric', month:'long', year:'numeric'}); } catch(_) { return s; } }
 /** Textul cererii, folosit pentru WhatsApp și pentru emailul de rezervă. Fără prețuri. */
 function requestText(d){
@@ -555,6 +566,7 @@ function requestText(d){
   add('Invitați', d.guests); add('Locație', place); add('Pachet', pk);
   const xn = (S.extras || []).filter(x => String(d.extras || '').split(',').includes(x.id)).map(x => x.name); if (xn.length) add('Servicii extra', xn.join(', '));
   if (far) lines.push('Locația e în afara zonei acoperite; aș dori o ofertă specială.');
+  if (lettersLine()) add('Text pentru litere', $('#lettersText').value.trim());
   const msg = $('#clientMessage').value.trim(); if (msg) { lines.push(''); lines.push('Observații: ' + msg); }
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
@@ -584,7 +596,7 @@ document.addEventListener('input', e => { if (e.target.getAttribute('aria-invali
 
 /* pachetele și zona acoperită vin din aplicație (Google Sheets); tot acum aflăm ce cale de comunicare merge pe acest telefon */
 if (CFG.scriptUrl) window.WWNet.call(CFG.scriptUrl, { action:'config' }, false).then(d => {
-  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages.map(fixDesc); S.pricing = Object.assign({}, S.pricing, d.config.pricing || {}); if (Array.isArray(d.config.extras)) S.extras = d.config.extras; renderPackages(); renderExtras(); renderCounties(); update(); }
+  if (d && d.ok && d.config && Array.isArray(d.config.packages) && d.config.packages.length) { S.packages = d.config.packages.map(fixDesc); S.pricing = Object.assign({}, S.pricing, d.config.pricing || {}); if (Array.isArray(d.config.extras)) S.extras = d.config.extras.map(x => /^litere mari luminoase$/i.test(String(x && x.name || '').trim()) ? Object.assign({}, x, { name: 'Litere volumetrice luminoase pentru decoruri spectaculoase și personalizate' }) : x); renderPackages(); renderExtras(); renderCounties(); update(); }
 }).catch(() => {});
 
 /* bara de jos pe telefon: apare cât timp nici butonul de sus, nici formularul nu sunt pe ecran */
@@ -605,6 +617,7 @@ $('#f').addEventListener('submit', async e => {
   for (const id of req) { const el = $('#'+id); if (!el.value.trim()) { el.setAttribute('aria-invalid','true'); bad = bad || el; } }
   if ($('#email').value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($('#email').value.trim())) { $('#email').setAttribute('aria-invalid','true'); bad = bad || $('#email'); }
   if ($('#phone').value && $('#phone').value.replace(/\D/g,'').length < 9) { $('#phone').setAttribute('aria-invalid','true'); bad = bad || $('#phone'); }
+  if (lettersOn() && !$('#lettersText').value.trim()) { $('#lettersText').setAttribute('aria-invalid','true'); bad = bad || $('#lettersText'); }
   if (bad) { err.textContent = 'Completați câmpurile marcate. Ele ne ajută să pregătim oferta.'; err.hidden = false; bad.focus(); return; }
   if (!$('#gdpr').checked) { err.textContent = 'Bifați acordul pentru folosirea datelor, ca să vă putem trimite oferta.'; err.hidden = false; $('#gdpr').focus(); return; }
   if (!CFG.scriptUrl) { err.textContent = 'Formularul nu este încă activ. Încercați din nou puțin mai târziu.'; err.hidden = false; return; }
