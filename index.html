@@ -478,7 +478,7 @@ function renderExtras(){
   $('#xsWrap').hidden = !xs.length;
   const txt = ($('#lettersText') || {}).value || '';
   $('#xs').innerHTML = xs.map(x => `<label><input type="checkbox" name="extra" value="${esc(x.id)}" ${was.includes(x.id) ? 'checked' : ''}><b>${esc(x.name)}</b>${x.desc ? `<span>${esc(x.desc)}</span>` : ''}</label>`
-    + (isLetters(x) ? `<div class="xs-txt field" id="lettersBox" ${was.includes(x.id) ? '' : 'hidden'}><label for="lettersText">Ce vreți să scrie cu litere luminoase?<i>*</i></label><input class="inp" id="lettersText" maxlength="60" autocomplete="off" placeholder="ex. MR & MRS · ANA ❤️ ANDREI · LOVE · 2027" value="${esc(txt)}"><small>Scrieți exact literele, cifrele sau simbolurile dorite. Merg și emoji, de exemplu ❤️ ✨ 🥂.</small></div>` : '')).join('');
+    + (isLetters(x) ? `<div class="xs-txt field" id="lettersBox" ${was.includes(x.id) ? '' : 'hidden'}><label for="lettersText">Ce elemente vă interesează?<i>*</i></label><input class="inp" id="lettersText" maxlength="60" autocomplete="off" placeholder="Ex: A❤️E ; LOVE ; 2027" value="${esc(txt)}"><small>Scrieți exact literele, cifrele sau simbolurile dorite. Merg și emoji, de exemplu ❤️ ✨ 🥂.</small></div>` : '')).join('');
 }
 /* serviciul cu litere luminoase: deschide câmpul pentru textul dorit */
 const isLetters = x => x && (x.id === 'litere' || /^litere/i.test(String(x.name || '')));
