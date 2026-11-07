@@ -378,7 +378,7 @@ footer .fcopy{margin-top:26px;font-size:.78rem;color:rgba(251,243,228,.6);letter
           <div class="grid">
             <div class="field"><label for="county">Județul<i>*</i></label><select class="inp" id="county" required></select></div>
             <div class="field"><label for="city">Orașul sau localitatea<i>*</i></label><input class="inp" id="city" required autocomplete="address-level2" placeholder="ex. București"></div>
-            <div class="field full"><label for="venue">Restaurantul sau locația <em>(opțional)</em></label><input class="inp" id="venue" placeholder="ex. numele restaurantului"></div>
+            <div class="field full"><label for="venue">Restaurantul sau locația<i>*</i></label><input class="inp" id="venue" required placeholder="ex. numele restaurantului"></div>
           </div>
           <p class="km" id="kmNote" hidden></p>
         </section>
@@ -601,7 +601,7 @@ $('#f').addEventListener('submit', async e => {
   e.preventDefault();
   if (sending) return;
   const err = $('#err'); err.hidden = true;
-  const req = ['eventDate','county','city','name','phone','email']; let bad = null;
+  const req = ['eventDate','county','city','venue','name','phone','email']; let bad = null;
   for (const id of req) { const el = $('#'+id); if (!el.value.trim()) { el.setAttribute('aria-invalid','true'); bad = bad || el; } }
   if ($('#email').value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($('#email').value.trim())) { $('#email').setAttribute('aria-invalid','true'); bad = bad || $('#email'); }
   if ($('#phone').value && $('#phone').value.replace(/\D/g,'').length < 9) { $('#phone').setAttribute('aria-invalid','true'); bad = bad || $('#phone'); }

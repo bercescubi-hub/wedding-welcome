@@ -42,6 +42,8 @@
   /** Administrator: proprietarul (cu ADMIN_KEY), un cont cu rol de administrator sau orice cont încă neconectat (pe dispozitivul lui). */
   const isAdmin = () => !configured() || !!C.key || C.role === 'admin';
   const formUrl = () => new URL('./', location.href).href;
+  /* numele serviciilor extra alese de client (cele șterse din setări apar cu id-ul lor) */
+  const xNames = l => String(l.extras || '').split(',').map(x => x.trim()).filter(Boolean).map(id => { const x = ((C.settings || {}).extras || []).find(e => e.id === id); return x ? x.name : id; });
 
   /* Apelul către scriptul Google. Întâi fetch; dacă browserul blochează răspunsul (extensii, setări de securitate),
      trimitem același apel prin JSONP (un <script> cu ?payload=…&callback=…), pe care scriptul îl înțelege. */
@@ -258,7 +260,7 @@
         <p class="hint">${C.lastSync ? `Sincronizat cu Google Sheets la ${esc(fmtDate(C.lastSync))}.` : 'Încă nesincronizat.'}</p>
         ${shown.length ? `<div class="leads" role="list">${shown.map(({ l, c, st }) => `<button type="button" class="lrow" role="listitem" data-act="crm-open" data-id="${esc(l.id)}">
             <span class="ld"><b>${fmtD(l.eventDate)}</b><small>${esc(l.eventType || 'Eveniment')}</small></span>
-            <span class="ln"><b>${esc(l.name)}</b><small>${esc(place(l) || '—')}</small></span>
+            <span class="ln"><b>${esc(l.name)}</b><small>${esc(place(l) || '—')}</small>${xNames(l).length ? `<small class="lx">✦ ${esc(xNames(l).join(' · '))}</small>` : ''}</span>
             <span class="lp"><small>${esc(c.pkg ? c.pkg.name : l.package || '—')}</small><b>${lei(c.total)}</b></span>
             <span class="lpr ${c.profit < 0 ? 'neg' : ''}"><small>profit</small><b>${lei(c.profit)}</b></span>
             <span class="ls">${pill(st)}</span></button>`).join('')}</div>`
@@ -341,6 +343,7 @@
       </div>
       ${P.outOfArea(L.km, S) ? `<p class="note" style="border-style:solid;color:var(--danger)"><b>Zonă neacoperită</b> · ~${esc(num(L.km))} km (limita e ${esc(S.pricing.maxKm)} km). Cerere de ofertă specială.</p>` : ''}
       ${L.clientMessage ? `<p class="note" style="border-style:solid">„${esc(L.clientMessage)}”</p>` : ''}
+      ${xNames(L).length ? `<p class="note xnote"><b>Servicii extra cerute:</b> ${esc(xNames(L).join(', '))}. Verifică disponibilitatea și pune prețul în ofertă.</p>` : ''}
       ${emailStrip()}
       <div class="row2">
         <div class="field"><label for="l-st">Status</label><select class="inp" id="l-st" data-l="status">${P.STATUSES.map(s => `<option ${s === L.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>

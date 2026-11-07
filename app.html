@@ -452,6 +452,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
 }
 .ver{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.lrow .lx{display:block;color:var(--gold);font-size:.78rem;margin-top:2px}
+.note.xnote{border:1px solid var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent)}
 </style>
 </head>
 <body>
@@ -484,7 +486,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.26.0';
+const APP_VERSION = '3.27.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
