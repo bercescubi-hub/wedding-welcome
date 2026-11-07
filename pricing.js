@@ -116,7 +116,7 @@
   }
   /* ---------- emailuri frumoase: textul șablonului, cu marcaje simple, devine un email cu logo ----------
      „## Titlu” = subtitlu · „- text” = listă · „| stânga | dreapta” = rând de tabel · „**text**” = îngroșat */
-  const LOGO_URL = 'https://bercescubi-hub.github.io/wedding-welcome/img/logo-light.png';
+  const LOGO_URL = 'https://wewelcome.ro/img/logo-light.png';
   const escH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const inl = s => escH(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/~~(.+?)~~/g, '<s style="color:#8a7a6c">$1</s>');
   function emailHtml(text, opt) {

@@ -47,7 +47,7 @@ Scriptul e în `google-apps-script/Code.gs`; pașii sunt în aplicație, la *Eve
 
 | Fișier | Rol |
 |---|---|
-| `index.html` | Aplicația (conturi, administrare, ecranul invitaților) |
+| `app.html` | Aplicația (conturi, administrare, ecranul invitaților) |
 | `crm.js` | Secțiunea Evenimente și ecranul Administrare |
 | `pricing.js` | Pachete, transport, costuri, profit (comun aplicației și formularului) |
 | `oferta.html`, `img/` | Formularul public pentru clienți |

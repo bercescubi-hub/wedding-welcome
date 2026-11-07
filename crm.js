@@ -41,7 +41,7 @@
   const configured = () => !!(C.url && (C.key || C.token));
   /** Administrator: proprietarul (cu ADMIN_KEY), un cont cu rol de administrator sau orice cont încă neconectat (pe dispozitivul lui). */
   const isAdmin = () => !configured() || !!C.key || C.role === 'admin';
-  const formUrl = () => new URL('oferta.html', location.href).href;
+  const formUrl = () => new URL('./', location.href).href;
 
   /* Apelul către scriptul Google. Întâi fetch; dacă browserul blochează răspunsul (extensii, setări de securitate),
      trimitem același apel prin JSONP (un <script> cu ?payload=…&callback=…), pe care scriptul îl înțelege. */
@@ -152,7 +152,7 @@
   function linkBox() {
     return `<div class="linkbox"><code>${esc(formUrl())}</code>
       <div class="btns"><button type="button" class="btn small" data-act="crm-copy" data-v="${esc(formUrl())}">Copiază</button>
-      <a class="btn small" href="oferta.html" target="_blank" rel="noopener">Deschide</a></div></div>
+      <a class="btn small" href="./" target="_blank" rel="noopener">Deschide</a></div></div>
       ${!(window.WW_CONFIG || {}).scriptUrl ? `<p class="hint warn-msg">Formularul se activează după conectarea la Google Sheets (Evenimente → Conectare).</p>` : ''}`;
   }
 
