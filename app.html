@@ -476,8 +476,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
   <div id="pin" class="pin" hidden></div>
 </div>
 
-<script src="config.js?v=94"></script>
-<script src="pricing.js?v=94"></script>
+<script src="config.js?v=95"></script>
+<script src="pricing.js?v=95"></script>
 <script>
 /* ============================================================
    Wedding Welcome — v2
@@ -487,7 +487,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.28.0';
+const APP_VERSION = '3.28.1';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
@@ -1651,6 +1651,6 @@ addEventListener('offline', () => { if (mode === 'admin') render(); });
 })();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
-<script src="crm.js?v=94"></script>
+<script src="crm.js?v=95"></script>
 </body>
 </html>

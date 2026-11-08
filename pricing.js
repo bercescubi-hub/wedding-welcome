@@ -28,7 +28,7 @@
     /* Servicii extra: apar pe pagina de ofertă ca opțiuni; prețul 0 = „preț la cerere” (nu se adună la total) */
     extras: [
       { id: 'litere', name: 'Litere volumetrice luminoase pentru decoruri spectaculoase și personalizate', desc: 'Litere mari, luminoase, pentru un decor spectaculos și fotografii de neuitat.', price: 0, cost: 0 },
-      { id: 'invitatii', name: 'Creare invitații', desc: 'Invitații personalizate, create în stilul evenimentului vostru.', price: 0, cost: 0 }
+      { id: 'invitatii', name: 'Papetărie pentru eveniment', desc: 'Papetărie personalizată, creată în armonie cu tematica și stilul evenimentului vostru: meniuri, plicuri pentru dar și place cards.', price: 0, cost: 0 }
     ],
     /* Câmpuri proprii: „fix” = același text mereu (ex. IBAN); „ask” = îl completezi la fiecare email */
     fields: [{ key: 'date_plata', label: 'Date pentru plată (IBAN, titular, bancă)', kind: 'fix', value: '' }],

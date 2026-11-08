@@ -755,6 +755,8 @@
   function migratePackages(S) {
     const NEW = { esential: ['Esențial', 1500, 'Welcome', 1300], complet: ['Complet', 2500, 'Celebrate', 2600], allnight: ['All Night', 3300, 'All Night', 4200] };
     let changed = false;
+    // papetăria în locul „Creare invitații” (8 nov.)
+    (S.extras || []).forEach(x => { if (x && /^creare invita(ț|t)ii$/i.test(String(x.name || '').trim())) { x.name = 'Papetărie pentru eveniment'; x.desc = 'Papetărie personalizată, creată în armonie cu tematica și stilul evenimentului vostru: meniuri, plicuri pentru dar și place cards.'; changed = true; } });
     // denumirea nouă pentru literele luminoase (7 nov.)
     (S.extras || []).forEach(x => { if (x && /^litere mari luminoase$/i.test(String(x.name || '').trim())) { x.name = 'Litere volumetrice luminoase pentru decoruri spectaculoase și personalizate'; changed = true; } });
     // o singură dată (29 oct.): descrierile cerute pentru Celebrate și All Night, oricare ar fi textul de acum
