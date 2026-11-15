@@ -455,6 +455,15 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
 .lrow .lx{display:block;color:var(--gold);font-size:.78rem;margin-top:2px}
 .note.xnote .xlet{font-size:1.1em;font-weight:600;letter-spacing:.04em}
 .note.xnote{border:1px solid var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent)}
+.extrasBox .xrow{padding:8px 0;border-top:1px solid var(--line)}
+.extrasBox .xrow:first-of-type{border-top:0}
+.extrasBox .xwish{margin:4px 0 0 30px;color:var(--gold);font-size:.92rem}
+.extrasBox .xwish b{font-size:1.06rem;letter-spacing:.02em}
+.extrasBox .xprice{margin:8px 0 2px 30px;max-width:240px}
+.extrasBox .xprice label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px}
+.extrasBox .xprice .dgroup{display:flex;align-items:center;gap:8px}
+.extrasBox .xprice .unit{color:var(--muted)}
+.extrasBox .xwarn{display:block;color:var(--warn);font-size:.8rem;margin-top:4px}
 </style>
 </head>
 <body>
@@ -476,8 +485,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
   <div id="pin" class="pin" hidden></div>
 </div>
 
-<script src="config.js?v=100"></script>
-<script src="pricing.js?v=100"></script>
+<script src="config.js?v=103"></script>
+<script src="pricing.js?v=103"></script>
 <script>
 /* ============================================================
    Wedding Welcome — v2
@@ -487,7 +496,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;bac
    - Videoclipurile și pozele de fundal stau în IndexedDB, pe acest laptop.
    - data.json (actualizat de Claude în repo) se aplică în versiunea în lucru.
    ============================================================ */
-const APP_VERSION = '3.28.2';
+const APP_VERSION = '3.29.0';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
@@ -1651,6 +1660,6 @@ addEventListener('offline', () => { if (mode === 'admin') render(); });
 })();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
-<script src="crm.js?v=100"></script>
+<script src="crm.js?v=103"></script>
 </body>
 </html>

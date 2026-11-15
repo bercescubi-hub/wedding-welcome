@@ -44,7 +44,13 @@
   const formUrl = () => new URL('./', location.href).href;
   const xDetails = l => [...String(l.clientMessage || '').matchAll(/✦ ([^:\n]+): (.+)/g)].map(m => [m[1].trim(), m[2].trim()]);
   /* numele serviciilor extra alese de client (cele șterse din setări apar cu id-ul lor) */
-  const xNames = l => String(l.extras || '').split(',').map(x => x.trim()).filter(Boolean).map(id => { const x = ((C.settings || {}).extras || []).find(e => e.id === id); return x ? x.name : id; });
+  /* detaliile scrise de client pe pagina de ofertă („✦ Text pentru litere: …”) și serviciul extra căruia îi aparțin */
+  const X_LINE = { 'Text pentru litere': 'litere', 'Papetărie dorită': 'invitatii' };
+  const xWish = (l, id) => (xDetails(l).find(([k]) => X_LINE[k] === id) || [])[1] || '';
+  /* serviciile extra ale cererii; dacă rubrica e goală (script vechi), le deducem din detaliile clientului */
+  const xSel = l => { const o = P.parseExtras(l.extras); if (!Object.keys(o).length) xDetails(l).forEach(([k]) => { if (X_LINE[k]) o[X_LINE[k]] = null; }); return o; };
+  const xNames = l => Object.keys(xSel(l)).map(id => { const x = ((C.settings || {}).extras || []).find(e => e.id === id); return x ? x.name : id; });
+  const plainMsg = l => String(l.clientMessage || '').split('\n').filter(x => !/^✦ /.test(x.trim())).join('\n').trim();
 
   /* Apelul către scriptul Google. Întâi fetch; dacă browserul blochează răspunsul (extensii, setări de securitate),
      trimitem același apel prin JSONP (un <script> cu ?payload=…&callback=…), pe care scriptul îl înțelege. */
@@ -274,6 +280,8 @@
   function openLead(id) {
     const l = C.leads.find(x => x.id === id); if (!l) return;
     L = clone(l); L.status = L.status || 'Nou'; L.discountType = L.discountType === 'lei' ? 'lei' : '%';
+    if (!String(L.extras || '').trim()) { const d = xSel(L); if (Object.keys(d).length) L.extras = P.joinExtras(d); }
+    if (!P.yes(L.album) && xDetails(L).some(([k, v]) => k === 'Album foto' && /^da/i.test(v))) L.album = 'da';
     L.outside = P.yes(L.outside) ? 'da' : 'nu'; L.staffMenuByClient = P.yes(L.staffMenuByClient) ? 'da' : 'nu';
     L.album = P.yes(L.album) ? 'da' : 'nu';
     L._promo = applyEarlyPromo(L);
@@ -318,14 +326,24 @@
       </div></div>`;
   }
   /** Butonul „Album foto”: la pachetul cu album inclus apare ca inclus; la celelalte cu Photo Booth îl adaugi (+ prețul albumului). */
+  /** Serviciile extra din fișa cererii: bifate automat după ce a cerut clientul, cu ce își dorește și cu prețul pentru oferta lui. */
+  function extrasRows() {
+    const sel = P.parseExtras(L.extras);
+    return `<span class="ms-l">Servicii extra</span>` + (C.settings.extras || []).map(x => {
+      const on = x.id in sel, wish = xWish(L, x.id), pr = sel[x.id];
+      return `<div class="xrow${on ? ' on' : ''}"><label class="tog"><input type="checkbox" data-x="${esc(x.id)}" ${on ? 'checked' : ''}> ${esc(x.name)}</label>
+        ${wish ? `<p class="xwish">Clientul dorește: <b>${esc(wish)}</b></p>` : ''}
+        ${on ? `<div class="xprice"><label for="xp-${esc(x.id)}">Preț pentru client</label><div class="dgroup"><input class="inp" id="xp-${esc(x.id)}" data-xp="${esc(x.id)}" inputmode="numeric" value="${pr != null ? esc(pr) : ''}" placeholder="${num(x.price) ? esc(num(x.price)) : 'de completat'}"><span class="unit">lei</span></div>${pr == null && !num(x.price) ? '<small class="xwarn">Completează prețul ca să apară în ofertă.</small>' : ''}</div>` : ''}</div>`;
+    }).join('');
+  }
   function albumField() {
     const S = C.settings, p = P.pkgOf(S, L.package);
-    if (!p || !p.modules.includes('booth')) return `<p class="hint">Album foto: doar la pachetele cu Photo Booth.</p>`;
+    if (!p) return `<p class="hint">Alege pachetul ca să poți adăuga albumul foto.</p>`;
     if (P.albumIncluded(p)) return `<p class="hint"><b>Album foto inclus</b> în pachetul ${esc(p.name)} (plus stick cu pozele).</p>`;
     const on = P.yes(L.album);
     const old = C.scriptOld ? `<p class="hint err-msg">Scriptul Google e o versiune veche și nu salvează încă albumul în Sheet. Actualizează-l (Code.gs → Implementare → Gestionează implementările → Versiune nouă).</p>` : '';
     return `<div class="btns" style="align-items:center"><button type="button" class="btn ${on ? 'danger' : 'primary'} small" data-act="crm-album">${on ? 'Scoate albumul foto' : '+ Adaugă album foto · ' + lei(S.pricing.albumPrice)}</button>
-      <span class="hint">${on ? `Album adăugat: +${lei(S.pricing.albumPrice)} la total.` : 'Pachetul include stick cu pozele; albumul se adaugă la cerere.'}</span></div>${old}`;
+      <span class="hint">${on ? `Album adăugat: +${lei(S.pricing.albumPrice)} la total.` : (p.modules.includes('booth') ? 'Pachetul include stick cu pozele; albumul se adaugă la cerere.' : 'Albumul foto se adaugă la cerere.')}</span></div>${old}`;
   }
   function renderLead() {
     const S = C.settings;
@@ -343,8 +361,8 @@
         <div><span>Ultimul email</span>${esc(L.lastEmail || '—')}</div>
       </div>
       ${P.outOfArea(L.km, S) ? `<p class="note" style="border-style:solid;color:var(--danger)"><b>Zonă neacoperită</b> · ~${esc(num(L.km))} km (limita e ${esc(S.pricing.maxKm)} km). Cerere de ofertă specială.</p>` : ''}
-      ${L.clientMessage ? `<p class="note" style="border-style:solid">„${esc(L.clientMessage)}”</p>` : ''}
-      ${xNames(L).length ? `<p class="note xnote"><b>Servicii extra cerute:</b> ${esc(xNames(L).join(', '))}. Verifică disponibilitatea și pune prețul în ofertă.${xDetails(L).map(([k, v]) => `<br><b>${esc(k)}:</b> <span class="xlet">${esc(v)}</span>`).join('')}</p>` : ''}
+      ${plainMsg(L) ? `<p class="note" style="border-style:solid">„${esc(plainMsg(L))}”</p>` : ''}
+      ${xNames(L).length ? `<p class="note xnote"><b>Servicii extra cerute:</b> ${esc(xNames(L).join(', '))}. Le găsești bifate mai jos, la „Servicii extra”: verifică disponibilitatea și completează prețul.</p>` : ''}
       ${emailStrip()}
       <div class="row2">
         <div class="field"><label for="l-st">Status</label><select class="inp" id="l-st" data-l="status">${P.STATUSES.map(s => `<option ${s === L.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
@@ -362,7 +380,7 @@
       </div>
       ${L._promo ? `<p class="hint ok-msg">Reducerea de ${esc(L.discountValue)}% din promoția de final de an e completată automat (cerere primită până la 31 decembrie). Se salvează când apeși „Salvează” sau trimiți oferta.</p>` : ''}
       <div id="albumBox">${albumField()}</div>
-      ${(C.settings.extras || []).length ? `<div class="extrasBox"><span class="ms-l">Servicii extra</span>${C.settings.extras.map(x => `<label class="tog"><input type="checkbox" data-x="${esc(x.id)}" ${String(L.extras || '').split(',').includes(x.id) ? 'checked' : ''}> ${esc(x.name)} <span class="hint">${num(x.price) ? lei(x.price) : 'preț la cerere'}</span></label>`).join('')}</div>` : ''}
+      ${(C.settings.extras || []).length ? `<div class="extrasBox" id="extrasBox">${extrasRows()}</div>` : ''}
       <div id="calcBox">${breakdown()}</div>
       <div class="field"><label for="l-notes">Note interne (nu le vede clientul)</label><textarea class="inp" id="l-notes" data-l="notes" rows="3" style="min-height:70px">${esc(L.notes || '')}</textarea></div>
       <p class="hint" id="ldMsg">${esc(L._msg || '')}</p>
@@ -978,8 +996,13 @@
       setDirty = true; save(); autoSave(); return;
     }
     if (t.dataset.x !== undefined && L && e.type === 'change') {
-      const set = String(L.extras || '').split(',').filter(Boolean).filter(x => x !== t.dataset.x); if (t.checked) set.push(t.dataset.x);
-      L.extras = set.join(','); const b = $('#calcBox'); if (b) b.innerHTML = breakdown(); return;
+      const o = P.parseExtras(L.extras); if (t.checked) o[t.dataset.x] = o[t.dataset.x] != null ? o[t.dataset.x] : null; else delete o[t.dataset.x];
+      L.extras = P.joinExtras(o); const xb = $('#extrasBox'); if (xb) xb.innerHTML = extrasRows(); const b = $('#calcBox'); if (b) b.innerHTML = breakdown(); return;
+    }
+    if (t.dataset.xp !== undefined && L) {
+      const o = P.parseExtras(L.extras), v = String(t.value).replace(/[^\d.,]/g, '').replace(',', '.');
+      o[t.dataset.xp] = v === '' ? null : Math.round(+v || 0); L.extras = P.joinExtras(o);
+      const b = $('#calcBox'); if (b) b.innerHTML = breakdown(); return;
     }
     if (t.dataset.l !== undefined && L) {
       const k = t.dataset.l;

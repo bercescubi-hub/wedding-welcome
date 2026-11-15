@@ -33,7 +33,7 @@ const FIELDS = [
 ];
 const KEYS = FIELDS.map(f => f[0]);
 const TEXT_COLS = ['id','createdAt','phone','eventDate','startTime','lastEmail'];
-const CLIENT_KEYS = ['extras','name','phone','email','eventType','eventDate','startTime','county','city','venue','guests','package','outside','km','transport','packagePrice','total','clientMessage','source'];
+const CLIENT_KEYS = ['extras','album','name','phone','email','eventType','eventDate','startTime','county','city','venue','guests','package','outside','km','transport','packagePrice','total','clientMessage','source'];
 const ADMIN_KEYS = ['extras','status','package','outside','km','transport','packagePrice','discountType','discountValue','total','cost','profit','staffMenuByClient','notes','name','phone','email','eventDate','startTime','county','city','venue','guests','eventType','album'];
 
 /* ---------------- intrări web ----------------

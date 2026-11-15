@@ -82,10 +82,10 @@
     const billedKm = outside ? km * (S.pricing.roundTrip ? 2 : 1) : 0;
     const transport = Math.round(billedKm * num(S.pricing.kmRate));
     const hasBooth = !!(p && p.modules.includes('booth')), albumIncl = albumIncluded(p);
-    const albumExtra = hasBooth && !albumIncl && yes(lead.album) ? Math.round(num(S.pricing.albumPrice)) : 0;
+    const albumExtra = !!p && !albumIncl && yes(lead.album) ? Math.round(num(S.pricing.albumPrice)) : 0;
     const album = albumIncl ? 'inclus' : albumExtra ? 'extra' : 'nu';
-    const exIds = String(lead.extras || '').split(',').map(x => x.trim()).filter(Boolean);
-    const extras = (S.extras || []).filter(x => exIds.includes(x.id));
+    const exSel = parseExtras(lead.extras);
+    const extras = (S.extras || []).filter(x => x.id in exSel).map(x => exSel[x.id] != null ? Object.assign({}, x, { price: exSel[x.id] }) : x);
     const extrasPrice = extras.reduce((a, x) => a + Math.round(num(x.price)), 0);
     const subtotal = price + transport + albumExtra + extrasPrice;
     const dv = num(lead.discountValue);
@@ -233,5 +233,8 @@
       }
     }
   };
-  g.WWPricing = { ACK_BODY, OFFER_BODY_V4, OFFER_BODY_V5, RECONFIRM_BODY, RECONFIRM_BODY_V1, emailHtml, emailText, OFFER_BODY, OFFER_BODY_V2, OFFER_BODY_V3, CONFIRM_BODY, RECONFIRM_BODY, outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, albumIncluded, num, yes, lei, leiRate };
+  /** Serviciile extra ale unei cereri: „litere,invitatii” sau cu preț stabilit pentru client: „litere:500,invitatii”. */
+  function parseExtras(s) { const o = {}; String(s || '').split(',').map(x => x.trim()).filter(Boolean).forEach(x => { const [id, p] = x.split(':'); o[id.trim()] = p != null && p.trim() !== '' && isFinite(+p) ? +p : null; }); return o; }
+  function joinExtras(o) { return Object.keys(o).map(id => o[id] != null ? id + ':' + o[id] : id).join(','); }
+  g.WWPricing = { parseExtras, joinExtras, ACK_BODY, OFFER_BODY_V4, OFFER_BODY_V5, RECONFIRM_BODY, RECONFIRM_BODY_V1, emailHtml, emailText, OFFER_BODY, OFFER_BODY_V2, OFFER_BODY_V3, CONFIRM_BODY, RECONFIRM_BODY, outOfArea, DEFAULT_SETTINGS, STATUSES, MODULE_NAMES, COUNTIES, isLocal, estimateKm, calc, pkgOf, albumIncluded, num, yes, lei, leiRate };
 })(typeof window !== 'undefined' ? window : globalThis);
