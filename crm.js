@@ -415,6 +415,19 @@
   /** Oferta „scrisă frumos”: ce include pachetul + tabelul cu prețurile (marcaje pe care emailul le transformă în listă și tabel). */
   /** Toate pachetele, cu pachetul ales pentru client evidențiat și cu reducerea lui (dacă are), ca să le poată compara. */
   /** Serviciile extra bifate de client: disponibilitatea și prețul estimativ (apar doar dacă a ales ceva). */
+  /** Totalul ofertei: pachetul ales + albumul + serviciile extra + transport − reducere = total. */
+  function totalBlock(l, c) {
+    if (!c.pkg) return '';
+    const n0 = v => Math.round(num(v)).toLocaleString('ro-RO');
+    const rows = [`| Pachet ${c.pkg.name} · ${c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore'} | ${n0(c.price)} lei |`];
+    if (c.albumExtra) rows.push(`| Album foto | ${n0(c.albumExtra)} lei |`);
+    (c.extras || []).forEach(x => rows.push(`| ${x.name} | ${num(x.price) ? n0(x.price) + ' lei' : '[COMPLETEAZĂ prețul]'} |`));
+    if (c.transport) rows.push(`| Transport · ${c.billedKm} km | ${n0(c.transport)} lei |`);
+    if (c.discount) rows.push(`| Reducere${l.discountType === '%' ? ' ' + num(l.discountValue) + '%' : ''} | − ${n0(c.discount)} lei |`);
+    if (c.vat && !c.vatIncluded) rows.push(`| TVA ${c.vatRate}% | ${n0(c.vat)} lei |`);
+    rows.push(`| **Total${c.vat && c.vatIncluded ? ' (TVA inclus)' : ''}** | **${n0(c.total)} lei** |`);
+    return '## Totalul ofertei tale\n' + rows.join('\n');
+  }
   function extrasBlock(c) {
     if (!(c.extras || []).length) return '';
     const n0 = v => Math.round(num(v)).toLocaleString('ro-RO');
@@ -425,7 +438,7 @@
     const pct = l.discountType === '%' ? num(l.discountValue) : 0;
     const rows = (S.packages || []).filter(p => num(p.price)).map(p => {
       const mine = c.pkg && c.pkg.id === p.id, after = Math.round(num(p.price) * (1 - pct / 100));
-      const name = (mine ? '**' + p.name + '** (ales pentru tine)' : p.name) + ' · ' + (num(p.hours) >= 8 ? 'toată noaptea' : num(p.hours) + ' ore') + (p.desc ? ' — ' + p.desc : '');
+      const name = (mine ? '**' + p.name + '** (ales pentru tine' + (c.albumExtra ? ', cu album foto' : '') + ')' : p.name) + ' · ' + (num(p.hours) >= 8 ? 'toată noaptea' : num(p.hours) + ' ore') + (p.desc ? ' — ' + p.desc : '');
       const price = pct ? `~~${n0(p.price)} lei~~ ${mine ? '**' : ''}${n0(after)} lei${mine ? '**' : ''}` : `${mine ? '**' : ''}${n0(p.price)} lei${mine ? '**' : ''}`;
       return `| ${name} | ${price} |`;
     });
@@ -457,7 +470,7 @@
       pachet: c.pkg ? c.pkg.name : '', ore: c.hours >= 8 ? 'toată noaptea' : c.hours + ' ore',
       pret_pachet: n0(c.price), transport: n0(c.transport), km: String(c.billedKm), reducere: n0(c.discount), total: n0(c.total),
       tva: n0(c.vat), total_fara_tva: n0(c.net), cota_tva: String(c.vatRate),
-      expeditor: S.email.fromName || '', invitati: l.guests || '', telefoane: phones(), tabel_oferta: offerTable(l, S, c), tabel_pachete: packagesTable(l, S, c), servicii_extra: extrasBlock(c),
+      expeditor: S.email.fromName || '', invitati: l.guests || '', telefoane: phones(), tabel_oferta: offerTable(l, S, c), tabel_pachete: packagesTable(l, S, c), servicii_extra: extrasBlock(c), total_oferta: totalBlock(l, c),
       nume: String(l.name || '').trim().split(/\s+/)[0] || '',
       procent_avans: String(num(S.pricing.advancePct)), zile_plata: String(num(S.pricing.payDays || 10)), avans: n0(c.total * num(S.pricing.advancePct) / 100),
       termen_plata: new Date(Date.now() + num(S.pricing.payDays || 10) * 864e5).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }),
@@ -637,7 +650,7 @@
   let tplSel = 0, tplLead = '', tplFocus = 'body', tplMsg = '', fileMsg = '', tplDelAsk = -1, tplResetAsk = -1, fileDelAsk = '';
   const FIELD_GROUPS = [
     ['Client', [['prenume', 'Prenume'], ['nume_complet', 'Nume complet'], ['data_eveniment', 'Data evenimentului'], ['locatie_completa', 'Locația completă'], ['localitate', 'Localitatea'], ['invitati', 'Nr. invitați']]],
-    ['Ofertă', [['tabel_oferta', 'Tabelul ofertei'], ['tabel_pachete', 'Toate pachetele'], ['servicii_extra', 'Servicii extra alese'], ['pachet', 'Pachet'], ['ore', 'Durată'], ['pret_pachet', 'Preț pachet'], ['transport', 'Transport'], ['km', 'Km'], ['reducere', 'Reducere'], ['total', 'Total'], ['tva', 'TVA'], ['total_fara_tva', 'Total fără TVA'], ['album', 'Album']]],
+    ['Ofertă', [['tabel_oferta', 'Tabelul ofertei'], ['tabel_pachete', 'Toate pachetele'], ['servicii_extra', 'Servicii extra alese'], ['total_oferta', 'Totalul ofertei'], ['pachet', 'Pachet'], ['ore', 'Durată'], ['pret_pachet', 'Preț pachet'], ['transport', 'Transport'], ['km', 'Km'], ['reducere', 'Reducere'], ['total', 'Total'], ['tva', 'TVA'], ['total_fara_tva', 'Total fără TVA'], ['album', 'Album']]],
     ['Plată', [['avans', 'Avans (lei)'], ['procent_avans', 'Avans (%)'], ['termen_plata', 'Termen plată'], ['zile_plata', 'Zile plată']]],
     ['Contact', [['telefoane', 'Telefoane'], ['expeditor', 'Expeditor']]]
   ];
@@ -803,6 +816,8 @@
     if (S.email && S.email.fromName === 'Wedding Welcome') { S.email.fromName = 'WE WELCOME'; changed = true; }
     if (/^Oferta (Wedding Welcome|WE WELCOME) pentru \{data_eveniment\}$/.test(t.subject)) { t.subject = 'Propunerea noastră pentru evenimentul tău 🎉'; changed = true; }
     if ((t.body.includes('Pachet: {pret_pachet} lei') && t.body.includes('Vă mulțumim pentru interesul arătat')) || t.body === P.OFFER_BODY_V2 || t.body === P.OFFER_BODY_V3 || t.body === P.OFFER_BODY_V4 || t.body === P.OFFER_BODY_V5) { t.body = P.OFFER_BODY; changed = true; }
+    // totalul (pachet + album + extra) după serviciile extra, o singură dată (15 nov.)
+    if (!(S.migr && S.migr.total1115)) { if (!t.body.includes('{total_oferta}')) t.body = t.body.includes('{servicii_extra}') ? t.body.replace('{servicii_extra}', '{servicii_extra}\n\n{total_oferta}') : t.body.includes('{tabel_pachete}') ? t.body.replace('{tabel_pachete}', '{tabel_pachete}\n\n{total_oferta}') : t.body; S.migr = Object.assign({}, S.migr, { total1115: true }); changed = true; }
     if (!(S.templates || []).some(x => x.id === 'primire')) { S.templates.unshift(clone(P.DEFAULT_SETTINGS.templates.find(x => x.id === 'primire'))); changed = true; }
     const rc = (S.templates || []).find(x => x.id === 'reconfirmare');
     if (rc && rc.body === P.RECONFIRM_BODY_V1) { rc.body = P.RECONFIRM_BODY; changed = true; }
