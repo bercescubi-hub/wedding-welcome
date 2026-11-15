@@ -73,7 +73,7 @@
     busy = 'Se încarcă cererile din Google Sheets…'; if (!quiet) rerender();
     try {
       const d = await api('GET', { action: 'list' });
-      C.leads = d.rows || []; C.scriptOld = !!(C.leads.length && !('album' in C.leads[0])); C.account = d.account || C.account; if (d.role) C.role = d.role;
+      C.leads = d.rows || []; C.scriptOld = !!(C.leads.length && !('album' in C.leads[0])); C.scriptStale = !!(C.leads.length && !('extras' in C.leads[0])); C.account = d.account || C.account; if (d.role) C.role = d.role;
       if (d.settings) { C.settings = merge(P.DEFAULT_SETTINGS, d.settings); const m1 = migrateTemplates(C.settings), m2 = migratePackages(C.settings); if ((m1 || m2 || (!d.settings.autoAck && C.settings.templates.some(t => t.autoSubmit))) && isAdmin()) saveSettingsRemote(); }
       else { C.settings.autoAck = buildAutoAck(C.settings); await api('POST', { action: 'settings', settings: C.settings }); }   // prima conectare: urcă prețurile implicite
       C.lastSync = new Date().toISOString(); save(); note = ''; setDirty = false;
@@ -260,6 +260,7 @@
       </section>
       <section class="panel">
         <div class="lhead">
+          ${C.scriptStale && isAdmin() ? `<p class="note" style="border:1px solid var(--danger);color:var(--danger)"><b>Scriptul Google nu e la zi.</b> Până îl actualizezi nu pleacă emailul automat de confirmare și nu se salvează serviciile extra și albumul cerute de clienți. Ia Code.gs nou, înlocuiește codul în Apps Script, rulează o dată „testDrive”, apoi Deploy → Manage deployments → ✏️ → New version → Deploy.</p>` : ''}
           <div class="chips">${['Toate'].concat(P.STATUSES).map(s => `<button type="button" class="chip" aria-pressed="${filter === s}" data-act="crm-filter" data-k="${esc(s)}">${esc(s)}${s !== 'Toate' && counts[s] ? ` <i>${counts[s]}</i>` : ''}</button>`).join('')}</div>
           <div class="btns"><input class="inp" id="crmQ" placeholder="Caută nume, oraș, email" value="${esc(q)}" aria-label="Caută în cereri" style="max-width:240px">
             <button type="button" class="btn" data-act="crm-sync" ${busy ? 'disabled' : ''}>${busy ? 'Se încarcă…' : 'Reîmprospătează'}</button></div>
